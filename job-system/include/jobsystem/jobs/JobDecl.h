@@ -5,9 +5,9 @@
 #include <memory>
 #include <string>
 
-#include "JobContext.h"
+#include "jobsystem/context/JobContext.h"
 
-namespace jobsystem {
+namespace jobsystem::jobs {
 
 enum JobDeclState { DETACHED, QUEUED, IN_EXECUTION, FINISHED };
 
@@ -54,9 +54,9 @@ public:
   virtual bool IsDisposableAfterExecution(const JobContext &context) noexcept;
 };
 
-} // namespace jobsystem
+} // namespace jobsystem::jobs
 
-jobsystem::JobDecl::JobDecl(std::function<void()> execution)
+jobsystem::jobs::JobDecl::JobDecl(std::function<void()> execution)
     : m_execution{execution} {
   static u_int64_t last_job_number;
   last_job_number++;
@@ -64,26 +64,31 @@ jobsystem::JobDecl::JobDecl(std::function<void()> execution)
   m_name = "job-" + std::to_string(last_job_number);
 }
 
-jobsystem::JobDecl::JobDecl(std::function<void()> execution, std::string name)
+jobsystem::jobs::JobDecl::JobDecl(std::function<void()> execution,
+                                  std::string name)
     : m_execution{execution}, m_name{name} {}
 
-jobsystem::JobDecl::~JobDecl() {}
+jobsystem::jobs::JobDecl::~JobDecl() {}
 
-inline jobsystem::JobDeclState jobsystem::JobDecl::GetState() noexcept {
+inline jobsystem::jobs::JobDeclState
+jobsystem::jobs::JobDecl::GetState() noexcept {
   return m_current_job_state;
 }
 
-inline void jobsystem::JobDecl::SetState(JobDeclState state) noexcept {
+inline void jobsystem::jobs::JobDecl::SetState(JobDeclState state) noexcept {
   m_current_job_state = state;
 }
 
-inline std::string jobsystem::JobDecl::GetName() noexcept { return m_name; }
+inline std::string jobsystem::jobs::JobDecl::GetName() noexcept {
+  return m_name;
+}
 
-inline bool jobsystem::JobDecl::IsReady(const JobContext &context) noexcept {
+inline bool
+jobsystem::jobs::JobDecl::IsReady(const JobContext &context) noexcept {
   return true;
 }
 
-inline bool jobsystem::JobDecl::IsDisposableAfterExecution(
+inline bool jobsystem::jobs::JobDecl::IsDisposableAfterExecution(
     const JobContext &context) noexcept {
   return true;
 }

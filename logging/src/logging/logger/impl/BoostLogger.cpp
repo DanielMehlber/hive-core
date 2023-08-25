@@ -19,10 +19,7 @@ void logging::logger::impl::BoostLogger::Init() {
   boost::log::add_common_attributes();
 };
 
-void logging::logger::impl::BoostLogger::ShutDown() {
-  boost::log::core::get()->flush();
-  boost::log::core::get()->remove_all_sinks();
-};
+void logging::logger::impl::BoostLogger::ShutDown(){};
 
 logging::logger::impl::BoostLogger::~BoostLogger() { ShutDown(); }
 logging::logger::impl::BoostLogger::BoostLogger() { Init(); }

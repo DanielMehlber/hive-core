@@ -1,8 +1,10 @@
 #include "jobsystem/manager/impl/BasicJobManager.h"
-#include "logging/Logging.h"
+#include "logging/LoggingApi.h"
+
+using namespace jobsystem::jobs;
 
 void jobsystem::manager::impl::BasicJobManager::Init() {
-  auto logger = logging::Logging::GetLogger();
+  auto logger = logging::LoggingApi::GetLogger();
   logger->Info("Performing init");
 }
 

@@ -1,7 +1,9 @@
 #ifndef IJOBMANAGER_H
 #define IJOBMANAGER_H
 
-#include "../JobDecl.h"
+#include "jobsystem/jobs/JobDecl.h"
+
+using namespace jobsystem::jobs;
 
 namespace jobsystem::manager {
 
@@ -19,6 +21,10 @@ enum JobExecutionPhase {
 };
 
 enum JobManagerState { IDLE, INIT_CYCLE, MID_CYCLE, CLEAN_UP_CYCLE };
+
+namespace impl {
+class BasicJobManager;
+};
 
 /**
  * The JobManager interface declares all functions that must be implemented in
