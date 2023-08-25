@@ -1,0 +1,6 @@
+build
+bin
+dist
+
+CMakeUserPresets.json
+CMakeFiles
