@@ -1,12 +1,10 @@
 #include <gtest/gtest.h>
-#include <jobsystem/JobApi.h>
-#include <jobsystem/manager/IJobManager.h>
+#include <jobsystem/JobSystem.h>
 #include <logging/LoggingApi.h>
 
-int main(int argc, char **argv) {
-  auto log = logging::LoggingApi::GetLogger();
-  log->Info("Was soll das denn?");
+TEST(JobSystem, checkInit) { jobsystem::JobSystem system; }
 
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

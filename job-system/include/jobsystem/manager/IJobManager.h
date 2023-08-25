@@ -61,23 +61,14 @@ public:
   void InvokeCycleAsync();
 
   /**
-   * @brief Places job declaration for execution in the current cycle (or the
-   * next one, if no cycle is currently running). It will be placed in the
-   * default execution phase.
-   *
-   * @param job_declaration declaration of the job that will be executed
-   */
-  void KickJob(std::shared_ptr<JobDecl> job_declaration);
-
-  /**
    * @brief Enqueues the job declaration for execution in a specific phase in
    * the current execution cycle (or next one, if none is currently running).
    *
    * @param job_declaration declaration of the job that will be executed
    * @param execution_phase
    */
-  void KickJob(std::shared_ptr<JobDecl> job_declaration,
-               JobExecutionPhase execution_phase);
+  void KickJob(JobDecl job_declaration,
+               JobExecutionPhase execution_phase = CYCLE_MAIN_PHASE);
 
   inline JobManagerState GetState() noexcept;
 };
@@ -99,13 +90,7 @@ template <typename Impl> inline void IJobManager<Impl>::InvokeCycleAsync() {
 }
 
 template <typename Impl>
-inline void
-IJobManager<Impl>::KickJob(std::shared_ptr<JobDecl> job_declaration) {
-  static_cast<Impl *>(this)->KickJob(job_declaration);
-}
-
-template <typename Impl>
-inline void IJobManager<Impl>::KickJob(std::shared_ptr<JobDecl> job_declaration,
+inline void IJobManager<Impl>::KickJob(JobDecl job_declaration,
                                        JobExecutionPhase execution_phase) {
   static_cast<Impl *>(this)->KickJob(job_declaration, execution_phase);
 }

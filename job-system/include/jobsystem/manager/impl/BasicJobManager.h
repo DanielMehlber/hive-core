@@ -18,9 +18,9 @@ public:
   void Shutdown();
   void InvokeCycle();
   void InvokeCycleAsync();
-  void KickJob(std::shared_ptr<jobsystem::jobs::JobDecl> job_declaration);
-  void KickJob(std::shared_ptr<jobsystem::jobs::JobDecl> job_declaration,
-               jobsystem::manager::JobExecutionPhase execution_phase);
+  void KickJob(
+      jobsystem::jobs::JobDecl job_declaration,
+      jobsystem::manager::JobExecutionPhase execution_phase = CYCLE_MAIN_PHASE);
 };
 } // namespace jobsystem::manager::impl
 
