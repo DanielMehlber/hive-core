@@ -25,7 +25,7 @@
 #endif
 
 namespace logging {
-class EXPORT_API LoggingApi {
+class EXPORT_API Logging {
 private:
   static std::shared_ptr<logger::ILogger> m_logger;
 
@@ -33,16 +33,9 @@ public:
   static std::shared_ptr<logger::ILogger> GetLogger() noexcept;
 };
 
-std::shared_ptr<logging::logger::ILogger>
-logging::LoggingApi::GetLogger() noexcept {
-  if (!m_logger) {
-    m_logger = std::make_shared<logger::impl::BoostLogger>();
-  }
-
-  return m_logger;
+inline std::shared_ptr<logging::logger::ILogger> GetLogger() {
+  return Logging::GetLogger();
 }
-
-std::shared_ptr<logging::logger::ILogger> logging::LoggingApi::m_logger;
 
 } // namespace logging
 

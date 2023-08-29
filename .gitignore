@@ -4,3 +4,6 @@ dist
 
 CMakeUserPresets.json
 CMakeFiles
+
+.vscode
+.kdev4
