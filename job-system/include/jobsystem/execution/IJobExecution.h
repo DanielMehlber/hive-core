@@ -31,8 +31,9 @@ public:
 
   /**
    * @brief Starts processing scheduled jobs
+   * @param manager managing instance that started the execution
    */
-  void Start();
+  void Start(JobManager *manager);
 
   /**
    * @brief Stops processing scheduled jobs. Already scheduled jobs will remain
@@ -58,10 +59,11 @@ IJobExecution<Impl>::WaitForCompletion(std::shared_ptr<JobCounter> counter) {
   static_cast<Impl *>(this)->WaitForCompletion(counter);
 }
 
-template <typename Impl> inline void IJobExecution<Impl>::Start() {
+template <typename Impl>
+inline void IJobExecution<Impl>::Start(JobManager *manager) {
   // CRTP pattern: avoid runtime cost of v-tables in hot path
   // Your implementation of IJobExecution must implement this function
-  static_cast<Impl *>(this)->Start();
+  static_cast<Impl *>(this)->Start(manager);
 }
 
 template <typename Impl> inline void IJobExecution<Impl>::Stop() {

@@ -28,7 +28,7 @@ protected:
    * @brief Workload encapsulated in a function that will be executed by the job
    * execution.
    */
-  std::function<JobContinuation()> m_workload;
+  std::function<JobContinuation(JobContext *)> m_workload;
 
   /**
    * @brief Tracks progress and current state of this job
@@ -53,15 +53,16 @@ protected:
   void FinishJob();
 
 public:
-  Job(std::function<JobContinuation()>, std::string name,
+  Job(std::function<JobContinuation(JobContext *)>, std::string name,
       JobExecutionPhase phase = MAIN);
-  Job(std::function<JobContinuation()>, JobExecutionPhase phase = MAIN);
+  Job(std::function<JobContinuation(JobContext *)>,
+      JobExecutionPhase phase = MAIN);
   virtual ~Job() { FinishJob(); };
 
   /**
    * @brief Executes the jobs workload in the calling thread.
    */
-  JobContinuation Execute();
+  JobContinuation Execute(JobContext *);
 
   /**
    * @brief Checks if this job can be scheduled (typically in the next cycle)
@@ -82,11 +83,13 @@ public:
   JobState GetState() noexcept;
   void SetState(JobState state) noexcept;
   JobExecutionPhase GetPhase() noexcept;
+  const std::string &GetName() noexcept;
 };
 
 inline JobState Job::GetState() noexcept { return m_current_state; }
 inline void Job::SetState(JobState state) noexcept { m_current_state = state; }
 inline JobExecutionPhase Job::GetPhase() noexcept { return m_phase; }
+inline const std::string &Job::GetName() noexcept { return m_name; }
 
 } // namespace jobsystem::job
 

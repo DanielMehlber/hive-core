@@ -1,4 +1,5 @@
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
+#include "jobsystem/JobManager.h"
 
 using namespace jobsystem::execution::impl;
 using namespace jobsystem::job;
@@ -17,15 +18,25 @@ void SingleThreadedExecutionImpl::Schedule(std::shared_ptr<Job> job) {
   m_queue_condition.notify_one();
 }
 
-void SingleThreadedExecutionImpl::ExecuteJobs() {
+void SingleThreadedExecutionImpl::ExecuteJobs(JobManager *manager) {
   while (!m_should_terminate) {
     std::unique_lock lock(m_queue_mutex);
     if (!m_queue.empty()) {
-      auto job = m_queue.back();
+      auto job = m_queue.front();
       m_queue.pop();
       lock.unlock();
-      job->Execute();
+
+      // generate job context
+      JobContext context(manager->GetCycleCount(), manager);
+
+      // run job
+      JobContinuation continuation = job->Execute(&context);
       job->SetState(JobState::EXECUTION_FINISHED);
+
+      if (continuation == REQUEUE) {
+        manager->KickJobForNextCycle(job);
+      }
+
     } else {
       m_queue_condition.wait(lock);
       continue;
@@ -33,11 +44,11 @@ void SingleThreadedExecutionImpl::ExecuteJobs() {
   }
 }
 
-void SingleThreadedExecutionImpl::Start() {
+void SingleThreadedExecutionImpl::Start(JobManager *manager) {
   if (m_current_state == JobExecutionState::STOPPED) {
     m_should_terminate = false;
     m_worker_thread = std::make_unique<std::thread>(
-        &SingleThreadedExecutionImpl::ExecuteJobs, this);
+        &SingleThreadedExecutionImpl::ExecuteJobs, this, manager);
     m_current_state = JobExecutionState::RUNNING;
   }
 }

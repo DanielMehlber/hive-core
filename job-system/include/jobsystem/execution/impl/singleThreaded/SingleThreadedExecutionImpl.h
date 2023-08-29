@@ -25,14 +25,14 @@ private:
 
   JobExecutionState m_current_state{STOPPED};
 
-  void ExecuteJobs();
+  void ExecuteJobs(JobManager *manager);
 
 public:
   SingleThreadedExecutionImpl();
   ~SingleThreadedExecutionImpl();
   void Schedule(std::shared_ptr<Job> job);
   void WaitForCompletion(std::shared_ptr<JobCounter> counter);
-  void Start();
+  void Start(JobManager *manager);
   void Stop();
   JobExecutionState GetState();
 };
