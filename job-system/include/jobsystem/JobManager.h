@@ -50,17 +50,25 @@ private:
   JobManagerState m_current_state{READY};
   JobExecutionImpl m_execution;
 
-  size_t m_cycle_count{0};
+  size_t m_total_cycle_count{0};
+
+// Debug values
+#ifndef NDEBUG
+  std::atomic<size_t> m_job_execution_counter{0};
+  size_t m_cycles_counter{0};
+#endif
 
   void ExecutePhaseAndWait(std::queue<std::shared_ptr<Job>> &queue,
                            std::mutex &queue_mutex);
 
 public:
+  JobManager();
+  void PrintStatusLog();
   void KickJob(std::shared_ptr<Job> job);
   void KickJobForNextCycle(std::shared_ptr<Job> job);
   void InvokeCycleAndWait();
   void WaitForCompletion(std::shared_ptr<JobCounter> counter);
-  size_t GetCycleCount() noexcept;
+  size_t GetTotalCyclesCount() noexcept;
 };
 
 inline void JobManager::WaitForCompletion(std::shared_ptr<JobCounter> counter) {

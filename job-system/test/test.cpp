@@ -70,9 +70,15 @@ TEST(JobSystem, timerJobs) {
   std::this_thread::sleep_for(1s);
   manager.InvokeCycleAndWait();
   ASSERT_TRUE(job_executed);
+
+  while (true) {
+    manager.InvokeCycleAndWait();
+    std::this_thread::sleep_for(10ms);
+  }
 }
 
 int main(int argc, char **argv) {
+
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

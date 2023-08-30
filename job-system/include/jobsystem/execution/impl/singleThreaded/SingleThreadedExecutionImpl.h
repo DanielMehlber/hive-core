@@ -21,7 +21,7 @@ private:
 
   std::unique_ptr<std::thread> m_worker_thread;
   std::condition_variable m_queue_condition;
-  std::atomic_bool m_should_terminate;
+  std::atomic_bool m_termination_flag;
 
   JobExecutionState m_current_state{STOPPED};
 

@@ -9,7 +9,6 @@ JobContinuation Job::Execute(JobContext *context) {
   m_current_state = EXECUTION_FINISHED;
   FinishJob();
 
-  LOG_DEBUG("job " + m_name + " was executed");
   return continuation;
 }
 

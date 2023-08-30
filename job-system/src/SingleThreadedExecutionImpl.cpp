@@ -19,15 +19,15 @@ void SingleThreadedExecutionImpl::Schedule(std::shared_ptr<Job> job) {
 }
 
 void SingleThreadedExecutionImpl::ExecuteJobs(JobManager *manager) {
-  while (!m_should_terminate) {
-    std::unique_lock lock(m_queue_mutex);
+  while (!m_termination_flag) {
+    std::unique_lock queue_lock(m_queue_mutex);
     if (!m_queue.empty()) {
       auto job = m_queue.front();
       m_queue.pop();
-      lock.unlock();
+      queue_lock.unlock();
 
       // generate job context
-      JobContext context(manager->GetCycleCount(), manager);
+      JobContext context(manager->GetTotalCyclesCount(), manager);
 
       // run job
       JobContinuation continuation = job->Execute(&context);
@@ -38,15 +38,16 @@ void SingleThreadedExecutionImpl::ExecuteJobs(JobManager *manager) {
       }
 
     } else {
-      m_queue_condition.wait(lock);
-      continue;
+      // unlocks queue_lock until notified (see documentation)
+      m_queue_condition.wait(
+          queue_lock, [&] { return !m_queue.empty() || m_termination_flag; });
     }
   }
 }
 
 void SingleThreadedExecutionImpl::Start(JobManager *manager) {
   if (m_current_state == JobExecutionState::STOPPED) {
-    m_should_terminate = false;
+    m_termination_flag = false;
     m_worker_thread = std::make_unique<std::thread>(
         &SingleThreadedExecutionImpl::ExecuteJobs, this, manager);
     m_current_state = JobExecutionState::RUNNING;
@@ -55,7 +56,9 @@ void SingleThreadedExecutionImpl::Start(JobManager *manager) {
 
 void SingleThreadedExecutionImpl::Stop() {
   if (m_current_state == JobExecutionState::RUNNING) {
-    m_should_terminate = true;
+    std::unique_lock lock(m_queue_mutex);
+    m_termination_flag = true;
+    lock.unlock();
     m_queue_condition.notify_all();
     m_worker_thread->join();
     m_current_state = JobExecutionState::STOPPED;
