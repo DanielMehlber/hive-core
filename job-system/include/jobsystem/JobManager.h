@@ -58,8 +58,11 @@ private:
   size_t m_cycles_counter{0};
 #endif
 
-  void ExecutePhaseAndWait(std::queue<std::shared_ptr<Job>> &queue,
+  void ExecuteQueueAndWait(std::queue<std::shared_ptr<Job>> &queue,
                            std::mutex &queue_mutex);
+  std::shared_ptr<JobCounter>
+  ScheduleAllJobsInQueue(std::queue<std::shared_ptr<Job>> &queue,
+                         std::mutex &queue_mutex);
 
 public:
   JobManager();

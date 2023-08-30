@@ -1,5 +1,6 @@
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 #include "jobsystem/JobManager.h"
+#include "logging/Logging.h"
 
 using namespace jobsystem::execution::impl;
 using namespace jobsystem::job;
@@ -11,19 +12,19 @@ SingleThreadedExecutionImpl::SingleThreadedExecutionImpl() {
 SingleThreadedExecutionImpl::~SingleThreadedExecutionImpl() { Stop(); }
 
 void SingleThreadedExecutionImpl::Schedule(std::shared_ptr<Job> job) {
-  std::unique_lock lock(m_queue_mutex);
-  m_queue.push(job);
+  std::unique_lock lock(m_execution_queue_mutex);
+  m_execution_queue.push(job);
   job->SetState(JobState::AWAITING_EXECUTION);
   lock.unlock();
-  m_queue_condition.notify_one();
+  m_execution_queue_condition.notify_one();
 }
 
 void SingleThreadedExecutionImpl::ExecuteJobs(JobManager *manager) {
   while (!m_termination_flag) {
-    std::unique_lock queue_lock(m_queue_mutex);
-    if (!m_queue.empty()) {
-      auto job = m_queue.front();
-      m_queue.pop();
+    std::unique_lock queue_lock(m_execution_queue_mutex);
+    if (!m_execution_queue.empty()) {
+      auto job = m_execution_queue.front();
+      m_execution_queue.pop();
       queue_lock.unlock();
 
       // generate job context
@@ -39,8 +40,9 @@ void SingleThreadedExecutionImpl::ExecuteJobs(JobManager *manager) {
 
     } else {
       // unlocks queue_lock until notified (see documentation)
-      m_queue_condition.wait(
-          queue_lock, [&] { return !m_queue.empty() || m_termination_flag; });
+      m_execution_queue_condition.wait(queue_lock, [&] {
+        return !m_execution_queue.empty() || m_termination_flag;
+      });
     }
   }
 }
@@ -56,10 +58,10 @@ void SingleThreadedExecutionImpl::Start(JobManager *manager) {
 
 void SingleThreadedExecutionImpl::Stop() {
   if (m_current_state == JobExecutionState::RUNNING) {
-    std::unique_lock lock(m_queue_mutex);
+    std::unique_lock lock(m_execution_queue_mutex);
     m_termination_flag = true;
     lock.unlock();
-    m_queue_condition.notify_all();
+    m_execution_queue_condition.notify_all();
     m_worker_thread->join();
     m_current_state = JobExecutionState::STOPPED;
   }
@@ -68,6 +70,14 @@ void SingleThreadedExecutionImpl::Stop() {
 using namespace std::chrono_literals;
 void SingleThreadedExecutionImpl::WaitForCompletion(
     std::shared_ptr<JobCounter> counter) {
+
+  if (m_worker_thread->get_id() == std::this_thread::get_id()) {
+    LOG_ERR("cannot wait for other jobs during job execution using the "
+            "SingleThreadedExecutionImpl because it would block the only "
+            "execution thread");
+    return;
+  }
+
   while (!counter->AreAllFinished()) {
     std::this_thread::sleep_for(10ms);
   }

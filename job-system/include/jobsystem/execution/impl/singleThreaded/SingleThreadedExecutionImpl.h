@@ -16,11 +16,11 @@ namespace jobsystem::execution::impl {
 class SingleThreadedExecutionImpl
     : public IJobExecution<SingleThreadedExecutionImpl> {
 private:
-  std::queue<std::shared_ptr<Job>> m_queue;
-  std::mutex m_queue_mutex;
+  std::queue<std::shared_ptr<Job>> m_execution_queue;
+  std::mutex m_execution_queue_mutex;
 
   std::unique_ptr<std::thread> m_worker_thread;
-  std::condition_variable m_queue_condition;
+  std::condition_variable m_execution_queue_condition;
   std::atomic_bool m_termination_flag;
 
   JobExecutionState m_current_state{STOPPED};

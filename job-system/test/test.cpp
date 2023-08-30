@@ -70,11 +70,30 @@ TEST(JobSystem, timerJobs) {
   std::this_thread::sleep_for(1s);
   manager.InvokeCycleAndWait();
   ASSERT_TRUE(job_executed);
+}
 
-  while (true) {
-    manager.InvokeCycleAndWait();
-    std::this_thread::sleep_for(10ms);
-  }
+TEST(JobSystem, jobKicksJob) {
+  JobManager manager;
+  bool jobACompleted = false;
+  bool jobBCompleted = false;
+  std::shared_ptr<Job> jobA = std::make_shared<Job>([&](JobContext *context) {
+    // job inside job
+    std::shared_ptr<Job> jobB = std::make_shared<Job>([&](JobContext *context) {
+      jobBCompleted = true;
+      return JobContinuation::DISPOSE;
+    });
+    std::shared_ptr<JobCounter> counter = std::make_shared<JobCounter>();
+    jobB->AddCounter(counter);
+    context->GetJobManager()->KickJob(jobB);
+    jobACompleted = true;
+    return JobContinuation::DISPOSE;
+  });
+
+  manager.KickJob(jobA);
+  manager.InvokeCycleAndWait();
+
+  ASSERT_TRUE(jobACompleted);
+  ASSERT_TRUE(jobBCompleted);
 }
 
 int main(int argc, char **argv) {

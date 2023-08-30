@@ -37,9 +37,9 @@ inline std::shared_ptr<logging::logger::ILogger> GetLogger() {
   return Logging::GetLogger();
 }
 
-#define LOG_INFO(x) Logging::GetLogger()->Info(x)
-#define LOG_WARN(x) Logging::GetLogger()->Warn(x)
-#define LOG_ERR(x) Logging::GetLogger()->Error(x)
+#define LOG_INFO(x) logging::Logging::GetLogger()->Info(x)
+#define LOG_WARN(x) logging::Logging::GetLogger()->Warn(x)
+#define LOG_ERR(x) logging::Logging::GetLogger()->Error(x)
 
 #ifdef NDEBUG
 #define LOG_DEBUG(x)
