@@ -37,7 +37,7 @@ TEST(JobSystem, allPhases) {
   ASSERT_EQ(2, vec.at(2));
 }
 
-TEST(JobSystem, autoReschedule) {
+TEST(JobSystem, auto_requeue) {
   JobManager manager;
   int executions = 0;
 
@@ -53,7 +53,7 @@ TEST(JobSystem, autoReschedule) {
   ASSERT_EQ(executions, 2);
 }
 
-TEST(JobSystem, timerJobs) {
+TEST(JobSystem, timer_job) {
   JobManager manager;
   bool job_executed = false;
   auto timer_job = std::make_shared<TimerJob>(
@@ -72,13 +72,29 @@ TEST(JobSystem, timerJobs) {
   ASSERT_TRUE(job_executed);
 }
 
-TEST(JobSystem, jobKicksJob) {
+TEST(JobSystem, jobs_kicking_jobs) {
   JobManager manager;
   bool jobACompleted = false;
   bool jobBCompleted = false;
-  std::shared_ptr<Job> jobA = std::make_shared<Job>([&](JobContext *context) {
-    // job inside job
-    std::shared_ptr<Job> jobB = std::make_shared<Job>([&](JobContext *context) {
+  bool jobCCompleted = false;
+  bool jobDCompleted = false;
+  auto jobA = std::make_shared<Job>([&](JobContext *context) {
+    // job inside job (should execute directly)
+    auto jobB = std::make_shared<Job>([&](JobContext *context) {
+      // job inside job inside job (should also execute directly)
+      auto jobC = std::make_shared<Job>([&](JobContext *context) {
+        // the phase of this job has passed, so it should not be executed
+        auto jobD = std::make_shared<Job>(
+            [&](JobContext *context) {
+              jobDCompleted = true;
+              return JobContinuation::DISPOSE;
+            },
+            INIT);
+        context->GetJobManager()->KickJob(jobD);
+        jobCCompleted = true;
+        return JobContinuation::DISPOSE;
+      });
+      context->GetJobManager()->KickJob(jobC);
       jobBCompleted = true;
       return JobContinuation::DISPOSE;
     });
@@ -94,6 +110,8 @@ TEST(JobSystem, jobKicksJob) {
 
   ASSERT_TRUE(jobACompleted);
   ASSERT_TRUE(jobBCompleted);
+  ASSERT_TRUE(jobCCompleted);
+  ASSERT_FALSE(jobDCompleted);
 }
 
 int main(int argc, char **argv) {
