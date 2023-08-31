@@ -37,6 +37,23 @@ TEST(JobSystem, allPhases) {
   ASSERT_EQ(2, vec.at(2));
 }
 
+TEST(JobSystem, multiple_jobs_per_phase) {
+  JobManager manager;
+
+  int job_count = 5;
+  std::atomic_int counter = 0;
+  for (int i = 0; i < job_count; i++) {
+    auto job = std::make_shared<Job>([&](JobContext *) {
+      counter++;
+      return JobContinuation::REQUEUE;
+    });
+    manager.KickJob(job);
+  }
+
+  manager.InvokeCycleAndWait();
+  ASSERT_EQ(job_count, counter);
+}
+
 TEST(JobSystem, auto_requeue) {
   JobManager manager;
   int executions = 0;

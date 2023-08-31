@@ -79,6 +79,6 @@ void SingleThreadedExecutionImpl::WaitForCompletion(
   }
 
   while (!counter->AreAllFinished()) {
-    std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_for(1ms);
   }
 }

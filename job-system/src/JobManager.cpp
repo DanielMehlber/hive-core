@@ -35,7 +35,8 @@ void JobManager::KickJob(std::shared_ptr<Job> job) {
 
     // if current cycle is running in this phase, directly schedule it.
     if (m_current_state == CYCLE_INIT) {
-      ScheduleAllJobsInQueue(m_init_queue, m_init_queue_mutex);
+      ScheduleAllJobsInQueue(m_init_queue, m_init_queue_mutex,
+                             m_init_phase_counter);
     }
   } break;
   case MAIN: {
@@ -45,7 +46,8 @@ void JobManager::KickJob(std::shared_ptr<Job> job) {
 
     // if current cycle is running in this phase, directly schedule it.
     if (m_current_state == CYCLE_MAIN) {
-      ScheduleAllJobsInQueue(m_main_queue, m_main_queue_mutex);
+      ScheduleAllJobsInQueue(m_main_queue, m_main_queue_mutex,
+                             m_main_phase_counter);
     }
   } break;
   case CLEAN_UP: {
@@ -55,7 +57,8 @@ void JobManager::KickJob(std::shared_ptr<Job> job) {
 
     // if current cycle is running in this phase, directly schedule it.
     if (m_current_state == CYCLE_CLEAN_UP) {
-      ScheduleAllJobsInQueue(m_clean_up_queue, m_clean_up_queue_mutex);
+      ScheduleAllJobsInQueue(m_clean_up_queue, m_clean_up_queue_mutex,
+                             m_clean_up_phase_counter);
     }
   } break;
   }
@@ -63,10 +66,9 @@ void JobManager::KickJob(std::shared_ptr<Job> job) {
   job->SetState(JobState::QUEUED);
 }
 
-std::shared_ptr<JobCounter>
-JobManager::ScheduleAllJobsInQueue(std::queue<std::shared_ptr<Job>> &queue,
-                                   std::mutex &queue_mutex) {
-  auto counter = std::make_shared<JobCounter>();
+void JobManager::ScheduleAllJobsInQueue(std::queue<std::shared_ptr<Job>> &queue,
+                                        std::mutex &queue_mutex,
+                                        std::shared_ptr<JobCounter> counter) {
   std::unique_lock lock(queue_mutex);
   while (!queue.empty()) {
     auto job = queue.front();
@@ -85,13 +87,12 @@ JobManager::ScheduleAllJobsInQueue(std::queue<std::shared_ptr<Job>> &queue,
     m_job_execution_counter++;
 #endif
   }
-
-  return counter;
 }
 
 void JobManager::ExecuteQueueAndWait(std::queue<std::shared_ptr<Job>> &queue,
-                                     std::mutex &queue_mutex) {
-  auto counter = ScheduleAllJobsInQueue(queue, queue_mutex);
+                                     std::mutex &queue_mutex,
+                                     std::shared_ptr<JobCounter> counter) {
+  ScheduleAllJobsInQueue(queue, queue_mutex, counter);
   WaitForCompletion(counter);
 }
 
@@ -113,15 +114,20 @@ void JobManager::InvokeCycleAndWait() {
   m_total_cycle_count++;
   m_execution.Start(this);
 
+  m_init_phase_counter = std::make_shared<JobCounter>();
+  m_main_phase_counter = std::make_shared<JobCounter>();
+  m_clean_up_phase_counter = std::make_shared<JobCounter>();
+
   // pass different phases consecutively to the execution
   m_current_state = CYCLE_INIT;
-  ExecuteQueueAndWait(m_init_queue, m_init_queue_mutex);
+  ExecuteQueueAndWait(m_init_queue, m_init_queue_mutex, m_init_phase_counter);
 
   m_current_state = CYCLE_MAIN;
-  ExecuteQueueAndWait(m_main_queue, m_main_queue_mutex);
+  ExecuteQueueAndWait(m_main_queue, m_main_queue_mutex, m_main_phase_counter);
 
   m_current_state = CYCLE_CLEAN_UP;
-  ExecuteQueueAndWait(m_clean_up_queue, m_clean_up_queue_mutex);
+  ExecuteQueueAndWait(m_clean_up_queue, m_clean_up_queue_mutex,
+                      m_clean_up_phase_counter);
 
   m_execution.Stop();
 

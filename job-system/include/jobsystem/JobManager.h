@@ -3,6 +3,7 @@
 
 #include "JobManagerState.h"
 #include "jobsystem/execution/IJobExecution.h"
+#include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/TimerJob.h"
@@ -13,7 +14,7 @@
 using namespace jobsystem::job;
 using namespace jobsystem::execution;
 
-typedef impl::SingleThreadedExecutionImpl JobExecutionImpl;
+typedef impl::FiberExecutionImpl JobExecutionImpl;
 
 namespace jobsystem {
 class JobManager {
@@ -24,6 +25,7 @@ private:
    */
   std::queue<std::shared_ptr<Job>> m_init_queue;
   std::mutex m_init_queue_mutex;
+  std::shared_ptr<JobCounter> m_init_phase_counter;
 
   /**
    * @brief All jobs for the main processing phase of the cycle are collected
@@ -31,12 +33,14 @@ private:
    */
   std::queue<std::shared_ptr<Job>> m_main_queue;
   std::mutex m_main_queue_mutex;
+  std::shared_ptr<JobCounter> m_main_phase_counter;
 
   /**
    * @brief All jobs for the clean-up phase of the cycle are collected here.
    */
   std::queue<std::shared_ptr<Job>> m_clean_up_queue;
   std::mutex m_clean_up_queue_mutex;
+  std::shared_ptr<JobCounter> m_clean_up_phase_counter;
 
   /**
    * @brief All jobs that should not be kicked for the following cycles instead
@@ -59,10 +63,12 @@ private:
 #endif
 
   void ExecuteQueueAndWait(std::queue<std::shared_ptr<Job>> &queue,
-                           std::mutex &queue_mutex);
-  std::shared_ptr<JobCounter>
-  ScheduleAllJobsInQueue(std::queue<std::shared_ptr<Job>> &queue,
-                         std::mutex &queue_mutex);
+                           std::mutex &queue_mutex,
+                           std::shared_ptr<JobCounter> counter);
+
+  void ScheduleAllJobsInQueue(std::queue<std::shared_ptr<Job>> &queue,
+                              std::mutex &queue_mutex,
+                              std::shared_ptr<JobCounter> counter);
 
 public:
   JobManager();

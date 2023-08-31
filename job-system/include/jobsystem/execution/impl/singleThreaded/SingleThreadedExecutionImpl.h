@@ -29,7 +29,7 @@ private:
 
 public:
   SingleThreadedExecutionImpl();
-  ~SingleThreadedExecutionImpl();
+  virtual ~SingleThreadedExecutionImpl();
   void Schedule(std::shared_ptr<Job> job);
   void WaitForCompletion(std::shared_ptr<JobCounter> counter);
   void Start(JobManager *manager);
