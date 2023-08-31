@@ -1,4 +1,6 @@
 #include "jobsystem/JobManager.h"
+#include "boost/core/demangle.hpp"
+#include <sstream>
 
 using namespace jobsystem;
 using namespace jobsystem::job;
@@ -14,7 +16,18 @@ JobManager::JobManager() {
       1s);
   KickJob(job);
 #endif
+
+  std::stringstream ss;
+  ss << "Job System started using "
+     << boost::core::demangle(typeid(m_execution).name())
+     << " as implementation";
+
+  LOG_INFO(ss.str());
+
+  m_execution.Start(this);
 }
+
+JobManager::~JobManager() { m_execution.Stop(); }
 
 void JobManager::PrintStatusLog() {
   LOG_DEBUG(std::to_string(m_cycles_counter) + " cycles completed " +
@@ -26,7 +39,7 @@ void JobManager::PrintStatusLog() {
 #endif
 }
 
-void JobManager::KickJob(std::shared_ptr<Job> job) {
+void JobManager::KickJob(SharedJob job) {
   switch (job->GetPhase()) {
   case INIT: {
     std::unique_lock queue_lock(m_init_queue_mutex);
@@ -66,9 +79,9 @@ void JobManager::KickJob(std::shared_ptr<Job> job) {
   job->SetState(JobState::QUEUED);
 }
 
-void JobManager::ScheduleAllJobsInQueue(std::queue<std::shared_ptr<Job>> &queue,
+void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
                                         std::mutex &queue_mutex,
-                                        std::shared_ptr<JobCounter> counter) {
+                                        SharedJobCounter counter) {
   std::unique_lock lock(queue_mutex);
   while (!queue.empty()) {
     auto job = queue.front();
@@ -89,9 +102,9 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<std::shared_ptr<Job>> &queue,
   }
 }
 
-void JobManager::ExecuteQueueAndWait(std::queue<std::shared_ptr<Job>> &queue,
+void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
                                      std::mutex &queue_mutex,
-                                     std::shared_ptr<JobCounter> counter) {
+                                     SharedJobCounter counter) {
   ScheduleAllJobsInQueue(queue, queue_mutex, counter);
   WaitForCompletion(counter);
 }
@@ -112,7 +125,6 @@ void JobManager::InvokeCycleAndWait() {
 
   // start the cycle by starting the execution
   m_total_cycle_count++;
-  m_execution.Start(this);
 
   m_init_phase_counter = std::make_shared<JobCounter>();
   m_main_phase_counter = std::make_shared<JobCounter>();
@@ -129,14 +141,12 @@ void JobManager::InvokeCycleAndWait() {
   ExecuteQueueAndWait(m_clean_up_queue, m_clean_up_queue_mutex,
                       m_clean_up_phase_counter);
 
-  m_execution.Stop();
-
 #ifndef NDEBUG
   m_cycles_counter++;
 #endif
 }
 
-void JobManager::KickJobForNextCycle(std::shared_ptr<Job> job) {
+void JobManager::KickJobForNextCycle(SharedJob job) {
   std::unique_lock lock(m_next_cycle_queue_mutex);
   m_next_cycle_queue.push(job);
   lock.unlock();

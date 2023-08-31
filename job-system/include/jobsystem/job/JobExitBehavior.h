@@ -8,14 +8,15 @@ namespace jobsystem::job {
  */
 enum JobContinuation {
   /**
-   * @brief The jobsystem will be reschedule or re-queue the job automatically,
-   * but instead dispose it. If the job has to be repeated, it must be kicked
-   * manually.
+   * @brief The jobsystem will not reschedule or re-queue the job after
+   * execution, but instead dispose it.
+   * @note If the job has to be repeated, it must be kicked manually.
    */
   DISPOSE,
   /**
    * @brief The jobsystem will requeue the job automatically after its
-   * completion. This is useful for periodic jobs.
+   * completion.
+   * @note This is useful for periodic jobs.
    */
   REQUEUE
 };

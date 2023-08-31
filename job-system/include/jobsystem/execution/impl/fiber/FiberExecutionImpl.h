@@ -15,9 +15,7 @@ class FiberExecutionImpl : IJobExecution<FiberExecutionImpl> {
 private:
   JobExecutionState m_current_state{STOPPED};
 
-  // const size_t m_worker_thread_count{std::thread::hardware_concurrency() -
-  // 1};
-  const size_t m_worker_thread_count{2};
+  const size_t m_worker_thread_count{std::thread::hardware_concurrency() - 1};
 
   /**
    * @brief Contains all worker threads that run scheduled fibers.

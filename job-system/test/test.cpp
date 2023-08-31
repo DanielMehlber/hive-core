@@ -1,3 +1,4 @@
+#define JOB_SYSTEM_SINGLE_THREAD
 #include "jobsystem/JobManager.h"
 #include <gtest/gtest.h>
 
@@ -129,6 +130,38 @@ TEST(JobSystem, jobs_kicking_jobs) {
   ASSERT_TRUE(jobBCompleted);
   ASSERT_TRUE(jobCCompleted);
   ASSERT_FALSE(jobDCompleted);
+}
+
+TEST(JobSystem, wait_for_job_inside_job) {
+// single threaded job implementations do not allow waiting inside jobs because
+// doing so is the only surefire way to deadlock the entire execution
+#ifndef JOB_SYSTEM_SINGLE_THREAD
+
+  JobManager manager;
+
+  std::vector<short> order;
+
+  SharedJob job = JOB([&](JobContext *) {
+    SharedJobCounter counter = JOB_COUNTER();
+    SharedJob otherJob = JOB([&](JobContext *) {
+      order.push_back(1);
+      return JobContinuation::DISPOSE;
+    });
+    otherJob->AddCounter(counter);
+
+    manager.KickJob(otherJob);
+    manager.WaitForCompletion(counter);
+    order.push_back(2);
+    return JobContinuation::DISPOSE;
+  });
+
+  manager.KickJob(job);
+  manager.InvokeCycleAndWait();
+
+  ASSERT_EQ(1, order.at(0));
+  ASSERT_EQ(2, order.at(1));
+
+#endif
 }
 
 int main(int argc, char **argv) {
