@@ -4,4 +4,5 @@ project(simulation-framework)
 enable_testing()
 
 add_subdirectory(logging)
-add_subdirectory(job-system)
+add_subdirectory(jobsystem)
+add_subdirectory(eventsystem)
