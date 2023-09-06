@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(eventsystem)
+project(messaging)
 
 find_package(Boost REQUIRED)
 

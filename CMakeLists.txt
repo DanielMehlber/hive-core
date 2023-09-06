@@ -5,4 +5,4 @@ enable_testing()
 
 add_subdirectory(logging)
 add_subdirectory(jobsystem)
-add_subdirectory(eventsystem)
+add_subdirectory(messaging)

@@ -1,20 +1,18 @@
-#ifndef IEVENTLISTENER_H
-#define IEVENTLISTENER_H
+#ifndef IMESSAGESUBSCRIBER_H
+#define IMESSAGESUBSCRIBER_H
 
-#include "eventsystem/Event.h"
-#include <memory>
-#include <set>
+#include "messaging/Message.h"
 
-namespace eventsystem {
+namespace messaging {
 
-class IEventListener {
+class IMessageSubscriber {
 public:
   /**
    * @brief Handles incoming event of some type that this listener has
    * registered its interest in.
    * @param event event that must be handled
    */
-  virtual void HandleEvent(const EventRef event) = 0;
+  virtual void HandleMessage(const SharedMessage event) = 0;
 
   /**
    * @brief Get id of this listener instance
@@ -22,6 +20,6 @@ public:
    */
   virtual const std::string &GetId() const = 0;
 };
-} // namespace eventsystem
+} // namespace messaging
 
-#endif /* IEVENTLISTENER_H */
+#endif /* IMESSAGESUBSCRIBER_H */
