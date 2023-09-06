@@ -24,7 +24,7 @@ private:
   bool m_timer_started{false};
 
 public:
-  TimerJob(std::function<JobContinuation(JobContext *)>, std::string name,
+  TimerJob(std::function<JobContinuation(JobContext *)>, const std::string &id,
            std::chrono::duration<double> time, JobExecutionPhase phase = MAIN);
   TimerJob(std::function<JobContinuation(JobContext *)>,
            std::chrono::duration<double> time, JobExecutionPhase phase = MAIN);

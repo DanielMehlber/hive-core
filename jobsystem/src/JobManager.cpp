@@ -113,7 +113,15 @@ size_t jobsystem::JobManager::GetTotalCyclesCount() noexcept {
   return m_total_cycle_count;
 }
 
+void JobManager::ResetContinuationRequeueBlacklist() {
+  std::unique_lock lock(m_continuation_requeue_blacklist_mutex);
+  m_continuation_requeue_blacklist.clear();
+}
+
 void JobManager::InvokeCycleAndWait() {
+  // clear black-list for upcoming cycle
+  ResetContinuationRequeueBlacklist();
+
   // put waiting jobs into queues for the upcoming cycle
   std::unique_lock lock(m_next_cycle_queue_mutex);
   while (!m_next_cycle_queue.empty()) {
@@ -141,13 +149,62 @@ void JobManager::InvokeCycleAndWait() {
   ExecuteQueueAndWait(m_clean_up_queue, m_clean_up_queue_mutex,
                       m_clean_up_phase_counter);
 
+  ResetContinuationRequeueBlacklist();
 #ifndef NDEBUG
   m_cycles_counter++;
 #endif
 }
 
 void JobManager::KickJobForNextCycle(SharedJob job) {
+  /*
+   * When a job is detached, but is currently in execution (so it can't be
+   * removed easily from any queues), its id is black-listed for the upcoming
+   * cycle. Enforce that rule.
+   */
+  std::unique_lock black_list_lock(m_continuation_requeue_blacklist_mutex);
+  if (m_continuation_requeue_blacklist.contains(job->GetId())) {
+    return;
+  }
+  black_list_lock.unlock();
+
   std::unique_lock lock(m_next_cycle_queue_mutex);
   m_next_cycle_queue.push(job);
+  lock.unlock();
+}
+
+void tryRemoveJobWithIdFromQueue(const std::string &id,
+                                 std::queue<SharedJob> &queue,
+                                 std::mutex &mutex) {
+  std::queue<SharedJob> new_queue;
+  std::unique_lock lock(mutex);
+  while (!queue.empty()) {
+    auto job = queue.front();
+    queue.pop();
+    bool should_remove_job = job->GetId().compare(id) == 0;
+    if (!should_remove_job) {
+      new_queue.push(job);
+    }
+  }
+
+  queue.swap(new_queue);
+}
+
+void JobManager::DetachJob(const std::string &job_id) {
+  /*
+   * try to remove the job from all queues (only works if it is not currently in
+   * execution.
+   */
+  tryRemoveJobWithIdFromQueue(job_id, m_next_cycle_queue,
+                              m_next_cycle_queue_mutex);
+  tryRemoveJobWithIdFromQueue(job_id, m_init_queue, m_init_queue_mutex);
+  tryRemoveJobWithIdFromQueue(job_id, m_main_queue, m_main_queue_mutex);
+  tryRemoveJobWithIdFromQueue(job_id, m_clean_up_queue, m_clean_up_queue_mutex);
+
+  /*
+   * In order to prohibit jobs from re-entering queues after their execution
+   * (see JobContinuation), we remember their id and black-list them.
+   */
+  std::unique_lock lock(m_continuation_requeue_blacklist_mutex);
+  m_continuation_requeue_blacklist.insert(job_id);
   lock.unlock();
 }

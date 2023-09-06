@@ -10,6 +10,7 @@
 #include "logging/Logging.h"
 #include <memory>
 #include <queue>
+#include <set>
 
 using namespace jobsystem::job;
 using namespace jobsystem::execution;
@@ -63,6 +64,14 @@ private:
   std::queue<SharedJob> m_next_cycle_queue;
   std::mutex m_next_cycle_queue_mutex;
 
+  /**
+   * @brief Some jobs must be prevented from being rescheduled for the next
+   * cycle. This is often the case when trying to detach jobs which are
+   * currently in the execution and must therefore be prevented from requeueing.
+   */
+  std::set<std::string> m_continuation_requeue_blacklist;
+  std::mutex m_continuation_requeue_blacklist_mutex;
+
   JobManagerState m_current_state{READY};
   JobExecutionImpl m_execution;
 
@@ -81,6 +90,8 @@ private:
                               std::mutex &queue_mutex,
                               SharedJobCounter counter);
 
+  void ResetContinuationRequeueBlacklist();
+
 public:
   JobManager();
   ~JobManager();
@@ -93,6 +104,13 @@ public:
    * @note The job will be executed when the execution cycle has been invoked
    */
   void KickJob(SharedJob job);
+
+  /**
+   * @brief Ensures that a job which is not yet in execution will not be
+   * executed (again)
+   * @param job_id id of this job
+   */
+  void DetachJob(const std::string &job_id);
 
   /**
    * @brief Pass detached job instance to manager in order to be exected in the

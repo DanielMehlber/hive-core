@@ -21,9 +21,10 @@ namespace jobsystem::job {
 class Job {
 protected:
   /**
-   * @brief Name of this job
+   * @brief ID of this job
    */
-  std::string m_name;
+  const std::string m_id;
+
   /**
    * @brief Workload encapsulated in a function that will be executed by the job
    * execution.
@@ -53,7 +54,7 @@ protected:
   void FinishJob();
 
 public:
-  Job(std::function<JobContinuation(JobContext *)>, std::string name,
+  Job(std::function<JobContinuation(JobContext *)>, const std::string &id,
       JobExecutionPhase phase = MAIN);
   Job(std::function<JobContinuation(JobContext *)>,
       JobExecutionPhase phase = MAIN);
@@ -83,13 +84,13 @@ public:
   JobState GetState() noexcept;
   void SetState(JobState state) noexcept;
   JobExecutionPhase GetPhase() noexcept;
-  const std::string &GetName() noexcept;
+  const std::string &GetId() noexcept;
 };
 
 inline JobState Job::GetState() noexcept { return m_current_state; }
 inline void Job::SetState(JobState state) noexcept { m_current_state = state; }
 inline JobExecutionPhase Job::GetPhase() noexcept { return m_phase; }
-inline const std::string &Job::GetName() noexcept { return m_name; }
+inline const std::string &Job::GetId() noexcept { return m_id; }
 
 } // namespace jobsystem::job
 

@@ -3,9 +3,9 @@
 using namespace jobsystem::job;
 
 TimerJob::TimerJob(std::function<JobContinuation(JobContext *)> workload,
-                   std::string name, std::chrono::duration<double> time,
+                   const std::string &id, std::chrono::duration<double> time,
                    JobExecutionPhase phase)
-    : Job(workload, name), m_time{time} {}
+    : Job(workload, id), m_time{time} {}
 
 TimerJob::TimerJob(std::function<JobContinuation(JobContext *)> workload,
                    std::chrono::duration<double> time, JobExecutionPhase phase)

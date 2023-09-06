@@ -1,4 +1,3 @@
-#define JOB_SYSTEM_SINGLE_THREAD
 #include "jobsystem/JobManager.h"
 #include <gtest/gtest.h>
 
@@ -161,6 +160,54 @@ TEST(JobSystem, wait_for_job_inside_job) {
   ASSERT_EQ(1, order.at(0));
   ASSERT_EQ(2, order.at(1));
 
+#endif
+}
+
+TEST(JobSystem, detach_jobs) {
+  std::atomic<short> execution_counter = 0;
+  JobManager manager;
+
+  SharedJob job = JOB([&](JobContext *context) {
+    execution_counter++;
+    return JobContinuation::REQUEUE;
+  });
+
+  manager.KickJob(job);
+  manager.InvokeCycleAndWait();
+  manager.InvokeCycleAndWait();
+  ASSERT_EQ(2, execution_counter);
+
+  manager.DetachJob(job->GetId());
+  manager.InvokeCycleAndWait();
+  ASSERT_EQ(2, execution_counter);
+}
+
+TEST(JobSystem, detach_jobs_mid_execution) {
+// this waits for counters, what is not possible inside jobs using a single
+// threaded implementation
+#ifndef JOB_SYSTEM_SINGLE_THREAD
+  std::atomic<short> execution_counter = 0;
+  JobManager manager;
+
+  SharedJobCounter detach_job_counter = JOB_COUNTER();
+  SharedJob job = JOB([&](JobContext *context) {
+    context->GetJobManager()->WaitForCompletion(detach_job_counter);
+    execution_counter++;
+    return JobContinuation::REQUEUE;
+  });
+
+  SharedJob detach_job = JOB([&](JobContext *context) {
+    context->GetJobManager()->DetachJob(job->GetId());
+    return JobContinuation::DISPOSE;
+  });
+  detach_job->AddCounter(detach_job_counter);
+
+  manager.KickJob(job);
+  manager.KickJob(detach_job);
+  manager.InvokeCycleAndWait();
+  manager.InvokeCycleAndWait();
+
+  ASSERT_EQ(1, execution_counter);
 #endif
 }
 
