@@ -17,16 +17,16 @@ public:
   virtual void PublishMessage(SharedMessage event) = 0;
 
   virtual bool HasSubscriber(const std::string &listener_id,
-                             const std::string &type) const = 0;
+                             const std::string &topic) const = 0;
 
   /**
-   * @brief Add a listener for a specific type of event. The listener will be
+   * @brief Add a listener for a specific topic of event. The listener will be
    * notified when this event occurs.
    * @param listener listener to add
-   * @param type type of event the listener is interested in
+   * @param topic topic of event the listener is interested in
    */
   virtual void AddSubscriber(std::weak_ptr<IMessageSubscriber> listener,
-                             const std::string &type) = 0;
+                             const std::string &topic) = 0;
 
   /**
    * @brief Remove listener from all event types.
@@ -35,13 +35,13 @@ public:
   virtual void RemoveSubscriber(std::weak_ptr<IMessageSubscriber> listener) = 0;
 
   /**
-   * @brief Remove listener from a specific type of event.
+   * @brief Remove listener from a specific topic of event.
    * @param listener listener to remove
-   * @param type type the listener is no longer interested in
+   * @param topic topic the listener is no longer interested in
    */
   virtual void
   RemoveSubscriberFromTopic(std::weak_ptr<IMessageSubscriber> listener,
-                            const std::string &type) = 0;
+                            const std::string &topic) = 0;
 
   /**
    * @brief Removes all listeners from the event manager

@@ -37,14 +37,14 @@ public:
 
   virtual void PublishMessage(SharedMessage event) override;
   virtual bool HasSubscriber(const std::string &listener_id,
-                             const std::string &type) const override;
+                             const std::string &topic) const override;
   virtual void AddSubscriber(std::weak_ptr<IMessageSubscriber> listener,
-                             const std::string &type) override;
+                             const std::string &topic) override;
   virtual void
   RemoveSubscriber(std::weak_ptr<IMessageSubscriber> listener) override;
   virtual void
   RemoveSubscriberFromTopic(std::weak_ptr<IMessageSubscriber> listener,
-                            const std::string &type) override;
+                            const std::string &topic) override;
   virtual void RemoveAllSubscribers() override;
 };
 } // namespace messaging::impl

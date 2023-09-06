@@ -23,7 +23,7 @@ JobBasedMessagingManager::~JobBasedMessagingManager() {
 }
 
 void JobBasedMessagingManager::CleanUpSubscribers() {
-  for (auto &[type, original_listeners] : m_topic_subscribers) {
+  for (auto &[topic, original_listeners] : m_topic_subscribers) {
     std::vector<std::weak_ptr<IMessageSubscriber>> new_listeners;
     for (auto listener : original_listeners) {
       if (!listener.expired()) {
@@ -55,9 +55,9 @@ void JobBasedMessagingManager::PublishMessage(SharedMessage event) {
 }
 
 bool messaging::impl::JobBasedMessagingManager::HasSubscriber(
-    const std::string &listener_id, const std::string &type) const {
-  if (m_topic_subscribers.contains(type)) {
-    const auto listener_list = m_topic_subscribers.at(type);
+    const std::string &listener_id, const std::string &topic) const {
+  if (m_topic_subscribers.contains(topic)) {
+    const auto listener_list = m_topic_subscribers.at(topic);
     for (auto listener : listener_list) {
       if (!listener.expired() &&
           listener.lock()->GetId().compare(listener_id) == 0) {
@@ -82,15 +82,15 @@ void JobBasedMessagingManager::AddSubscriber(
 
 void JobBasedMessagingManager::RemoveSubscriber(
     std::weak_ptr<IMessageSubscriber> listener) {
-  for (const auto &[type, listener_set] : m_topic_subscribers) {
-    RemoveSubscriberFromTopic(listener, type);
+  for (const auto &[topic, listener_set] : m_topic_subscribers) {
+    RemoveSubscriberFromTopic(listener, topic);
   }
 }
 
 void JobBasedMessagingManager::RemoveSubscriberFromTopic(
-    std::weak_ptr<IMessageSubscriber> listener, const std::string &type) {
-  if (m_topic_subscribers.contains(type)) {
-    auto listener_set = m_topic_subscribers[type];
+    std::weak_ptr<IMessageSubscriber> listener, const std::string &topic) {
+  if (m_topic_subscribers.contains(topic)) {
+    auto listener_set = m_topic_subscribers[topic];
     for (auto listener_iter = listener_set.begin();
          listener_iter != listener_set.end(); listener_iter++) {
       // always check if listener is still valid
