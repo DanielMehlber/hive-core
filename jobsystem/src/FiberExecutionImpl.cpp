@@ -77,7 +77,7 @@ void FiberExecutionImpl::Stop() {
 
   // closing channel causes workers to exit, so they can be joined
   m_job_channel->close();
-  for (auto worker : m_worker_threads) {
+  for (auto &worker : m_worker_threads) {
     worker->join();
   }
 

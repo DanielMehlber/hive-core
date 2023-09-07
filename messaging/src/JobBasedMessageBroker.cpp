@@ -25,7 +25,7 @@ JobBasedMessageBroker::~JobBasedMessageBroker() {
 void JobBasedMessageBroker::CleanUpSubscribers() {
   for (auto &[topic, original_listeners] : m_topic_subscribers) {
     std::vector<std::weak_ptr<IMessageSubscriber>> new_listeners;
-    for (auto listener : original_listeners) {
+    for (auto &listener : original_listeners) {
       if (!listener.expired()) {
         new_listeners.push_back(listener);
       }
@@ -36,10 +36,10 @@ void JobBasedMessageBroker::CleanUpSubscribers() {
 }
 
 void JobBasedMessageBroker::PublishMessage(SharedMessage event) {
-  auto topic_name = event->GetTopic();
+  const auto &topic_name = event->GetTopic();
   if (m_topic_subscribers.contains(topic_name)) {
-    auto subscribers_of_topic = m_topic_subscribers.at(topic_name);
-    for (auto subscriber : subscribers_of_topic) {
+    auto &subscribers_of_topic = m_topic_subscribers.at(topic_name);
+    for (auto &subscriber : subscribers_of_topic) {
       if (!subscriber.expired()) {
         SharedJob message_job =
             std::make_shared<Job>([subscriber, event](JobContext *) {
@@ -57,7 +57,7 @@ void JobBasedMessageBroker::PublishMessage(SharedMessage event) {
 bool messaging::impl::JobBasedMessageBroker::HasSubscriber(
     const std::string &listener_id, const std::string &topic) const {
   if (m_topic_subscribers.contains(topic)) {
-    const auto listener_list = m_topic_subscribers.at(topic);
+    const auto &listener_list = m_topic_subscribers.at(topic);
     for (auto listener : listener_list) {
       if (!listener.expired() &&
           listener.lock()->GetId().compare(listener_id) == 0) {
@@ -90,7 +90,7 @@ void JobBasedMessageBroker::RemoveSubscriber(
 void JobBasedMessageBroker::RemoveSubscriberFromTopic(
     std::weak_ptr<IMessageSubscriber> listener, const std::string &topic) {
   if (m_topic_subscribers.contains(topic)) {
-    auto listener_set = m_topic_subscribers[topic];
+    auto &listener_set = m_topic_subscribers.at(topic);
     for (auto listener_iter = listener_set.begin();
          listener_iter != listener_set.end(); listener_iter++) {
       // always check if listener is still valid
