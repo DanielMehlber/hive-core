@@ -1,10 +1,10 @@
-#include "messaging/manager/impl/JobBasedMessagingManager.h"
+#include "messaging/broker/impl/JobBasedMessageBroker.h"
 
 using namespace messaging;
 using namespace messaging::impl;
 using namespace std::chrono_literals;
 
-JobBasedMessagingManager::JobBasedMessagingManager(
+JobBasedMessageBroker::JobBasedMessageBroker(
     std::shared_ptr<JobManager> job_manager)
     : m_job_manager{job_manager} {
 
@@ -17,12 +17,12 @@ JobBasedMessagingManager::JobBasedMessagingManager(
   m_job_manager->KickJob(clean_up_job);
 }
 
-JobBasedMessagingManager::~JobBasedMessagingManager() {
+JobBasedMessageBroker::~JobBasedMessageBroker() {
   m_job_manager->DetachJob("messaging-subscriber-clean-up");
   RemoveAllSubscribers();
 }
 
-void JobBasedMessagingManager::CleanUpSubscribers() {
+void JobBasedMessageBroker::CleanUpSubscribers() {
   for (auto &[topic, original_listeners] : m_topic_subscribers) {
     std::vector<std::weak_ptr<IMessageSubscriber>> new_listeners;
     for (auto listener : original_listeners) {
@@ -35,7 +35,7 @@ void JobBasedMessagingManager::CleanUpSubscribers() {
   }
 }
 
-void JobBasedMessagingManager::PublishMessage(SharedMessage event) {
+void JobBasedMessageBroker::PublishMessage(SharedMessage event) {
   auto topic_name = event->GetTopic();
   if (m_topic_subscribers.contains(topic_name)) {
     auto subscribers_of_topic = m_topic_subscribers.at(topic_name);
@@ -54,7 +54,7 @@ void JobBasedMessagingManager::PublishMessage(SharedMessage event) {
   }
 }
 
-bool messaging::impl::JobBasedMessagingManager::HasSubscriber(
+bool messaging::impl::JobBasedMessageBroker::HasSubscriber(
     const std::string &listener_id, const std::string &topic) const {
   if (m_topic_subscribers.contains(topic)) {
     const auto listener_list = m_topic_subscribers.at(topic);
@@ -69,7 +69,7 @@ bool messaging::impl::JobBasedMessagingManager::HasSubscriber(
   return false;
 }
 
-void JobBasedMessagingManager::AddSubscriber(
+void JobBasedMessageBroker::AddSubscriber(
     std::weak_ptr<IMessageSubscriber> listener, const std::string &topic) {
   if (!HasSubscriber(listener.lock()->GetId(), topic)) {
     if (!m_topic_subscribers.contains(topic)) {
@@ -80,14 +80,14 @@ void JobBasedMessagingManager::AddSubscriber(
   }
 }
 
-void JobBasedMessagingManager::RemoveSubscriber(
+void JobBasedMessageBroker::RemoveSubscriber(
     std::weak_ptr<IMessageSubscriber> listener) {
   for (const auto &[topic, listener_set] : m_topic_subscribers) {
     RemoveSubscriberFromTopic(listener, topic);
   }
 }
 
-void JobBasedMessagingManager::RemoveSubscriberFromTopic(
+void JobBasedMessageBroker::RemoveSubscriberFromTopic(
     std::weak_ptr<IMessageSubscriber> listener, const std::string &topic) {
   if (m_topic_subscribers.contains(topic)) {
     auto listener_set = m_topic_subscribers[topic];
@@ -104,6 +104,6 @@ void JobBasedMessagingManager::RemoveSubscriberFromTopic(
   }
 }
 
-void JobBasedMessagingManager::RemoveAllSubscribers() {
+void JobBasedMessageBroker::RemoveAllSubscribers() {
   m_topic_subscribers.clear();
 }

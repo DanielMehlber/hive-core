@@ -92,6 +92,8 @@ inline void Job::SetState(JobState state) noexcept { m_current_state = state; }
 inline JobExecutionPhase Job::GetPhase() noexcept { return m_phase; }
 inline const std::string &Job::GetId() noexcept { return m_id; }
 
+typedef std::shared_ptr<jobsystem::job::Job> SharedJob;
+
 } // namespace jobsystem::job
 
 #endif /* JOB_H */

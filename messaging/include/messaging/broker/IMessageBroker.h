@@ -1,5 +1,5 @@
-#ifndef IMESSAGINGMANAGER_H
-#define IMESSAGINGMANAGER_H
+#ifndef IMESSAGEBROKER_H
+#define IMESSAGEBROKER_H
 
 #include "messaging/Message.h"
 #include "messaging/subscriber/IMessageSubscriber.h"
@@ -7,9 +7,9 @@
 
 namespace messaging {
 
-class IMessagingManager {
+class IMessageBroker {
 public:
-  virtual ~IMessagingManager() {}
+  virtual ~IMessageBroker() {}
   /**
    * @brief Triggers an event and transfers it to all registered listeners.
    * @param event event that must be triggered
@@ -48,6 +48,9 @@ public:
    */
   virtual void RemoveAllSubscribers() = 0;
 };
+
+typedef std::shared_ptr<IMessageBroker> SharedBroker;
+
 } // namespace messaging
 
-#endif /* IMESSAGINGMANAGER_H */
+#endif /* IMESSAGEBROKER_H */

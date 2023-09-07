@@ -1,4 +1,4 @@
-#include "jobsystem/JobManager.h"
+#include "jobsystem/JobSystem.h"
 #include <gtest/gtest.h>
 
 using namespace jobsystem;
@@ -8,19 +8,19 @@ TEST(JobSystem, allPhases) {
   JobManager manager;
 
   std::vector<short> vec;
-  std::shared_ptr<Job> jobA = std::make_shared<Job>(
+  SharedJob jobA = JobSystemFactory::CreateJob(
       [&](JobContext *context) {
         vec.push_back(0);
         return JobContinuation::DISPOSE;
       },
       JobExecutionPhase::INIT);
-  std::shared_ptr<Job> jobB = std::make_shared<Job>(
+  SharedJob jobB = JobSystemFactory::CreateJob(
       [&](JobContext *context) {
         vec.push_back(1);
         return JobContinuation::DISPOSE;
       },
       JobExecutionPhase::MAIN);
-  std::shared_ptr<Job> jobC = std::make_shared<Job>(
+  SharedJob jobC = JobSystemFactory::CreateJob(
       [&](JobContext *context) {
         vec.push_back(2);
         return JobContinuation::DISPOSE;
@@ -43,7 +43,7 @@ TEST(JobSystem, multiple_jobs_per_phase) {
   int job_count = 5;
   std::atomic_int counter = 0;
   for (int i = 0; i < job_count; i++) {
-    auto job = std::make_shared<Job>([&](JobContext *) {
+    auto job = JobSystemFactory::CreateJob([&](JobContext *) {
       counter++;
       return JobContinuation::REQUEUE;
     });
@@ -58,7 +58,7 @@ TEST(JobSystem, auto_requeue) {
   JobManager manager;
   int executions = 0;
 
-  auto job = std::make_shared<Job>([&](JobContext *) {
+  auto job = JobSystemFactory::CreateJob([&](JobContext *) {
     executions++;
     return JobContinuation::REQUEUE;
   });
@@ -73,7 +73,7 @@ TEST(JobSystem, auto_requeue) {
 TEST(JobSystem, timer_job) {
   JobManager manager;
   bool job_executed = false;
-  auto timer_job = std::make_shared<TimerJob>(
+  auto timer_job = JobSystemFactory::CreateJob<TimerJob>(
       [&](JobContext *) {
         job_executed = true;
         return JobContinuation::REQUEUE;
@@ -95,13 +95,13 @@ TEST(JobSystem, jobs_kicking_jobs) {
   bool jobBCompleted = false;
   bool jobCCompleted = false;
   bool jobDCompleted = false;
-  auto jobA = std::make_shared<Job>([&](JobContext *context) {
+  auto jobA = JobSystemFactory::CreateJob([&](JobContext *context) {
     // job inside job (should execute directly)
-    auto jobB = std::make_shared<Job>([&](JobContext *context) {
+    auto jobB = JobSystemFactory::CreateJob([&](JobContext *context) {
       // job inside job inside job (should also execute directly)
-      auto jobC = std::make_shared<Job>([&](JobContext *context) {
+      auto jobC = JobSystemFactory::CreateJob([&](JobContext *context) {
         // the phase of this job has passed, so it should not be executed
-        auto jobD = std::make_shared<Job>(
+        auto jobD = JobSystemFactory::CreateJob(
             [&](JobContext *context) {
               jobDCompleted = true;
               return JobContinuation::DISPOSE;
@@ -115,7 +115,8 @@ TEST(JobSystem, jobs_kicking_jobs) {
       jobBCompleted = true;
       return JobContinuation::DISPOSE;
     });
-    std::shared_ptr<JobCounter> counter = std::make_shared<JobCounter>();
+
+    SharedJobCounter counter = JobSystemFactory::CreateCounter();
     jobB->AddCounter(counter);
     context->GetJobManager()->KickJob(jobB);
     jobACompleted = true;
@@ -140,9 +141,9 @@ TEST(JobSystem, wait_for_job_inside_job) {
 
   std::vector<short> order;
 
-  SharedJob job = JOB([&](JobContext *) {
+  SharedJob job = JobSystemFactory::CreateJob([&](JobContext *) {
     SharedJobCounter counter = JOB_COUNTER();
-    SharedJob otherJob = JOB([&](JobContext *) {
+    SharedJob otherJob = JobSystemFactory::CreateJob([&](JobContext *) {
       order.push_back(1);
       return JobContinuation::DISPOSE;
     });
@@ -167,7 +168,7 @@ TEST(JobSystem, detach_jobs) {
   std::atomic<short> execution_counter = 0;
   JobManager manager;
 
-  SharedJob job = JOB([&](JobContext *context) {
+  SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
     execution_counter++;
     return JobContinuation::REQUEUE;
   });
@@ -190,13 +191,13 @@ TEST(JobSystem, detach_jobs_mid_execution) {
   JobManager manager;
 
   SharedJobCounter detach_job_counter = JOB_COUNTER();
-  SharedJob job = JOB([&](JobContext *context) {
+  SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
     context->GetJobManager()->WaitForCompletion(detach_job_counter);
     execution_counter++;
     return JobContinuation::REQUEUE;
   });
 
-  SharedJob detach_job = JOB([&](JobContext *context) {
+  SharedJob detach_job = JobSystemFactory::CreateJob([&](JobContext *context) {
     context->GetJobManager()->DetachJob(job->GetId());
     return JobContinuation::DISPOSE;
   });

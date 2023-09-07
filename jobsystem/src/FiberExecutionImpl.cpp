@@ -1,5 +1,5 @@
 #include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
-#include "jobsystem/JobManager.h"
+#include "jobsystem/manager/JobManager.h"
 
 using namespace jobsystem::execution::impl;
 using namespace jobsystem::job;

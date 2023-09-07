@@ -1,8 +1,8 @@
-#ifndef JOBBASEDMESSAGINGMANAGER_H
-#define JOBBASEDMESSAGINGMANAGER_H
+#ifndef JOBBASEDMESSAGEBROKER_H
+#define JOBBASEDMESSAGEBROKER_H
 
-#include "jobsystem/JobManager.h"
-#include "messaging/manager/IMessagingManager.h"
+#include "jobsystem/manager/JobManager.h"
+#include "messaging/broker/IMessageBroker.h"
 #include "messaging/subscriber/IMessageSubscriber.h"
 #include <map>
 #include <memory>
@@ -13,7 +13,7 @@ using namespace jobsystem;
 using namespace messaging;
 
 namespace messaging::impl {
-class JobBasedMessagingManager final : public messaging::IMessagingManager {
+class JobBasedMessageBroker final : public messaging::IMessageBroker {
 private:
   /**
    * @brief Maps the topic name (as string) to all of its subscribers.
@@ -32,8 +32,8 @@ private:
   void CleanUpSubscribers();
 
 public:
-  JobBasedMessagingManager(std::shared_ptr<JobManager> job_manager);
-  virtual ~JobBasedMessagingManager();
+  JobBasedMessageBroker(std::shared_ptr<JobManager> job_manager);
+  virtual ~JobBasedMessageBroker();
 
   virtual void PublishMessage(SharedMessage event) override;
   virtual bool HasSubscriber(const std::string &listener_id,
@@ -49,4 +49,4 @@ public:
 };
 } // namespace messaging::impl
 
-#endif /* JOBBASEDMESSAGINGMANAGER_H */
+#endif /* JOBBASEDMESSAGEBROKER_H */

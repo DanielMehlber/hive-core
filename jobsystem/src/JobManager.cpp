@@ -1,4 +1,4 @@
-#include "jobsystem/JobManager.h"
+#include "jobsystem/manager/JobManager.h"
 #include "boost/core/demangle.hpp"
 #include <sstream>
 

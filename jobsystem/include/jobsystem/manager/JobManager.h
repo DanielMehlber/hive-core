@@ -2,6 +2,7 @@
 #define JOBMANAGER_H
 
 #include "JobManagerState.h"
+#include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/execution/IJobExecution.h"
 #include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
@@ -20,13 +21,6 @@ typedef impl::SingleThreadedExecutionImpl JobExecutionImpl;
 #else
 typedef impl::FiberExecutionImpl JobExecutionImpl;
 #endif
-
-// utility types
-typedef std::shared_ptr<jobsystem::job::Job> SharedJob;
-typedef std::shared_ptr<jobsystem::job::JobCounter> SharedJobCounter;
-
-#define JOB(x) std::make_shared<Job>(x)
-#define JOB_COUNTER() std::make_shared<JobCounter>()
 
 namespace jobsystem {
 

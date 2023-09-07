@@ -21,9 +21,20 @@ public:
       const std::function<void(const SharedMessage)> &func)
       : m_function{func},
         m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {};
+  FunctionalMessageSubscriber(
+      const std::function<void(const SharedMessage)> &&func)
+      : m_function{func},
+        m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {};
+
+  FunctionalMessageSubscriber
+  operator=(std::function<void(const SharedMessage)> func) {
+    return FunctionalMessageSubscriber(func);
+  };
+
   virtual void HandleMessage(const SharedMessage event) { m_function(event); }
   virtual const std::string &GetId() const override { return m_id; };
 };
+
 } // namespace messaging
 
 #endif /* FUNCTIONALMESSAGESUBSCRIBER_H */

@@ -20,6 +20,9 @@ public:
    */
   virtual const std::string &GetId() const = 0;
 };
+
+typedef std::shared_ptr<IMessageSubscriber> SharedSubscriber;
+
 } // namespace messaging
 
 #endif /* IMESSAGESUBSCRIBER_H */

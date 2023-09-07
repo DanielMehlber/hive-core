@@ -2,6 +2,7 @@
 #define JOBCOUNTER_H
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 
 namespace jobsystem::job {
@@ -18,6 +19,8 @@ public:
 inline void JobCounter::Increase() { m_count++; }
 inline void JobCounter::Decrease() { m_count--; }
 inline bool JobCounter::AreAllFinished() { return m_count < 1; }
+
+typedef std::shared_ptr<jobsystem::job::JobCounter> SharedJobCounter;
 
 } // namespace jobsystem::job
 
