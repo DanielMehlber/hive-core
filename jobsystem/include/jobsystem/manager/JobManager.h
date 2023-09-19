@@ -9,6 +9,7 @@
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/TimerJob.h"
 #include "logging/Logging.h"
+#include <future>
 #include <memory>
 #include <queue>
 #include <set>
@@ -121,18 +122,38 @@ public:
   void InvokeCycleAndWait();
 
   /**
-   * @brief Blocks the calling party until all jobs tracked by the counter have
-   * completed.
-   * @param counter counter tracking the progress of a group of jobs
+   * @brief Execution will wait (or will be deferred, depending on the execution
+   * environment) until the waitable object has been finished.
+   * @param waitable process that needs finish for the current calling party to
+   * continue.
    * @note On single-threaded implementations, this cannot be called from inside
    * a job because it would deadlock the worker thread.
    */
-  void WaitForCompletion(SharedJobCounter counter);
+  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
+
+  /**
+   * @brief Execution of the calling party will wait (or will be deferred,
+   * depending on the execution environment) until the passed future has been
+   * resolved.
+   * @tparam FutureType type of the future object
+   * @param future future that must resolve in order for the calling party to
+   * continue.
+   */
+  template <typename FutureType>
+  void WaitForCompletion(const std::future<FutureType> &future);
+
   size_t GetTotalCyclesCount() noexcept;
 };
 
-inline void JobManager::WaitForCompletion(SharedJobCounter counter) {
+inline void
+JobManager::WaitForCompletion(std::shared_ptr<IJobWaitable> counter) {
   m_execution.WaitForCompletion(counter);
+}
+
+template <typename FutureType>
+inline void
+JobManager::WaitForCompletion(const std::future<FutureType> &future) {
+  m_execution.WaitForCompletion(future);
 }
 
 } // namespace jobsystem

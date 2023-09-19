@@ -64,6 +64,17 @@ public:
   void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
 
   /**
+   * @brief Execution of the calling party will wait (or will be deferred,
+   * depending on the execution environment) until the passed future has been
+   * resolved.
+   * @tparam FutureType type of the future object
+   * @param future future that must resolve in order for the calling party to
+   * continue.
+   */
+  template <typename FutureType>
+  void WaitForCompletion(const std::future<FutureType> &future);
+
+  /**
    * @brief Starts processing scheduled jobs and invoke the execution
    * @param manager managing instance that started the execution
    */
@@ -78,6 +89,23 @@ public:
 
   JobExecutionState GetState();
 };
+
+template <typename FutureType>
+inline void
+FiberExecutionImpl::WaitForCompletion(const std::future<FutureType> &future) {
+  bool is_called_from_fiber =
+      !boost::fibers::context::active()->is_context(boost::fibers::type::none);
+  if (is_called_from_fiber) {
+    // caller is a fiber, so yield
+    while (future.wait_for(std::chrono::seconds(0)) !=
+           std::future_status::ready) {
+      boost::this_fiber::yield();
+    }
+  } else {
+    // caller is a thread, so block
+    future.wait();
+  }
+}
 
 inline JobExecutionState FiberExecutionImpl::GetState() {
   return m_current_state;

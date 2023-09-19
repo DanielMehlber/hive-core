@@ -5,6 +5,7 @@
 #include "jobsystem/job/IJobWaitable.h"
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/JobCounter.h"
+#include <future>
 #include <memory>
 
 using namespace jobsystem::job;
@@ -24,14 +25,27 @@ public:
   void Schedule(std::shared_ptr<Job> job);
 
   /**
-   * @brief Wait for the counter to become 0. The implementation can vary
-   * depending on the underlying synchronization primitives.
+   * @brief Wait for the waitable object to finish before execution is
+   * continued. The implementation can vary depending on the underlying
+   * synchronization primitives.
    * @attention Some implementations do not support this call from inside a
    * running job (e.g. the single threaded implementation because this would
    * block the only execution thread)
-   * @param waitable counter to wait for
+   * @param waitable process that needs to finish before execution of the
+   * calling party can continue.
    */
   void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
+
+  /**
+   * @brief Execution of the calling party will wait (or will be deferred,
+   * depending on the execution environment) until the passed future has been
+   * resolved.
+   * @tparam FutureType type of the future object
+   * @param future future that must resolve in order for the calling party to
+   * continue.
+   */
+  template <typename FutureType>
+  void WaitForCompletion(const std::future<FutureType> &future);
 
   /**
    * @brief Starts processing scheduled jobs and invoke the execution
@@ -62,6 +76,15 @@ IJobExecution<Impl>::WaitForCompletion(std::shared_ptr<IJobWaitable> waitable) {
   // CRTP pattern: avoid runtime cost of v-tables in hot path
   // Your implementation of IJobExecution must implement this function
   static_cast<Impl *>(this)->WaitForCompletion(waitable);
+}
+
+template <typename Impl>
+template <typename FutureType>
+inline void
+IJobExecution<Impl>::WaitForCompletion(const std::future<FutureType> &fut) {
+  // CRTP pattern: avoid runtime cost of v-tables in hot path
+  // Your implementation of IJobExecution must implement this function
+  static_cast<Impl *>(this)->WaitForCompletion(fut);
 }
 
 template <typename Impl>

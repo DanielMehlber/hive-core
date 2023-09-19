@@ -35,7 +35,16 @@ public:
   void Start(JobManager *manager);
   void Stop();
   JobExecutionState GetState();
+
+  template <typename FutureType>
+  void WaitForCompletion(const std::future<FutureType> &future);
 };
+
+template <typename FutureType>
+inline void SingleThreadedExecutionImpl::WaitForCompletion(
+    const std::future<FutureType> &future) {
+  future.wait();
+}
 
 inline JobExecutionState SingleThreadedExecutionImpl::GetState() {
   return m_current_state;

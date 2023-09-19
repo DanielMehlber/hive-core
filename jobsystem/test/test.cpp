@@ -212,6 +212,30 @@ TEST(JobSystem, detach_jobs_mid_execution) {
 #endif
 }
 
+TEST(JobSystem, wait_for_future_completion) {
+  std::vector<short> order;
+  JobManager manager;
+
+  SharedJob job = JobSystemFactory::CreateJob([&order](JobContext *context) {
+    std::future<void> future = std::async(std::launch::async, [&order] {
+      std::this_thread::sleep_for(1s);
+      order.push_back(1);
+    });
+
+    order.push_back(0);
+    context->GetJobManager()->WaitForCompletion(future);
+    order.push_back(2);
+    return JobContinuation::DISPOSE;
+  });
+
+  manager.KickJob(job);
+  manager.InvokeCycleAndWait();
+
+  ASSERT_EQ(order.at(0), 0);
+  ASSERT_EQ(order.at(1), 1);
+  ASSERT_EQ(order.at(2), 2);
+}
+
 int main(int argc, char **argv) {
 
   ::testing::InitGoogleTest(&argc, argv);
