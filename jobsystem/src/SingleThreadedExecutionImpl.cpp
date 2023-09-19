@@ -69,7 +69,7 @@ void SingleThreadedExecutionImpl::Stop() {
 
 using namespace std::chrono_literals;
 void SingleThreadedExecutionImpl::WaitForCompletion(
-    std::shared_ptr<JobCounter> counter) {
+    std::shared_ptr<IJobWaitable> waitable) {
 
   if (m_worker_thread->get_id() == std::this_thread::get_id()) {
     LOG_ERR("cannot wait for other jobs during job execution using the "
@@ -78,7 +78,7 @@ void SingleThreadedExecutionImpl::WaitForCompletion(
     return;
   }
 
-  while (!counter->AreAllFinished()) {
+  while (!waitable->IsFinished()) {
     std::this_thread::sleep_for(1ms);
   }
 }

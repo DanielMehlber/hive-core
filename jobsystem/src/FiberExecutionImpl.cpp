@@ -27,18 +27,18 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
 }
 
 void FiberExecutionImpl::WaitForCompletion(
-    std::shared_ptr<JobCounter> counter) {
+    std::shared_ptr<IJobWaitable> waitable) {
 
   bool is_called_from_fiber =
       !boost::fibers::context::active()->is_context(boost::fibers::type::none);
   if (is_called_from_fiber) {
     // caller is a fiber, so yield
-    while (!counter->AreAllFinished()) {
+    while (!waitable->IsFinished()) {
       boost::this_fiber::yield();
     }
   } else {
     // caller is a thread, so block
-    while (!counter->AreAllFinished()) {
+    while (!waitable->IsFinished()) {
       std::this_thread::sleep_for(1ms);
     }
   }

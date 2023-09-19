@@ -59,9 +59,9 @@ public:
    * @attention Some implementations do not support this call from inside a
    * running job (e.g. the single threaded implementation because this would
    * block the only execution thread)
-   * @param counter counter to wait for
+   * @param waitable counter to wait for
    */
-  void WaitForCompletion(std::shared_ptr<JobCounter> counter);
+  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
 
   /**
    * @brief Starts processing scheduled jobs and invoke the execution

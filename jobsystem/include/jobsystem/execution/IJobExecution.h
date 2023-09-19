@@ -2,6 +2,7 @@
 #define IJOBEXECUTION_H
 
 #include "JobExecutionState.h"
+#include "jobsystem/job/IJobWaitable.h"
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/JobCounter.h"
 #include <memory>
@@ -28,9 +29,9 @@ public:
    * @attention Some implementations do not support this call from inside a
    * running job (e.g. the single threaded implementation because this would
    * block the only execution thread)
-   * @param counter counter to wait for
+   * @param waitable counter to wait for
    */
-  void WaitForCompletion(std::shared_ptr<JobCounter> counter);
+  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
 
   /**
    * @brief Starts processing scheduled jobs and invoke the execution
@@ -57,10 +58,10 @@ inline void IJobExecution<Impl>::Schedule(std::shared_ptr<Job> job) {
 
 template <typename Impl>
 inline void
-IJobExecution<Impl>::WaitForCompletion(std::shared_ptr<JobCounter> counter) {
+IJobExecution<Impl>::WaitForCompletion(std::shared_ptr<IJobWaitable> waitable) {
   // CRTP pattern: avoid runtime cost of v-tables in hot path
   // Your implementation of IJobExecution must implement this function
-  static_cast<Impl *>(this)->WaitForCompletion(counter);
+  static_cast<Impl *>(this)->WaitForCompletion(waitable);
 }
 
 template <typename Impl>

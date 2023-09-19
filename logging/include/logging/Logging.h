@@ -4,6 +4,7 @@
 #include "logger/ILogger.h"
 #include "logger/impl/BoostLogger.h"
 #include <memory>
+#include <sstream>
 
 #ifndef EXPORT_MACRO_H
 #define EXPORT_MACRO_H
@@ -37,14 +38,36 @@ inline std::shared_ptr<logging::logger::ILogger> GetLogger() {
   return Logging::GetLogger();
 }
 
-#define LOG_INFO(x) logging::Logging::GetLogger()->Info(x)
-#define LOG_WARN(x) logging::Logging::GetLogger()->Warn(x)
-#define LOG_ERR(x) logging::Logging::GetLogger()->Error(x)
+#define LOG_INFO(x)                                                            \
+  {                                                                            \
+    std::stringstream __ss;                                                    \
+    __ss << x;                                                                 \
+    logging::GetLogger()->Info(__ss.str());                                    \
+  }
+
+#define LOG_WARN(x)                                                            \
+  {                                                                            \
+    std::stringstream __ss;                                                    \
+    __ss << x;                                                                 \
+    logging::GetLogger()->Warn(__ss.str());                                    \
+  }
+
+#define LOG_ERR(x)                                                             \
+  {                                                                            \
+    std::stringstream __ss;                                                    \
+    __ss << x;                                                                 \
+    logging::GetLogger()->Error(__ss.str());                                   \
+  }
 
 #ifdef NDEBUG
 #define LOG_DEBUG(x)
 #else
-#define LOG_DEBUG(x) logging::GetLogger()->Debug(x)
+#define LOG_DEBUG(x)                                                           \
+  {                                                                            \
+    std::stringstream __ss;                                                    \
+    __ss << x;                                                                 \
+    logging::GetLogger()->Debug(__ss.str());                                   \
+  }
 #endif
 
 } // namespace logging
