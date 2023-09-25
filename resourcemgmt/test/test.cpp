@@ -1,7 +1,6 @@
 #include <chrono>
 #include <gtest/gtest.h>
 #include <resourcemgmt/ResourceFactory.h>
-#include <resourcemgmt/ResourceManager.h>
 #include <resourcemgmt/loader/IResourceLoader.h>
 
 using namespace resourcemgmt;
@@ -26,32 +25,46 @@ public:
   };
 };
 
-TEST(ResourceMgmt, register_loader) {
-  ResourceManager manager;
-  auto dummy_loader = std::make_shared<DummyLoader>(0.5s);
-  manager.RegisterLoader(dummy_loader);
+class AnotherDummyLoader : public IResourceLoader {
+public:
+  virtual const std::string &GetId() const noexcept {
+    const static std::string id = "dummy";
+    return id;
+  };
 
-  std::future<SharedResource> future = manager.LoadResource("dummy://hallo");
+  virtual SharedResource Load(const std::string &uri) {
+    return ResourceFactory::CreateSharedResource<std::string>("dummy");
+  };
+};
+
+TEST(ResourceMgmt, register_loader) {
+  auto manager =
+      ResourceFactory::CreateResourceManager<ThreadPoolResourceManager>();
+  auto dummy_loader = std::make_shared<DummyLoader>(0.5s);
+  manager->RegisterLoader(dummy_loader);
+
+  std::future<SharedResource> future = manager->LoadResource("dummy://hallo");
   future.wait();
   auto result = future.get()->ExtractAsType<std::string>();
 
   ASSERT_TRUE(result->compare("dummy") == 0);
 
-  manager.UnregisterLoader(dummy_loader->GetId());
+  manager->UnregisterLoader(dummy_loader->GetId());
   ASSERT_THROW(std::future<SharedResource> future =
-                   manager.LoadResource("dummy://hallo"),
+                   manager->LoadResource("dummy://hallo"),
                ResourceLoaderNotFound);
 }
 
 TEST(ResoureMgmt, loading_multiple) {
-  ResourceManager manager(2);
+  auto manager =
+      ResourceFactory::CreateResourceManager<ThreadPoolResourceManager>(2);
   auto dummy_loader = std::make_shared<DummyLoader>(0.01s);
-  manager.RegisterLoader(dummy_loader);
+  manager->RegisterLoader(dummy_loader);
 
   std::vector<std::shared_future<SharedResource>> futures;
   futures.reserve(100);
   for (int i = 0; i < 100; i++) {
-    std::future<SharedResource> future = manager.LoadResource("dummy://hallo");
+    std::future<SharedResource> future = manager->LoadResource("dummy://hallo");
     futures.push_back(future.share());
   }
 
@@ -60,6 +73,17 @@ TEST(ResoureMgmt, loading_multiple) {
     auto result = future.get()->ExtractAsType<std::string>();
     ASSERT_TRUE(result->compare("dummy") == 0);
   }
+}
+
+TEST(ResourceMgmt, duplicate_loader_id) {
+  auto manager =
+      ResourceFactory::CreateResourceManager<ThreadPoolResourceManager>(2);
+  auto dummy_loader = std::make_shared<DummyLoader>(0.01s);
+  manager->RegisterLoader(dummy_loader);
+
+  auto another_dummy_loader = std::make_shared<AnotherDummyLoader>();
+  ASSERT_THROW(manager->RegisterLoader(another_dummy_loader),
+               DuplicateLoaderIdException);
 }
 
 int main(int argc, char **argv) {

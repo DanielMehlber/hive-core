@@ -12,8 +12,9 @@ DECLARE_EXCEPTION(WrongResourceTypeRequestedException);
 
 class Resource {
 private:
-  std::shared_ptr<void> m_value;
-  size_t m_type_info;
+  const std::shared_ptr<void> m_value;
+  const std::string m_type_name;
+  const size_t m_type_id;
 
 public:
   Resource() = delete;
@@ -25,8 +26,10 @@ public:
 };
 
 template <typename Type> std::shared_ptr<Type> Resource::ExtractAsType() {
-  if (typeid(Type).hash_code() != m_type_info) {
-    LOG_WARN("cannot access resource because wrong content type was requested");
+  if (typeid(Type).hash_code() != m_type_id) {
+    LOG_WARN("resource stores type " << m_type_name << ", but "
+                                     << typeid(Type).name()
+                                     << " was requested");
     THROW_EXCEPTION(WrongResourceTypeRequestedException,
                     "wrong resource type was requested");
   }
@@ -37,7 +40,8 @@ template <typename Type> std::shared_ptr<Type> Resource::ExtractAsType() {
 template <typename ResourceType>
 inline Resource::Resource(std::shared_ptr<ResourceType> content_ptr)
     : m_value{std::static_pointer_cast<void>(content_ptr)},
-      m_type_info{typeid(ResourceType).hash_code()} {}
+      m_type_id{typeid(ResourceType).hash_code()},
+      m_type_name(typeid(ResourceType).name()) {}
 
 typedef std::shared_ptr<Resource> SharedResource;
 

@@ -22,6 +22,16 @@ public:
    */
   virtual const std::string &GetId() const noexcept = 0;
 
+  /**
+   * @brief Loads some resource of arbitrary type (e.g. from filesystem or
+   * network) using the URI of the resource.
+   * @note The implementation of this function may be blocking because it will
+   * be wrapped in an asynchronous function.
+   * @attention If the loading process fails, this function can throw arbitrary
+   * exceptions depending on the implementation and concrete resource type.
+   * @param uri resource locator
+   * @return the loaded resource
+   */
   virtual SharedResource Load(const std::string &uri) = 0;
 };
 } // namespace resourcemgmt

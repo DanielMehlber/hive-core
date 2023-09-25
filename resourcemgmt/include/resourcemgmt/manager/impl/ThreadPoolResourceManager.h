@@ -2,8 +2,9 @@
 #define RESOURCEMANAGER_H
 
 #include "common/exceptions/ExceptionsBase.h"
-#include "loader/IResourceLoader.h"
 #include "resourcemgmt/Resource.h"
+#include "resourcemgmt/loader/IResourceLoader.h"
+#include "resourcemgmt/manager/IResourceManager.h"
 #include <condition_variable>
 #include <map>
 #include <queue>
@@ -12,7 +13,7 @@ namespace resourcemgmt {
 
 DECLARE_EXCEPTION(ResourceLoaderNotFound);
 
-class ResourceManager {
+class ThreadPoolResourceManager : public IResourceManager {
 private:
   std::map<std::string, std::shared_ptr<IResourceLoader>> m_registered_loaders;
 
@@ -26,12 +27,14 @@ private:
   void LoadResourcesWorker();
 
 public:
-  ResourceManager(size_t loading_thread_count = 1);
-  ~ResourceManager();
-  void RegisterLoader(std::shared_ptr<IResourceLoader> loader);
-  void UnregisterLoader(const std::string &id);
+  ThreadPoolResourceManager(size_t loading_thread_count = 1);
+  ~ThreadPoolResourceManager();
 
-  std::future<SharedResource> LoadResource(const std::string &uri);
+  virtual void RegisterLoader(std::shared_ptr<IResourceLoader> loader) override;
+  virtual void UnregisterLoader(const std::string &id) override;
+
+  virtual std::future<SharedResource>
+  LoadResource(const std::string &uri) override;
 };
 
 } // namespace resourcemgmt

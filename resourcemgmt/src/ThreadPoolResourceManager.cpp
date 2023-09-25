@@ -1,19 +1,25 @@
+#include "resourcemgmt/manager/impl/ThreadPoolResourceManager.h"
 #include "logging/Logging.h"
-#include "resourcemgmt/ResourceManager.h"
 
 using namespace resourcemgmt;
 
-void ResourceManager::RegisterLoader(std::shared_ptr<IResourceLoader> loader) {
+void ThreadPoolResourceManager::RegisterLoader(
+    std::shared_ptr<IResourceLoader> loader) {
+  if (m_registered_loaders.contains(loader->GetId())) {
+    THROW_EXCEPTION(DuplicateLoaderIdException,
+                    "loader id '" << loader->GetId()
+                                  << "' is already taken and must stay unique");
+  }
   m_registered_loaders[loader->GetId()] = loader;
   LOG_DEBUG("new resource loader '" << loader->GetId() << "' registered");
 }
 
-void ResourceManager::UnregisterLoader(const std::string &id) {
+void ThreadPoolResourceManager::UnregisterLoader(const std::string &id) {
   m_registered_loaders.erase(id);
   LOG_DEBUG("resource loader '" << id << "' unregistered");
 }
 
-void ResourceManager::LoadResourcesWorker() {
+void ThreadPoolResourceManager::LoadResourcesWorker() {
   while (true) {
     std::unique_lock queue_lock(m_loading_queue_mutex);
     m_loading_queue_condition.wait(queue_lock, [this]() {
@@ -32,16 +38,17 @@ void ResourceManager::LoadResourcesWorker() {
   }
 }
 
-ResourceManager::ResourceManager(size_t loading_thread_count)
+ThreadPoolResourceManager::ThreadPoolResourceManager(
+    size_t loading_thread_count)
     : m_terminate{false} {
   for (int i = 0; i < loading_thread_count; i++) {
     auto th = std::make_shared<std::thread>(
-        &ResourceManager::LoadResourcesWorker, this);
+        &ThreadPoolResourceManager::LoadResourcesWorker, this);
     m_loading_threads.push_back(th);
   }
 }
 
-ResourceManager::~ResourceManager() {
+ThreadPoolResourceManager::~ThreadPoolResourceManager() {
   m_terminate = true;
   m_loading_queue_condition.notify_all();
   for (auto th : m_loading_threads) {
@@ -50,7 +57,7 @@ ResourceManager::~ResourceManager() {
 }
 
 std::future<SharedResource>
-ResourceManager::LoadResource(const std::string &uri) {
+ThreadPoolResourceManager::LoadResource(const std::string &uri) {
   /*
    * Example for 'file://myfile.txt'
    * - resource_loader_id = 'file'
