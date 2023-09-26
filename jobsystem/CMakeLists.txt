@@ -4,6 +4,14 @@ project(jobsystem)
 
 find_package(Boost REQUIRED)
 
+find_package(Doxygen REQUIRED dot)
+
+if(DOXYGEN_FOUND)
+    doxygen_add_docs(jobsystemdocs "include" "src" ALL)
+else (DOXYGEN_FOUND)
+    message("Doxygen need to be installed to generate the doxygen documentation")
+endif (DOXYGEN_FOUND)
+
 # Add subdirectories
 add_subdirectory(src)
 add_subdirectory(test)
