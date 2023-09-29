@@ -11,6 +11,16 @@
 using namespace jobsystem::execution;
 
 namespace jobsystem::execution::impl {
+
+/**
+ * @brief This implementation of the job execution uses a concept called fibers,
+ * which (in constrast to threads) are scheduled by a scheduler cooperatively,
+ * not preemptively. In this implementation, fibers are provided by the
+ * Boost.Fiber library.
+ * @note Fibers are running on a pool of worker threads which exchange them to
+ * share their work. When a job yields, the fiber it's running on might be
+ * executed on a different thread after it has been revoked as last time.
+ */
 class FiberExecutionImpl : IJobExecution<FiberExecutionImpl> {
 private:
   JobExecutionState m_current_state{STOPPED};

@@ -5,6 +5,13 @@
 #include <chrono>
 
 namespace jobsystem::job {
+
+/**
+ * @brief While regular jobs are executed right away in the next execution
+ * cycle, this job has the ability to wait for a certain amount of time. This is
+ * useful to create jobs which execute in certain time-intercals instead of
+ * every cycle.
+ */
 class TimerJob : public Job {
 private:
   /**

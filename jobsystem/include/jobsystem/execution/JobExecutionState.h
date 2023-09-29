@@ -2,6 +2,10 @@
 #define JOBEXECUTIONSTATE_H
 
 namespace jobsystem::execution {
+
+/**
+ * @brief current state and life-cycle of the job execution system.
+ */
 enum JobExecutionState { STOPPED, RUNNING };
 } // namespace jobsystem::execution
 

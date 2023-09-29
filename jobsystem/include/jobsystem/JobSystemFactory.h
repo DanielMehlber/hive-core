@@ -7,6 +7,7 @@
 using namespace jobsystem::job;
 
 namespace jobsystem {
+
 class JobSystemFactory {
 public:
   template <typename Type = Job, typename... Args>

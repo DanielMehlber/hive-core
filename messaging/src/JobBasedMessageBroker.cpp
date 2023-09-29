@@ -37,6 +37,7 @@ void JobBasedMessageBroker::CleanUpSubscribers() {
 
 void JobBasedMessageBroker::PublishMessage(SharedMessage event) {
   const auto &topic_name = event->GetTopic();
+
   if (m_topic_subscribers.contains(topic_name)) {
     auto &subscribers_of_topic = m_topic_subscribers.at(topic_name);
     for (auto &subscriber : subscribers_of_topic) {
@@ -51,6 +52,10 @@ void JobBasedMessageBroker::PublishMessage(SharedMessage event) {
         m_job_manager->KickJob(message_job);
       }
     }
+
+    LOG_DEBUG("message of topic '" << topic_name << "' published to "
+                                   << subscribers_of_topic.size()
+                                   << " subscribers");
   }
 }
 

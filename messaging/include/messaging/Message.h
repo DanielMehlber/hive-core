@@ -56,7 +56,7 @@ inline std::optional<T> Message::GetPayload(const std::string &key) const {
     auto any_container = m_payload.at(key);
     return std::any_cast<T>(any_container);
   } else {
-    {};
+    return {};
   }
 }
 

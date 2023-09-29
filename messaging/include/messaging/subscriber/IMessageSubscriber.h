@@ -19,7 +19,7 @@ public:
    * @brief Get id of this listener instance
    * @return id (preferably uuid of this listener)
    */
-  virtual const std::string &GetId() const = 0;
+  virtual std::string GetId() const = 0;
 };
 
 typedef std::shared_ptr<IMessageSubscriber> SharedSubscriber;

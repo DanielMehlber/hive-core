@@ -13,6 +13,13 @@ using namespace jobsystem::execution;
 using namespace jobsystem::job;
 
 namespace jobsystem::execution::impl {
+
+/**
+ * @brief This implementation of the job execution uses a single worker thread
+ * that processes all jobs in its queue.
+ * @attention This implementation cannot wait for other jobs from inside another
+ * job because this would block the one and only worker thread.
+ */
 class SingleThreadedExecutionImpl
     : public IJobExecution<SingleThreadedExecutionImpl> {
 private:

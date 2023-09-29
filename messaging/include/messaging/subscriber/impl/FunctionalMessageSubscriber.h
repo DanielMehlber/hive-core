@@ -32,7 +32,7 @@ public:
   };
 
   virtual void HandleMessage(const SharedMessage event) { m_function(event); }
-  virtual const std::string &GetId() const override { return m_id; };
+  virtual std::string GetId() const override { return m_id; };
 };
 
 } // namespace messaging

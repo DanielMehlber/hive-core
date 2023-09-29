@@ -25,6 +25,11 @@ typedef impl::FiberExecutionImpl JobExecutionImpl;
 
 namespace jobsystem {
 
+/**
+ * @brief Manages the job processing order, controls the progress of cycles and
+ * holds all job instances that must be executed in the current or following
+ * execution cycles.
+ */
 class JobManager {
 private:
   /**
@@ -78,18 +83,44 @@ private:
   size_t m_cycles_counter{0};
 #endif
 
+  /**
+   * @brief Pushes all job instances contained in the passed queue to the
+   * execution and waits until all have been executed.
+   * @param queue queue containing all jobs that should be executed
+   * @param queue_mutex mutex of the queue enabling concurrent access and
+   * modification
+   * @param counter counter that should be used to track the progress of all job
+   * instances pushed into the execution
+   */
   void ExecuteQueueAndWait(std::queue<SharedJob> &queue,
                            std::mutex &queue_mutex, SharedJobCounter counter);
 
+  /**
+   * @brief Pushes all job instances contained in the passed queue to the
+   * execution for scheduling.
+   * @param queue queue containing all job instances that should be executed
+   * @param queue_mutex mutex of the passed queue enabling concurrent access and
+   * modification
+   * @param counter counter that is attached to all job instances that get
+   * passed to the job execution.
+   */
   void ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
                               std::mutex &queue_mutex,
                               SharedJobCounter counter);
 
+  /**
+   * @brief The continuation requeue blacklist is used when cancelling jobs by
+   * preventing their re-queueing. This operation clears the blacklist.
+   */
   void ResetContinuationRequeueBlacklist();
 
 public:
   JobManager();
   ~JobManager();
+
+  /**
+   * @brief Logs runtime information and statistics.
+   */
   void PrintStatusLog();
 
   /**

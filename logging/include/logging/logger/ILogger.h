@@ -4,6 +4,10 @@
 #include <string>
 
 namespace logging::logger {
+
+/**
+ * @brief Generic interface for logging
+ */
 class ILogger {
 public:
   virtual void Init() = 0;

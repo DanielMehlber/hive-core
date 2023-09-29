@@ -26,11 +26,20 @@
 #endif
 
 namespace logging {
+
+/**
+ * @brief Provides a logger implementations
+ */
 class EXPORT_API Logging {
 private:
   static std::shared_ptr<logger::ILogger> m_logger;
 
 public:
+  /**
+   * @brief Constructs the default logger implementation (if logger does not
+   * exist yet).
+   * @return the default logger implementation
+   */
   static std::shared_ptr<logger::ILogger> GetLogger() noexcept;
 };
 
