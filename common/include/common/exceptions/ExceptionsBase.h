@@ -5,7 +5,7 @@
 #include <boost/stacktrace.hpp>
 #include <sstream>
 
-class ExceptionBase : virtual std::exception {
+class ExceptionBase : public std::exception {
 protected:
   const boost::stacktrace::stacktrace m_stacktrace_print;
   const std::string m_message;
@@ -18,6 +18,7 @@ public:
   virtual const char *what() const noexcept override {
     return m_message.c_str();
   }
+
   virtual const char *get_type() const noexcept = 0;
 
   const std::string to_string() {
@@ -29,7 +30,7 @@ public:
 };
 
 #define DECLARE_EXCEPTION(ExceptionType)                                       \
-  class ExceptionType : virtual ExceptionBase {                                \
+  class ExceptionType : public ExceptionBase {                                 \
   public:                                                                      \
     ExceptionType(const std::stringstream &message,                            \
                   const boost::stacktrace::stacktrace &stacktrace)             \

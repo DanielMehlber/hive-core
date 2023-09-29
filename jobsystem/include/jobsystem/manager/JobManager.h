@@ -156,6 +156,8 @@ JobManager::WaitForCompletion(const std::future<FutureType> &future) {
   m_execution.WaitForCompletion(future);
 }
 
+typedef std::shared_ptr<JobManager> SharedJobManager;
+
 } // namespace jobsystem
 
 #endif /* JOBMANAGER_H */

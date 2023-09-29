@@ -5,7 +5,8 @@
 
 namespace messaging {
 
-class IMessageSubscriber {
+class IMessageSubscriber
+    : public std::enable_shared_from_this<IMessageSubscriber> {
 public:
   /**
    * @brief Handles incoming event of some type that this listener has
