@@ -5,13 +5,19 @@
 #include "common/exceptions/ExceptionsBase.h"
 #include "properties/PropertyProvider.h"
 #include <future>
+#include <list>
 #include <memory>
 
 namespace networking::websockets {
 
 DECLARE_EXCEPTION(DuplicateConsumerTypeException);
+DECLARE_EXCEPTION(PeerSetupException);
 
-class IWebSocketServer {
+/**
+ * @brief A generic interface declaring a web-socket peer that can accept
+ * connections,
+ */
+class IWebSocketPeer : public std::enable_shared_from_this<IWebSocketPeer> {
 public:
   /**
    * @brief Adds a consumer for a specific type of arriving messages to the
@@ -31,8 +37,8 @@ public:
    * @param type_name type name of the messages that the consumer processes
    * @return a consumer if one has been found for the given type
    */
-  virtual std::optional<SharedWebSocketMessageConsumer>
-  GetConsumerForType(const std::string &type_name) noexcept = 0;
+  virtual std::list<SharedWebSocketMessageConsumer>
+  GetConsumersOfType(const std::string &type_name) noexcept = 0;
 
   /**
    * @brief Sends some message to some uri asynchronously
@@ -66,7 +72,7 @@ public:
   virtual void CloseConnectionTo(const std::string &uri) noexcept = 0;
 };
 
-typedef std::shared_ptr<IWebSocketServer> SharedWebSocketServer;
+typedef std::shared_ptr<IWebSocketPeer> SharedWebSocketPeer;
 
 } // namespace networking::websockets
 

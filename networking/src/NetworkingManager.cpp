@@ -18,7 +18,7 @@ NetworkingManager::NetworkingManager(props::SharedPropertyProvider properties,
 
 void NetworkingManager::InitWebSocketServer() {
   if (!m_web_socket_server) {
-    m_web_socket_server = NetworkingFactory::CreateWebSocketServer(
+    m_web_socket_server = NetworkingFactory::CreateWebSocketPeer(
         m_job_manager, m_property_provider);
   }
 }

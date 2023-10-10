@@ -47,4 +47,11 @@ public:
     throw ExceptionType(__ss, boost::stacktrace::stacktrace());                \
   };
 
+#define BUILD_EXCEPTION(ExceptionType, message)                                \
+  [&]() {                                                                      \
+    std::stringstream __ss;                                                    \
+    __ss << message;                                                           \
+    return ExceptionType(__ss, boost::stacktrace::stacktrace());               \
+  }();
+
 #endif /* EXCEPTIONSBASE_H */

@@ -1,4 +1,5 @@
 #include "WebSocketConverterTest.h"
+#include "WebSocketPeerTest.h"
 #include <gtest/gtest.h>
 
 int main(int argc, char **argv) {

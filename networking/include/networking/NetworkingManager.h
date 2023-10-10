@@ -11,7 +11,7 @@ private:
   props::SharedPropertyProvider m_property_provider;
   jobsystem::SharedJobManager m_job_manager;
 
-  SharedWebSocketServer m_web_socket_server;
+  SharedWebSocketPeer m_web_socket_server;
 
   void InitWebSocketServer();
 
