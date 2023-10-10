@@ -1,9 +1,10 @@
 #ifndef WEBSOCKETPPSERVER_H
 #define WEBSOCKETPPSERVER_H
 
-#include "jobsystem/JobSystem.h"
-#include "networking/websockets/IWebSocketServer.h"
+#include <jobsystem/JobSystem.h>
 #include <map>
+#include <networking/websockets/IWebSocketServer.h>
+#include <properties/PropertyProvider.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
@@ -21,6 +22,12 @@ private:
    * @brief The job system is required to react to received messages
    */
   jobsystem::SharedJobManager m_job_manager;
+
+  /**
+   * @brief Provides property values and configuration that is required for the
+   * setup of the server and socket connections
+   */
+  props::SharedPropertyProvider m_property_provider;
 
   /**
    * @brief maps type names to their consumers
@@ -46,10 +53,8 @@ private:
                          server::message_ptr msg);
 
 public:
-  WebSocketppServer(jobsystem::SharedJobManager job_manager);
-
-  virtual void Init(const WebSocketConfiguration &configuration) override;
-  virtual void Shutdown() override;
+  WebSocketppServer(jobsystem::SharedJobManager job_manager,
+                    props::SharedPropertyProvider properties);
 
   virtual void
   AddConsumer(std::weak_ptr<IWebSocketMessageConsumer> consumer) override;

@@ -1,13 +1,36 @@
 #include "networking/websockets/impl/WebSocketppServer.h"
-#include "logging/Logging.h"
 #include "networking/websockets/WebSocketMessageConverter.h"
 #include <functional>
+#include <logging/Logging.h>
 
 using namespace networking::websockets;
 using namespace std::placeholders;
 
-WebSocketppServer::WebSocketppServer(jobsystem::SharedJobManager job_manager)
-    : m_job_manager{job_manager} {}
+WebSocketppServer::WebSocketppServer(jobsystem::SharedJobManager job_manager,
+                                     props::SharedPropertyProvider properties)
+    : m_job_manager{job_manager}, m_property_provider{properties} {
+
+  // configuration section
+  bool use_tls = properties->GetOrElse<bool>("net.ws.tls.enabled", true);
+  size_t port = properties->GetOrElse("net.ws.port", 9000);
+
+  if (use_tls) {
+    LOG_WARN("Using TLS in web-socket connections is not implemented yet. "
+             "Using unsafe connection.")
+  }
+
+  m_server_endpoint.set_open_handler(
+      std::bind(&WebSocketppServer::OnConnectionOpened, this, _1));
+  m_server_endpoint.set_close_handler(
+      std::bind(&WebSocketppServer::OnConnectionClosed, this, _1));
+  m_server_endpoint.set_message_handler(
+      std::bind(&WebSocketppServer::OnMessageReceived, this, _1, _2));
+
+  m_server_endpoint.init_asio();
+  m_server_endpoint.listen(port);
+  m_server_endpoint.start_accept();
+  m_server_endpoint.run();
+}
 
 void WebSocketppServer::AddConsumer(
     std::weak_ptr<IWebSocketMessageConsumer> consumer) {
@@ -114,24 +137,3 @@ void WebSocketppServer::OnMessageReceived(websocketpp::connection_hdl conn,
              << "' received, but no consumer registered. Message ignored.")
   }
 }
-
-void WebSocketppServer::Init(const WebSocketConfiguration &configuration) {
-  if (configuration.GetUseTls()) {
-    LOG_WARN("Using TLS in web-socket connections is not implemented yet. "
-             "Using unsafe connection.")
-  }
-
-  m_server_endpoint.set_open_handler(
-      std::bind(&WebSocketppServer::OnConnectionOpened, this, _1));
-  m_server_endpoint.set_close_handler(
-      std::bind(&WebSocketppServer::OnConnectionClosed, this, _1));
-  m_server_endpoint.set_message_handler(
-      std::bind(&WebSocketppServer::OnMessageReceived, this, _1, _2));
-
-  m_server_endpoint.init_asio();
-  m_server_endpoint.listen(configuration.GetPort());
-  m_server_endpoint.start_accept();
-  m_server_endpoint.run();
-}
-
-void WebSocketppServer::Shutdown() {}

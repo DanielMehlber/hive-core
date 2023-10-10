@@ -2,8 +2,8 @@
 #define IWEBSOCKETSERVER_H
 
 #include "IWebSocketMessageConsumer.h"
-#include "WebSocketConfiguration.h"
 #include "common/exceptions/ExceptionsBase.h"
+#include "properties/PropertyProvider.h"
 #include <future>
 #include <memory>
 
@@ -13,17 +13,6 @@ DECLARE_EXCEPTION(DuplicateConsumerTypeException);
 
 class IWebSocketServer {
 public:
-  /**
-   * @brief Initializes the web socket server
-   * @param configuration will be applied to the launched server
-   */
-  virtual void Init(const WebSocketConfiguration &configuration) = 0;
-
-  /**
-   * @brief Shuts the web socket server down and closes all connections
-   */
-  virtual void Shutdown() = 0;
-
   /**
    * @brief Adds a consumer for a specific type of arriving messages to the
    * register.

@@ -3,6 +3,8 @@ project(simulation-framework)
 
 enable_testing()
 
+option(GENERATE_DOCS "Run Doxygen to build the documentation" OFF)
+
 add_subdirectory(common)
 add_subdirectory(logging)
 add_subdirectory(jobsystem)

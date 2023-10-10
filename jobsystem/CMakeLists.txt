@@ -6,11 +6,13 @@ find_package(Boost REQUIRED)
 
 find_package(Doxygen REQUIRED dot)
 
-if(DOXYGEN_FOUND)
-    doxygen_add_docs(jobsystemdocs "include" "src" ALL)
-else (DOXYGEN_FOUND)
-    message("Doxygen need to be installed to generate the doxygen documentation")
-endif (DOXYGEN_FOUND)
+if(GENERATE_DOCS)
+    if(DOXYGEN_FOUND)
+        doxygen_add_docs(jobsystemdocs "include" "src" ALL)
+    else (DOXYGEN_FOUND)
+        message("Doxygen need to be installed to generate the doxygen documentation")
+    endif (DOXYGEN_FOUND)
+endif(GENERATE_DOCS)
 
 # Add subdirectories
 add_subdirectory(src)
