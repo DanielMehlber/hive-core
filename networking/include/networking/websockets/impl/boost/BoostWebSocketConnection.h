@@ -1,13 +1,19 @@
 #ifndef BOOSTWEBSOCKETCONNECTION_H
 #define BOOSTWEBSOCKETCONNECTION_H
 
+#include "networking/websockets/WebSocketMessage.h"
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
+#include <common/exceptions/ExceptionsBase.h>
+#include <future>
 #include <memory>
 
 namespace networking::websockets {
 
 typedef boost::beast::websocket::stream<boost::beast::tcp_stream> stream_type;
+
+DECLARE_EXCEPTION(ConnectionClosedException);
+DECLARE_EXCEPTION(MessageSendingException);
 
 class BoostWebSocketConnection
     : public std::enable_shared_from_this<BoostWebSocketConnection> {
@@ -48,6 +54,11 @@ private:
   void OnMessageReceived(boost::beast::error_code error_code,
                          std::size_t bytes_transferred);
 
+  void OnMessageSent(std::promise<void> &&promise,
+                     SharedWebSocketMessage message,
+                     boost::beast::error_code error_code,
+                     std::size_t bytes_transferred);
+
   bool IsUsable() const;
 
 public:
@@ -78,6 +89,13 @@ public:
    * @brief Closes the web-socket connection and the underlying tcp stream
    */
   void Close();
+
+  /**
+   * @brief Sends a message to the remote peer through this connection.
+   * @param message web-socket message that will be sent
+   * @return future indicating that the message has been sent
+   */
+  std::future<void> Send(SharedWebSocketMessage message);
 
   std::string GetRemoteHostAddress() const;
 };

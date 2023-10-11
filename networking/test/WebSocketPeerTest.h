@@ -23,7 +23,19 @@ SharedWebSocketPeer SetupWebSocketPeer(SharedJobManager job_manager, int port) {
   return server;
 }
 
-TEST(NetworkingTest, websockets_connection_establishment) {
+class TestConsumer : public IWebSocketMessageConsumer {
+public:
+  size_t counter{0};
+  virtual const std::string GetMessageType() const noexcept override {
+    return "test-type";
+  }
+  virtual void ProcessReceivedMessage(
+      SharedWebSocketMessage received_message) noexcept override {
+    counter++;
+  }
+};
+
+TEST(WebSockets, websockets_connection_establishment) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
   SharedWebSocketPeer peer1 = SetupWebSocketPeer(job_manager, 9003);
   SharedWebSocketPeer peer2 = SetupWebSocketPeer(job_manager, 9004);
@@ -32,6 +44,46 @@ TEST(NetworkingTest, websockets_connection_establishment) {
   result.wait();
 
   ASSERT_NO_THROW(result.get());
+}
+
+void SendMessageAndWait(SharedWebSocketMessage message,
+                        SharedWebSocketPeer peer, std::string uri) {
+  std::future<void> sending_result = peer->Send(uri, message);
+  sending_result.wait();
+  ASSERT_NO_THROW(sending_result.get());
+}
+
+TEST(WebSockets, websockets_message_sending) {
+  SharedJobManager job_manager = std::make_shared<JobManager>();
+  SharedWebSocketPeer peer1 = SetupWebSocketPeer(job_manager, 9003);
+  SharedWebSocketPeer peer2 = SetupWebSocketPeer(job_manager, 9004);
+
+  std::shared_ptr<TestConsumer> test_consumer_1 =
+      std::make_shared<TestConsumer>();
+  std::shared_ptr<TestConsumer> test_consumer_2 =
+      std::make_shared<TestConsumer>();
+
+  peer1->AddConsumer(test_consumer_1);
+  peer2->AddConsumer(test_consumer_2);
+
+  auto result1 = peer1->EstablishConnectionTo("ws://127.0.0.1:9004");
+  result1.wait();
+  ASSERT_NO_THROW(result1.get());
+
+  SharedWebSocketMessage message =
+      std::make_shared<WebSocketMessage>("test-type");
+
+  SendMessageAndWait(message, peer1, "ws://127.0.0.1:9004");
+
+  auto result2 = peer2->EstablishConnectionTo("ws://127.0.0.1:9003");
+  result2.wait();
+  ASSERT_NO_THROW(result2.get());
+
+  SendMessageAndWait(message, peer2, "ws://127.0.0.1:9003");
+
+  job_manager->InvokeCycleAndWait();
+  ASSERT_EQ(test_consumer_1->counter, 1);
+  ASSERT_EQ(test_consumer_2->counter, 1);
 }
 
 #endif /* WEBSOCKETPEERTEST_H */

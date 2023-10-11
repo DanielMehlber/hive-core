@@ -1,5 +1,6 @@
 #include "networking/websockets/impl/boost/BoostWebSocketConnection.h"
 #include "logging/Logging.h"
+#include "networking/websockets/WebSocketMessageConverter.h"
 #include <boost/asio.hpp>
 
 using namespace networking::websockets;
@@ -56,9 +57,7 @@ void BoostWebSocketConnection::OnMessageReceived(
   }
 
   // extract sent bytes and pass them to the callback function
-  const auto received_data =
-      boost::asio::buffer_cast<const char *>(m_buffer.data());
-  std::string content = received_data;
+  const auto received_data = boost::beast::buffers_to_string(m_buffer.data());
   m_on_message_received(received_data, shared_from_this());
 }
 
@@ -88,3 +87,54 @@ void BoostWebSocketConnection::Close() {
 }
 
 BoostWebSocketConnection::~BoostWebSocketConnection() { Close(); }
+
+std::future<void>
+BoostWebSocketConnection::Send(SharedWebSocketMessage message) {
+
+  if (!m_socket.is_open()) {
+    LOG_WARN("Cannot sent message via web-socket to remote host "
+             << m_remote_endpoint_data.address().to_string() << ":"
+             << m_remote_endpoint_data.port() << " because socket is closed");
+
+    THROW_EXCEPTION(ConnectionClosedException, "connection is not open");
+  }
+
+  std::promise<void> sending_promise;
+  std::future<void> sending_future = sending_promise.get_future();
+
+  WebSocketMessageConverter converter;
+  std::string payload = converter.ToJson(message);
+
+  m_socket.async_write(
+      asio::buffer(payload),
+      boost::beast::bind_front_handler(&BoostWebSocketConnection::OnMessageSent,
+                                       shared_from_this(),
+                                       std::move(sending_promise), message));
+
+  return std::move(sending_future);
+}
+
+void BoostWebSocketConnection::OnMessageSent(
+    std::promise<void> &&promise, SharedWebSocketMessage message,
+    boost::beast::error_code error_code, std::size_t bytes_transferred) {
+  if (error_code) {
+    LOG_WARN("Sending message via web-socket to remote host "
+             << m_remote_endpoint_data.address().to_string() << ":"
+             << m_remote_endpoint_data.port()
+             << " failed: " << error_code.message());
+    auto exception =
+        BUILD_EXCEPTION(MessageSendingException,
+                        "Sending message via web-socket to remote host "
+                            << m_remote_endpoint_data.address().to_string()
+                            << ":" << m_remote_endpoint_data.port()
+                            << " failed: " << error_code.message());
+    promise.set_exception(std::make_exception_ptr(exception));
+    return;
+  }
+
+  promise.set_value();
+  LOG_DEBUG("Sent message of type "
+            << message->GetType() << " via web-socket to host "
+            << m_remote_endpoint_data.address().to_string() << ":"
+            << m_remote_endpoint_data.port());
+}

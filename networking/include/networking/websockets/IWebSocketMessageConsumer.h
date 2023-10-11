@@ -17,7 +17,7 @@ public:
    * @brief Returns the web-socket message type this consumer listens to
    * @return string that contains the unique type name
    */
-  virtual const std::string &GetMessageType() const noexcept = 0;
+  virtual const std::string GetMessageType() const noexcept = 0;
 
   /**
    * @brief Reacts to received messages and processes them

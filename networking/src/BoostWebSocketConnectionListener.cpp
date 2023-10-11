@@ -1,5 +1,4 @@
 #include "networking/websockets/impl/boost/BoostWebSocketConnectionListener.h"
-#include <boost/asio.hpp>
 
 using namespace networking::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -11,9 +10,11 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 BoostWebSocketConnectionListener::BoostWebSocketConnectionListener(
     std::shared_ptr<boost::asio::io_context> execution_context,
     props::SharedPropertyProvider property_provider,
+    std::shared_ptr<boost::asio::ip::tcp::endpoint> local_endpoint,
     std::function<void(std::string, stream_type &&)> connection_consumer)
     : m_connection_consumer{connection_consumer},
-      m_execution_context{execution_context}, m_properties{property_provider} {}
+      m_execution_context{execution_context}, m_properties{property_provider},
+      m_local_endpoint{local_endpoint} {}
 
 BoostWebSocketConnectionListener::~BoostWebSocketConnectionListener() {
   ShutDown();
@@ -22,10 +23,6 @@ BoostWebSocketConnectionListener::~BoostWebSocketConnectionListener() {
 void BoostWebSocketConnectionListener::Init() {
   // load configurations
   bool use_tls = m_properties->GetOrElse("net.ws.tls.enabled", true);
-  size_t thread_count = m_properties->GetOrElse("net.ws.threads.count", 1);
-  size_t port_number = m_properties->GetOrElse("net.ws.port", 9000);
-  std::string host_address_name =
-      m_properties->GetOrElse<std::string>("net.ws.addr", "127.0.0.1");
 
   if (use_tls) {
     LOG_WARN(
@@ -33,15 +30,13 @@ void BoostWebSocketConnectionListener::Init() {
   }
 
   // setup acceptor which listens for incoming connections asynchronously
-  auto host_address = asio::ip::make_address(host_address_name);
-  m_this_host_endpoint = tcp::endpoint(host_address, port_number);
   m_incoming_connection_acceptor =
       std::make_unique<tcp::acceptor>(*m_execution_context.get());
 
   beast::error_code error_code;
 
   // open the acceptor for incoming connections
-  m_incoming_connection_acceptor->open(m_this_host_endpoint.protocol(),
+  m_incoming_connection_acceptor->open(m_local_endpoint->protocol(),
                                        error_code);
   if (error_code) {
     LOG_ERR("cannot setup acceptor for incoming web-socket connections: "
@@ -64,7 +59,9 @@ void BoostWebSocketConnectionListener::Init() {
   }
 
   // Bind the acceptor to the host address
-  m_incoming_connection_acceptor->bind(m_this_host_endpoint, error_code);
+  m_incoming_connection_acceptor->bind(
+      tcp::endpoint(m_local_endpoint->address(), m_local_endpoint->port()),
+      error_code);
   if (error_code) {
     LOG_ERR(
         "cannot bind incoming web-socket connection acceptor to host address: "
@@ -92,8 +89,8 @@ void BoostWebSocketConnectionListener::StartAcceptingAnotherConnection() {
     return;
   }
   LOG_DEBUG("waiting for web-socket connections on "
-            << m_this_host_endpoint.address().to_string() << " port "
-            << m_this_host_endpoint.port());
+            << m_local_endpoint->address().to_string() << " port "
+            << m_local_endpoint->port());
   // Accept incoming connections
   m_incoming_connection_acceptor->async_accept(
       asio::make_strand(*m_execution_context.get()),

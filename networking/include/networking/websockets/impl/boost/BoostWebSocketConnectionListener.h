@@ -2,6 +2,7 @@
 #define BOOSTWEBSOCKETCONNECTIONLISTENER_H
 
 #include "BoostWebSocketConnection.h"
+#include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <common/exceptions/ExceptionsBase.h>
 #include <functional>
@@ -44,7 +45,7 @@ private:
    * @brief Defines the endpoint configuration of this host (port, address,
    * etc.)
    */
-  boost::asio::ip::tcp::endpoint m_this_host_endpoint;
+  const std::shared_ptr<boost::asio::ip::tcp::endpoint> m_local_endpoint;
 
   /**
    * @brief After a TCP connection has been established with a client, the
@@ -77,6 +78,7 @@ public:
   BoostWebSocketConnectionListener(
       std::shared_ptr<boost::asio::io_context> execution_context,
       props::SharedPropertyProvider property_provider,
+      std::shared_ptr<boost::asio::ip::tcp::endpoint> local_endpoint,
       std::function<void(std::string, stream_type &&)> connection_consumer);
 
   ~BoostWebSocketConnectionListener();

@@ -1,4 +1,5 @@
 add_library(networking 
+    UrlParser.cpp
     WebSocketMessage.cpp 
     WebSocketMessageConsumerJob.cpp 
     BoostJsonMessageConverter.cpp 

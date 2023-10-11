@@ -19,6 +19,8 @@ namespace networking::websockets {
 
 typedef websocketpp::server<websocketpp::config::asio> server;
 
+DECLARE_EXCEPTION(NoSuchPeerException);
+
 /**
  * @brief This implementation of IWebSocketServer uses WebSocket++ to provide
  * a web-socket communication peer.
@@ -69,6 +71,14 @@ private:
   std::vector<std::thread> m_execution_threads;
 
   /**
+   * @brief This is the local endpoint over which the peer should communicate
+   * with others (receive & send messages).
+   * @note This is important for the connection establishing and listening
+   * process.
+   */
+  std::shared_ptr<boost::asio::ip::tcp::endpoint> m_local_endpoint;
+
+  /**
    * @brief Consumers are stored as expireable weak-pointers. When the actual
    * referenced consumer is destroyed, the list of consumers holds expired
    * pointers that can be removed.
@@ -82,6 +92,9 @@ private:
    * @param stream web-socket stream
    */
   void AddConnection(std::string url, stream_type &&stream);
+
+  std::optional<SharedBoostWebSocketConnection>
+  GetConnection(const std::string &uri);
 
   void ProcessReceivedMessage(std::string data,
                               SharedBoostWebSocketConnection over_connection);

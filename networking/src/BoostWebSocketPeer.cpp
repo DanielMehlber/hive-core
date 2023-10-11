@@ -1,8 +1,10 @@
 #include "networking/websockets/impl/boost/BoostWebSocketPeer.h"
+#include "networking/util/UrlParser.h"
 #include "networking/websockets/WebSocketMessageConsumerJob.h"
 #include "networking/websockets/WebSocketMessageConverter.h"
 #include <regex>
 
+using namespace networking;
 using namespace networking::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -17,6 +19,13 @@ BoostWebSocketPeer::BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
   bool init_server_at_startup =
       properties->GetOrElse("net.ws.server.auto-init", true);
   size_t thread_count = properties->GetOrElse<size_t>("net.ws.threads", 1);
+  size_t local_endpont_port =
+      properties->GetOrElse<size_t>("net.ws.port", 9000);
+  std::string local_endpoint_address =
+      properties->GetOrElse<std::string>("net.ws.address", "127.0.0.1");
+
+  m_local_endpoint = std::make_shared<boost::asio::ip::tcp::endpoint>(
+      asio::ip::make_address(local_endpoint_address), local_endpont_port);
 
   m_execution_context = std::make_shared<boost::asio::io_context>();
 
@@ -122,6 +131,18 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   }
 }
 
+std::optional<std::string> connectionIdFromUrl(const std::string &url) {
+  auto opt_parsed_url = util::UrlParser::parse(url);
+  if (opt_parsed_url.has_value()) {
+    auto parsed_url = opt_parsed_url.value();
+    std::stringstream ss;
+    ss << parsed_url.host << ":" << parsed_url.port << parsed_url.path;
+    return ss.str();
+  } else {
+    return {};
+  }
+}
+
 void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
   if (!m_running) {
     return;
@@ -135,13 +156,28 @@ void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
   connection->StartReceivingMessages();
 
   std::unique_lock conn_lock(m_connections_mutex);
-  m_connections[url] = connection;
+
+  auto connection_id = connectionIdFromUrl(url).value();
+  m_connections[connection_id] = connection;
+}
+
+std::optional<SharedBoostWebSocketConnection>
+networking::websockets::BoostWebSocketPeer::GetConnection(
+    const std::string &uri) {
+
+  const std::string connection_id = connectionIdFromUrl(uri).value();
+  std::unique_lock lock(m_connections_mutex);
+  if (m_connections.contains(connection_id)) {
+    return m_connections.at(connection_id);
+  } else {
+    return {};
+  }
 }
 
 void BoostWebSocketPeer::InitAndStartConnectionListener() {
   if (!m_connection_listener) {
     m_connection_listener = std::make_shared<BoostWebSocketConnectionListener>(
-        m_execution_context, m_property_provider,
+        m_execution_context, m_property_provider, m_local_endpoint,
         std::bind(&BoostWebSocketPeer::AddConnection, this,
                   std::placeholders::_1, std::placeholders::_2));
     m_connection_listener->Init();
@@ -162,22 +198,26 @@ void BoostWebSocketPeer::InitConnectionEstablisher() {
 std::future<void>
 BoostWebSocketPeer::Send(const std::string &uri,
                          SharedWebSocketMessage message) noexcept {
-  throw "not implemented yet"; // TODO
+  auto opt_connection = GetConnection(uri);
+  if (opt_connection.has_value()) {
+    return opt_connection.value()->Send(message);
+  } else {
+    THROW_EXCEPTION(NoSuchPeerException, "peer " << uri << " does not exist");
+  }
 }
 
 std::future<void>
 BoostWebSocketPeer::EstablishConnectionTo(const std::string &uri) noexcept {
 
-  std::unique_lock conn_lock(m_connections_mutex);
+  auto opt_connection = GetConnection(uri);
+
   // if connection has already been established
-  if (m_connections.contains(uri)) {
-    conn_lock.unlock();
+  if (opt_connection.has_value()) {
     std::promise<void> prom;
     prom.set_value();
     return prom.get_future();
   }
 
-  conn_lock.unlock();
   // check if connection establishment component has been initlialized.
   if (!m_connection_establisher) {
     InitConnectionEstablisher();
@@ -187,5 +227,13 @@ BoostWebSocketPeer::EstablishConnectionTo(const std::string &uri) noexcept {
 }
 
 void BoostWebSocketPeer::CloseConnectionTo(const std::string &uri) noexcept {
-  throw "not implemented yet"; // TODO
+  auto opt_connection_id = connectionIdFromUrl(uri);
+  if (opt_connection_id.has_value()) {
+    auto connection_id = opt_connection_id.value();
+    std::unique_lock lock(m_connections_mutex);
+    if (m_connections.contains(connection_id)) {
+      m_connections.at(connection_id)->Close();
+      m_connections.erase(connection_id);
+    }
+  }
 };

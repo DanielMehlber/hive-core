@@ -1,3 +1,4 @@
+#include "UrlParserTest.h"
 #include "WebSocketConverterTest.h"
 #include "WebSocketPeerTest.h"
 #include <gtest/gtest.h>

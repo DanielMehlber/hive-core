@@ -1,4 +1,5 @@
 #include "networking/websockets/impl/boost/BoostWebSocketConnectionEstablisher.h"
+#include "networking/util/UrlParser.h"
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <logging/Logging.h>
@@ -6,6 +7,7 @@
 #include <string>
 
 using namespace networking::websockets;
+using namespace networking;
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -21,40 +23,12 @@ BoostWebSocketConnectionEstablisher::BoostWebSocketConnectionEstablisher(
       m_execution_context{execution_context},
       m_connection_consumer{connection_consumer} {}
 
-struct ParsedURI {
-  std::string scheme;
-  std::string host;
-  std::string port;
-  std::string path;
-  std::string query;
-};
-
-std::optional<ParsedURI> parseURI(const std::string &uri) {
-  ParsedURI result;
-
-  // Regular expression for parsing URI components
-  std::regex uriRegex(R"(([^:\/?#]+):\/\/([^\/?#]+):(\d*)?([^?#]*)(\?.*)?)");
-  std::smatch match;
-
-  if (std::regex_match(uri, match, uriRegex)) {
-    result.scheme = match[1].str();
-    result.host = match[2].str();
-    result.port = match[3].str().empty() ? "80" : match[3].str();
-    result.path = match[4].str().empty() ? "/" : match[4].str();
-    result.query = match[5].str();
-  } else {
-    return {};
-  }
-
-  return result;
-}
-
 std::future<void> BoostWebSocketConnectionEstablisher::EstablishConnectionTo(
     const std::string &uri) {
 
   std::promise<void> connection_promise;
 
-  auto optional_uri = parseURI(uri);
+  auto optional_uri = util::UrlParser::parse(uri);
   if (!optional_uri.has_value()) {
     LOG_WARN("failed to establish web-socket connection due to malformed URL '"
              << uri << "'");
@@ -63,7 +37,7 @@ std::future<void> BoostWebSocketConnectionEstablisher::EstablishConnectionTo(
 
   LOG_DEBUG("connection attempt to host " << uri << " started");
 
-  ParsedURI url = optional_uri.value();
+  util::ParsedUrl url = optional_uri.value();
 
   std::future<void> connection_future = connection_promise.get_future();
 

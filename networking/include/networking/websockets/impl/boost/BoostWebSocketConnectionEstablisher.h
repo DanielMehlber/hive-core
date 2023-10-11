@@ -2,6 +2,7 @@
 #define BOOSTWEBSOCKETCONNECTIONESTABLISHER_H
 
 #include "BoostWebSocketConnection.h"
+#include <boost/asio.hpp>
 #include <common/exceptions/ExceptionsBase.h>
 #include <future>
 #include <properties/PropertyProvider.h>
@@ -22,6 +23,9 @@ class BoostWebSocketConnectionEstablisher
 private:
   std::shared_ptr<boost::asio::io_context> m_execution_context;
 
+  /**
+   * @brief Resolves IP addresses from given hostnames
+   */
   boost::asio::ip::tcp::resolver m_resolver;
 
   /**
