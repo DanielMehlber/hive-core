@@ -11,6 +11,38 @@ using namespace networking::websockets;
 using namespace jobsystem;
 using namespace props;
 using namespace messaging;
+using namespace std::chrono_literals;
+
+#define WAIT_FOR_ASSERTION(statement, timeout, else_action)                    \
+  {                                                                            \
+    auto time = std::chrono::high_resolution_clock::now();                     \
+    while (!(statement)) {                                                     \
+      auto now = std::chrono::high_resolution_clock::now();                    \
+      auto delay =                                                             \
+          std::chrono::duration_cast<std::chrono::milliseconds>(now - time);   \
+      if (delay > timeout) {                                                   \
+        FAIL() << "more than " << #timeout << " passed and condition "         \
+               << #statement << " was still not true";                         \
+      }                                                                        \
+      std::this_thread::sleep_for(0.05s);                                      \
+      { else_action; }                                                         \
+    }                                                                          \
+  }
+
+void TryAssertUntilTimeout(std::function<bool()> evaluation,
+                           std::chrono::seconds timeout) {
+  auto time = std::chrono::high_resolution_clock::now();
+  while (!evaluation()) {
+    auto now = std::chrono::high_resolution_clock::now();
+    auto delay =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - time);
+    if (delay > timeout) {
+      FAIL() << "more than " << timeout.count()
+             << " seconds passed and condition was still not true";
+    }
+    std::this_thread::sleep_for(0.05s);
+  }
+}
 
 SharedWebSocketPeer SetupWebSocketPeer(SharedJobManager job_manager, int port) {
   SharedBroker message_broker = MessagingFactory::CreateBroker(job_manager);
@@ -101,8 +133,18 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
   SendMessageAndWait(message, peer2, "ws://127.0.0.1:9003");
 
   job_manager->InvokeCycleAndWait();
-  ASSERT_EQ(test_consumer_1->counter, 1);
-  ASSERT_EQ(test_consumer_2->counter, 1);
+  TryAssertUntilTimeout(
+      [&] {
+        job_manager->InvokeCycleAndWait();
+        return test_consumer_1->counter == 1;
+      },
+      10s);
+  TryAssertUntilTimeout(
+      [&] {
+        job_manager->InvokeCycleAndWait();
+        return test_consumer_2->counter == 1;
+      },
+      10s);
 }
 
 TEST(WebSockets, websockets_message_sending_1_to_n) {
@@ -131,7 +173,12 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
   }
 
   job_manager->InvokeCycleAndWait();
-  ASSERT_EQ(test_consumer_1->counter, 5);
+  TryAssertUntilTimeout(
+      [&] {
+        job_manager->InvokeCycleAndWait();
+        return test_consumer_1->counter == 5;
+      },
+      10s);
 }
 
 #endif /* WEBSOCKETPEERTEST_H */

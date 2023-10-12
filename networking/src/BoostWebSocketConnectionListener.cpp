@@ -109,6 +109,12 @@ void BoostWebSocketConnectionListener::ProcessTcpConnection(
     return;
   }
 
+  if (!socket.is_open()) {
+    LOG_ERR("server was not able to accept TCP connection for web-socket "
+            "stream: TCP connection has already been closed");
+    return;
+  }
+
   auto remote_endpoint = socket.remote_endpoint();
   auto remote_endpoint_address = remote_endpoint.address();
 
