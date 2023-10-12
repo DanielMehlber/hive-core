@@ -7,5 +7,6 @@ CMakeFiles
 
 .vscode
 .kdev4
-
+.idea
 .VSCodeCounter
+CMakeUserPresets.json
