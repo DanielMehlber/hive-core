@@ -32,20 +32,18 @@ private:
   void CleanUpSubscribers();
 
 public:
-  JobBasedMessageBroker(std::shared_ptr<JobManager> job_manager);
-  virtual ~JobBasedMessageBroker();
+  explicit JobBasedMessageBroker(std::shared_ptr<JobManager> job_manager);
+  ~JobBasedMessageBroker() override;
 
-  virtual void PublishMessage(SharedMessage event) override;
-  virtual bool HasSubscriber(const std::string &listener_id,
-                             const std::string &topic) const override;
-  virtual void AddSubscriber(std::weak_ptr<IMessageSubscriber> listener,
-                             const std::string &topic) override;
-  virtual void
-  RemoveSubscriber(std::weak_ptr<IMessageSubscriber> listener) override;
-  virtual void
-  RemoveSubscriberFromTopic(std::weak_ptr<IMessageSubscriber> listener,
-                            const std::string &topic) override;
-  virtual void RemoveAllSubscribers() override;
+  void PublishMessage(SharedMessage event) override;
+  bool HasSubscriber(const std::string &listener_id,
+                     const std::string &topic) const override;
+  void AddSubscriber(std::weak_ptr<IMessageSubscriber> listener,
+                     const std::string &topic) override;
+  void RemoveSubscriber(std::weak_ptr<IMessageSubscriber> listener) override;
+  void RemoveSubscriberFromTopic(std::weak_ptr<IMessageSubscriber> listener,
+                                 const std::string &topic) override;
+  void RemoveAllSubscribers() override;
 };
 } // namespace messaging::impl
 

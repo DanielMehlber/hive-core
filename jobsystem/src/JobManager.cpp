@@ -109,7 +109,7 @@ void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
   WaitForCompletion(counter);
 }
 
-size_t jobsystem::JobManager::GetTotalCyclesCount() noexcept {
+size_t jobsystem::JobManager::GetTotalCyclesCount() const noexcept {
   return m_total_cycle_count;
 }
 
@@ -180,7 +180,7 @@ void tryRemoveJobWithIdFromQueue(const std::string &id,
   while (!queue.empty()) {
     auto job = queue.front();
     queue.pop();
-    bool should_remove_job = job->GetId().compare(id) == 0;
+    bool should_remove_job = job->GetId() == id;
     if (!should_remove_job) {
       new_queue.push(job);
     }

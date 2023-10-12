@@ -27,14 +27,13 @@ private:
   void LoadResourcesWorker();
 
 public:
-  ThreadPoolResourceManager(size_t loading_thread_count = 1);
+  explicit ThreadPoolResourceManager(size_t loading_thread_count = 1);
   ~ThreadPoolResourceManager();
 
-  virtual void RegisterLoader(std::shared_ptr<IResourceLoader> loader) override;
-  virtual void UnregisterLoader(const std::string &id) override;
+  void RegisterLoader(std::shared_ptr<IResourceLoader> loader) override;
+  void UnregisterLoader(const std::string &id) override;
 
-  virtual std::future<SharedResource>
-  LoadResource(const std::string &uri) override;
+  std::future<SharedResource> LoadResource(const std::string &uri) override;
 };
 
 } // namespace resourcemgmt

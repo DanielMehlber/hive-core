@@ -13,7 +13,7 @@ public:
    * registered its interest in.
    * @param event event that must be handled
    */
-  virtual void HandleMessage(const SharedMessage event) = 0;
+  virtual void HandleMessage(SharedMessage event) = 0;
 
   /**
    * @brief Get id of this listener instance

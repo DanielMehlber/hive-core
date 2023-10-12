@@ -9,7 +9,7 @@ namespace messaging {
 
 class IMessageBroker {
 public:
-  virtual ~IMessageBroker() {}
+  virtual ~IMessageBroker() = default;
   /**
    * @brief Triggers an event and transfers it to all registered listeners.
    * @param event event that must be triggered

@@ -19,7 +19,7 @@ BoostWebSocketConnectionEstablisher::BoostWebSocketConnectionEstablisher(
     std::shared_ptr<boost::asio::io_context> execution_context,
     props::SharedPropertyProvider provider,
     std::function<void(std::string, stream_type &&)> connection_consumer)
-    : m_resolver{asio::make_strand(*execution_context.get())},
+    : m_resolver{asio::make_strand(*execution_context)},
       m_execution_context{execution_context},
       m_connection_consumer{connection_consumer} {}
 
@@ -64,21 +64,20 @@ void BoostWebSocketConnectionEstablisher::ProcessResolvedHostnameOfServer(
     return;
   }
 
-  auto stream = std::make_shared<stream_type>(
-      asio::make_strand(*m_execution_context.get()));
+  auto stream =
+      std::make_shared<stream_type>(asio::make_strand(*m_execution_context));
   // create new stream that will be processed in further asynchronous steps
 
   // Set the timeout for the operation
-  beast::get_lowest_layer(*stream.get())
-      .expires_after(std::chrono::seconds(30));
+  beast::get_lowest_layer(*stream).expires_after(std::chrono::seconds(30));
 
   // Make the connection on the IP address we get from a lookup
-  beast::get_lowest_layer(*stream.get())
-      .async_connect(results, beast::bind_front_handler(
-                                  &BoostWebSocketConnectionEstablisher::
-                                      ProcessEstablishedConnectionToServer,
-                                  shared_from_this(),
-                                  std::move(connection_promise), uri, stream));
+  beast::get_lowest_layer(*stream).async_connect(
+      results,
+      beast::bind_front_handler(&BoostWebSocketConnectionEstablisher::
+                                    ProcessEstablishedConnectionToServer,
+                                shared_from_this(),
+                                std::move(connection_promise), uri, stream));
 }
 
 void BoostWebSocketConnectionEstablisher::ProcessEstablishedConnectionToServer(
@@ -104,7 +103,7 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedConnectionToServer(
 
   // Turn off the timeout on the tcp_stream, because
   // the websocket stream has its own timeout system.
-  beast::get_lowest_layer(*stream.get()).expires_never();
+  beast::get_lowest_layer(*stream).expires_never();
 
   // Set suggested timeout settings for the websocket
   stream->set_option(
@@ -150,7 +149,7 @@ void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
            << address.to_string() << " on port " << port);
 
   // consume connection
-  m_connection_consumer(uri, std::move(*stream.get()));
+  m_connection_consumer(uri, std::move(*stream));
 
   // notify future about resolution of promise
   connection_promise.set_value();

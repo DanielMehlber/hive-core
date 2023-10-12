@@ -24,7 +24,7 @@ protected:
   void NotifyListenersAboutChange(const std::string &path) const;
 
 public:
-  PropertyProvider(messaging::SharedBroker message_broker);
+  explicit PropertyProvider(messaging::SharedBroker message_broker);
   virtual ~PropertyProvider();
 
   /**
@@ -35,8 +35,7 @@ public:
    * @param value new value of the property. If the property already exists, the
    * old value will be overwritten.
    */
-  template <typename PropType>
-  void Set(const std::string &key, const PropType value);
+  template <typename PropType> void Set(const std::string &key, PropType value);
 
   /**
    * @brief Get value of some property (if it exists)
@@ -61,7 +60,7 @@ public:
    * not exist
    */
   template <typename PropType>
-  PropType GetOrElse(const std::string &key, const PropType value);
+  PropType GetOrElse(const std::string &key, PropType value);
 
   /**
    * @brief Registeres a property listener for a concrete property (if the path

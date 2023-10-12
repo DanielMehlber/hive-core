@@ -20,7 +20,7 @@ public:
   Resource() = delete;
 
   template <typename ResourceType>
-  Resource(std::shared_ptr<ResourceType> content_ptr);
+  explicit Resource(std::shared_ptr<ResourceType> content_ptr);
 
   template <typename Type> std::shared_ptr<Type> ExtractAsType();
 };

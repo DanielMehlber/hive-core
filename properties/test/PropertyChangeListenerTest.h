@@ -13,14 +13,14 @@ private:
   unsigned int m_change_notification_received{0};
 
 public:
-  virtual void ProcessPropertyChange(const std::string &key) noexcept {
+  void ProcessPropertyChange(const std::string &key) noexcept override {
     m_change_notification_received++;
     LOG_DEBUG("received property change notification for "
               << key << " for a total of " << m_change_notification_received
               << " times");
   }
 
-  unsigned int GetChangeNotificationsReceived() {
+  unsigned int GetChangeNotificationsReceived() const {
     return m_change_notification_received;
   }
 };

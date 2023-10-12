@@ -4,6 +4,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/stacktrace.hpp>
 #include <sstream>
+#include <utility>
 
 class ExceptionBase : public std::exception {
 protected:
@@ -12,20 +13,18 @@ protected:
 
 public:
   ExceptionBase(const std::stringstream &message,
-                const boost::stacktrace::stacktrace &stacktrace)
-      : m_stacktrace_print{stacktrace}, m_message{message.str()} {}
+                boost::stacktrace::stacktrace stacktrace)
+      : m_stacktrace_print{std::move(stacktrace)}, m_message{message.str()} {}
 
-  virtual const char *what() const noexcept override {
-    return m_message.c_str();
-  }
+  const char *what() const noexcept override { return m_message.c_str(); }
 
   virtual const char *get_type() const noexcept = 0;
 
-  const std::string to_string() {
-    std::stringstream __ss;
-    __ss << "Caught " << get_type() << ": " << m_message << std::endl;
-    __ss << "Stacktrace: " << std::endl << m_stacktrace_print << std::endl;
-    return __ss.str();
+  std::string to_string() {
+    std::stringstream _ss;
+    _ss << "Caught " << get_type() << ": " << m_message << std::endl;
+    _ss << "Stacktrace: " << std::endl << m_stacktrace_print << std::endl;
+    return _ss.str();
   }
 };
 

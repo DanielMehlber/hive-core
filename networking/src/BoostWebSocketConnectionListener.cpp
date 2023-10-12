@@ -31,7 +31,7 @@ void BoostWebSocketConnectionListener::Init() {
 
   // setup acceptor which listens for incoming connections asynchronously
   m_incoming_connection_acceptor =
-      std::make_unique<tcp::acceptor>(*m_execution_context.get());
+      std::make_unique<tcp::acceptor>(*m_execution_context);
 
   beast::error_code error_code;
 
@@ -93,7 +93,7 @@ void BoostWebSocketConnectionListener::StartAcceptingAnotherConnection() {
             << m_local_endpoint->port());
   // Accept incoming connections
   m_incoming_connection_acceptor->async_accept(
-      asio::make_strand(*m_execution_context.get()),
+      asio::make_strand(*m_execution_context),
       beast::bind_front_handler(
           &BoostWebSocketConnectionListener::ProcessTcpConnection,
           shared_from_this()));
@@ -158,7 +158,7 @@ void BoostWebSocketConnectionListener::ProcessWebSocketHandshake(
 
   LOG_INFO("web-socket connection established by " << address.to_string() << ":"
                                                    << port);
-  m_connection_consumer(host, std::move(*current_stream.get()));
+  m_connection_consumer(host, std::move(*current_stream));
 
   StartAcceptingAnotherConnection();
 }

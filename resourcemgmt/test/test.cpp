@@ -14,12 +14,12 @@ public:
   DummyLoader(std::chrono::duration<long double> delay = 0.5s)
       : m_delay{delay} {};
 
-  virtual const std::string &GetId() const noexcept {
+  const std::string &GetId() const noexcept override {
     const static std::string id = "dummy";
     return id;
   };
 
-  virtual SharedResource Load(const std::string &uri) {
+  SharedResource Load(const std::string &uri) override {
     std::this_thread::sleep_for(m_delay);
     return ResourceFactory::CreateSharedResource<std::string>("dummy");
   };
@@ -27,12 +27,12 @@ public:
 
 class AnotherDummyLoader : public IResourceLoader {
 public:
-  virtual const std::string &GetId() const noexcept {
+  const std::string &GetId() const noexcept override {
     const static std::string id = "dummy";
     return id;
   };
 
-  virtual SharedResource Load(const std::string &uri) {
+  SharedResource Load(const std::string &uri) override {
     return ResourceFactory::CreateSharedResource<std::string>("dummy");
   };
 };
@@ -47,12 +47,10 @@ TEST(ResourceMgmt, register_loader) {
   future.wait();
   auto result = future.get()->ExtractAsType<std::string>();
 
-  ASSERT_TRUE(result->compare("dummy") == 0);
+  ASSERT_TRUE(*result == "dummy");
 
   manager->UnregisterLoader(dummy_loader->GetId());
-  ASSERT_THROW(std::future<SharedResource> future =
-                   manager->LoadResource("dummy://hallo"),
-               ResourceLoaderNotFound);
+  ASSERT_THROW(manager->LoadResource("dummy://hallo"), ResourceLoaderNotFound);
 }
 
 TEST(ResoureMgmt, loading_multiple) {
@@ -71,7 +69,7 @@ TEST(ResoureMgmt, loading_multiple) {
   for (auto &future : futures) {
     future.wait();
     auto result = future.get()->ExtractAsType<std::string>();
-    ASSERT_TRUE(result->compare("dummy") == 0);
+    ASSERT_TRUE(*result == "dummy");
   }
 }
 

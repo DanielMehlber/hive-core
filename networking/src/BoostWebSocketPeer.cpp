@@ -18,10 +18,9 @@ BoostWebSocketPeer::BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
 
   bool init_server_at_startup =
       properties->GetOrElse("net.ws.server.auto-init", true);
-  size_t thread_count = properties->GetOrElse<size_t>("net.ws.threads", 1);
-  size_t local_endpont_port =
-      properties->GetOrElse<size_t>("net.ws.port", 9000);
-  std::string local_endpoint_address =
+  auto thread_count = properties->GetOrElse<size_t>("net.ws.threads", 1);
+  auto local_endpont_port = properties->GetOrElse<size_t>("net.ws.port", 9000);
+  auto local_endpoint_address =
       properties->GetOrElse<std::string>("net.ws.address", "127.0.0.1");
 
   m_local_endpoint = std::make_shared<boost::asio::ip::tcp::endpoint>(
@@ -115,7 +114,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   WebSocketMessageConverter converter;
   SharedWebSocketMessage message;
   try {
-    message = converter.FromJson(data);
+    message = networking::websockets::WebSocketMessageConverter::FromJson(data);
   } catch (const MessagePayloadInvalidException &ex) {
     LOG_WARN("message received from host "
              << over_connection->GetRemoteHostAddress()

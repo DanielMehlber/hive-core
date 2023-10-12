@@ -26,4 +26,4 @@ PropertyChangeListener::PropertyChangeListener()
     : m_property_listener_id{
           boost::uuids::to_string(boost::uuids::random_generator()())} {};
 
-PropertyChangeListener::~PropertyChangeListener() {}
+PropertyChangeListener::~PropertyChangeListener() = default;

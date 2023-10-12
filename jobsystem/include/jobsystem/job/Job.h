@@ -56,8 +56,8 @@ protected:
 public:
   Job(std::function<JobContinuation(JobContext *)>, const std::string &id,
       JobExecutionPhase phase = MAIN);
-  Job(std::function<JobContinuation(JobContext *)>,
-      JobExecutionPhase phase = MAIN);
+  explicit Job(std::function<JobContinuation(JobContext *)>,
+               JobExecutionPhase phase = MAIN);
   virtual ~Job() { FinishJob(); };
 
   /**

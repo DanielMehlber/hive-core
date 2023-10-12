@@ -33,9 +33,9 @@ protected:
 
 public:
   Message() = delete;
-  Message(const std::string &topic)
+  explicit Message(const std::string &topic)
       : topic{topic}, m_id{boost::uuids::random_generator()()} {};
-  virtual ~Message(){};
+  virtual ~Message() = default;
 
   uuid GetId() const noexcept;
   template <typename T> void SetPayload(const std::string &key, T value);

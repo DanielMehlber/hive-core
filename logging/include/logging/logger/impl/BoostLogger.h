@@ -10,12 +10,12 @@ public:
   BoostLogger();
   virtual ~BoostLogger();
 
-  virtual void Init() final override;
-  virtual void ShutDown() final override;
-  virtual void Info(const std::string &message) const noexcept final override;
-  virtual void Warn(const std::string &message) const noexcept final override;
-  virtual void Error(const std::string &message) const noexcept final override;
-  virtual void Debug(const std::string &message) const noexcept final override;
+  void Init() final;
+  void ShutDown() final;
+  void Info(const std::string &message) const noexcept final;
+  void Warn(const std::string &message) const noexcept final;
+  void Error(const std::string &message) const noexcept final;
+  void Debug(const std::string &message) const noexcept final;
 };
 
 } // namespace logging::logger::impl

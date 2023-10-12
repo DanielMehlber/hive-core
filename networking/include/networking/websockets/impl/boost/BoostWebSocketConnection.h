@@ -54,6 +54,14 @@ private:
   void OnMessageReceived(boost::beast::error_code error_code,
                          std::size_t bytes_transferred);
 
+  /**
+   * Callback function that will be called when a message has been sent to some
+   * remote host (or if that operation has failed)
+   * @param promise promise that must be resolved
+   * @param message message that was sent (or maybe not)
+   * @param error_code status indicating the success of sending the message
+   * @param bytes_transferred number of bytes that have been sent
+   */
   void OnMessageSent(std::promise<void> &&promise,
                      SharedWebSocketMessage message,
                      boost::beast::error_code error_code,
@@ -73,6 +81,10 @@ public:
       std::function<void(const std::string &,
                          std::shared_ptr<BoostWebSocketConnection>)>
           on_message_received);
+
+  /**
+   * Shuts down the connection
+   */
   ~BoostWebSocketConnection();
 
   /**
@@ -95,8 +107,16 @@ public:
    */
   std::future<void> Send(SharedWebSocketMessage message);
 
+  /**
+   * @return address of the connected remote endpoint
+   */
   std::string GetRemoteHostAddress() const;
 
+  /**
+   * Checks if the connected endpoint is reachable, i.e. if the connection is
+   * still standing.
+   * @return true, if the connection can be used for sending/receiving messages
+   */
   bool IsUsable() const;
 };
 

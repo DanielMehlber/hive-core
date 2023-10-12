@@ -34,12 +34,19 @@ protected:
   std::map<std::string, std::string> m_attributes;
 
 public:
-  WebSocketMessage(const std::string &message_type);
+  explicit WebSocketMessage(const std::string &message_type);
   WebSocketMessage(const std::string &message_type, const std::string &id);
   virtual ~WebSocketMessage();
 
+  /**
+   * @return unique id of this message
+   */
   std::string GetId() const noexcept;
 
+  /**
+   * @return type of this message
+   * @note this attribute is used to find the according message consumer
+   */
   std::string GetType() const noexcept;
 
   /**

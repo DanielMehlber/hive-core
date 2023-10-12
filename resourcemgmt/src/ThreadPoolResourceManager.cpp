@@ -73,7 +73,8 @@ ThreadPoolResourceManager::LoadResource(const std::string &uri) {
   std::string resource_loader_id;
   std::string resource_url;
 
-  bool is_resource_loader_specified = protocol_serperator_index >= 0;
+  bool is_resource_loader_specified =
+      protocol_serperator_index != std::string::npos;
   if (is_resource_loader_specified) {
     resource_loader_id = uri.substr(0, protocol_serperator_index);
     resource_url = uri.substr(protocol_serperator_index + 3);

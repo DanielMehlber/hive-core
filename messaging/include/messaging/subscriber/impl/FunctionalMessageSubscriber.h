@@ -17,11 +17,11 @@ protected:
 
 public:
   FunctionalMessageSubscriber() = delete;
-  FunctionalMessageSubscriber(
+  explicit FunctionalMessageSubscriber(
       const std::function<void(const SharedMessage)> &func)
       : m_function{func},
         m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {};
-  FunctionalMessageSubscriber(
+  explicit FunctionalMessageSubscriber(
       const std::function<void(const SharedMessage)> &&func)
       : m_function{func},
         m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {};
@@ -31,8 +31,8 @@ public:
     return FunctionalMessageSubscriber(func);
   };
 
-  virtual void HandleMessage(const SharedMessage event) { m_function(event); }
-  virtual std::string GetId() const override { return m_id; };
+  void HandleMessage(const SharedMessage event) override { m_function(event); }
+  std::string GetId() const override { return m_id; };
 };
 
 } // namespace messaging

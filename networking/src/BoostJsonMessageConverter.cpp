@@ -30,9 +30,9 @@ networking::websockets::WebSocketMessageConverter::FromJson(
     // Extract 'attributes' as a map
     std::map<std::string, std::string> attributes;
     json::object attrObj = message_body.at("attributes").as_object();
-    for (auto it = attrObj.begin(); it != attrObj.end(); ++it) {
-      std::string key = it->key();
-      std::string value = it->value().as_string().c_str();
+    for (auto &it : attrObj) {
+      std::string key = it.key();
+      std::string value = it.value().as_string().c_str();
       parsed_message->SetAttribute(key, value);
     }
 

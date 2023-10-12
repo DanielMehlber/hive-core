@@ -4,8 +4,13 @@
 #include "NetworkingFactory.h"
 #include "jobsystem/JobSystem.h"
 #include "properties/PropertyProvider.h"
+#include <memory>
 
 namespace networking {
+
+/**
+ * @brief Central networking manager that provides connectivity.
+ */
 class NetworkingManager {
 private:
   props::SharedPropertyProvider m_property_provider;
@@ -19,6 +24,9 @@ public:
   NetworkingManager(props::SharedPropertyProvider properties,
                     jobsystem::SharedJobManager job_manager);
 };
+
+typedef std::shared_ptr<NetworkingManager> SharedNetworkingManager;
+
 } // namespace networking
 
 #endif /* NETWORKINGMANAGER_H */

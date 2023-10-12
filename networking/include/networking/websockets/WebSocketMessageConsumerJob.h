@@ -7,13 +7,14 @@
 namespace networking::websockets {
 
 /**
- * @brief Job that uses a consumer to process a received message.
+ * @brief A job that, when scheduled, makes a message consumer process a message
+ * of a certain type.
  */
 class WebSocketMessageConsumerJob : public jobsystem::job::Job {
 protected:
   const SharedWebSocketMessage m_message;
   const SharedWebSocketMessageConsumer m_consumer;
-
+  
   jobsystem::job::JobContinuation
   ConsumeMessage(jobsystem::JobContext *context);
 

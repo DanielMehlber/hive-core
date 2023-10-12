@@ -16,7 +16,7 @@ TEST(PropertyTest, prop_get_set) {
   provider.Set<std::string>("example.test.value", "test");
   auto optional_value = provider.Get<std::string>("example.test.value");
   ASSERT_TRUE(optional_value.has_value());
-  ASSERT_TRUE(optional_value.value().compare("test") == 0);
+  ASSERT_TRUE(optional_value.value() == "test");
 }
 
 int main(int argc, char **argv) {

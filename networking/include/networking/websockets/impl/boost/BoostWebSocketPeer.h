@@ -107,19 +107,18 @@ public:
                      props::SharedPropertyProvider properties);
   virtual ~BoostWebSocketPeer();
 
-  virtual void
-  AddConsumer(std::weak_ptr<IWebSocketMessageConsumer> consumer) override;
+  void AddConsumer(std::weak_ptr<IWebSocketMessageConsumer> consumer) override;
 
-  virtual std::list<SharedWebSocketMessageConsumer>
+  std::list<SharedWebSocketMessageConsumer>
   GetConsumersOfType(const std::string &type_name) noexcept override;
 
-  virtual std::future<void> Send(const std::string &uri,
-                                 SharedWebSocketMessage message) override;
+  std::future<void> Send(const std::string &uri,
+                         SharedWebSocketMessage message) override;
 
-  virtual std::future<void>
+  std::future<void>
   EstablishConnectionTo(const std::string &uri) noexcept override;
 
-  virtual void CloseConnectionTo(const std::string &uri) noexcept override;
+  void CloseConnectionTo(const std::string &uri) noexcept override;
 };
 } // namespace networking::websockets
 

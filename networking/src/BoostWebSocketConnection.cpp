@@ -103,7 +103,8 @@ BoostWebSocketConnection::Send(SharedWebSocketMessage message) {
   std::future<void> sending_future = sending_promise.get_future();
 
   WebSocketMessageConverter converter;
-  std::string payload = converter.ToJson(message);
+  std::string payload =
+      networking::websockets::WebSocketMessageConverter::ToJson(message);
 
   m_socket.async_write(
       asio::buffer(payload),

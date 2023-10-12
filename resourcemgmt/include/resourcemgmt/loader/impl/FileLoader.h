@@ -11,7 +11,7 @@ public:
    * resource loader when the resource manager receives a resource request.
    * @return id of this loader
    */
-  virtual const std::string &GetId() const noexcept override;
+  const std::string &GetId() const noexcept override;
 
   /**
    * @brief Loads some resource of arbitrary type (e.g. from filesystem or
@@ -23,7 +23,7 @@ public:
    * @param uri resource locator
    * @return the loaded resource
    */
-  virtual SharedResource Load(const std::string &uri) override;
+  SharedResource Load(const std::string &uri) override;
 };
 
 inline const std::string &FileLoader::GetId() const noexcept {

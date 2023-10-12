@@ -7,7 +7,7 @@ using namespace props;
 PropertyProvider::PropertyProvider(messaging::SharedBroker message_broker)
     : m_message_broker{message_broker} {}
 
-PropertyProvider::~PropertyProvider() {}
+PropertyProvider::~PropertyProvider() = default;
 
 /*
  * if the path is 'this.is.an.example', sub-paths are
@@ -16,10 +16,10 @@ PropertyProvider::~PropertyProvider() {}
  * - 'this.is.an'
  * - 'this.is.an.eample'
  */
-std::vector<std::string> getSubpaths(std::string path, char delimeter) {
+std::vector<std::string> getSubpaths(const std::string &path, char delimeter) {
   std::vector<std::string> subpaths;
 
-  if (path.size() > 0) {
+  if (!path.empty()) {
     size_t index = 0;
     while (true) {
       index = path.find_first_of(delimeter, index + 1);

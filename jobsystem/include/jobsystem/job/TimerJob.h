@@ -35,14 +35,14 @@ public:
            std::chrono::duration<double> time, JobExecutionPhase phase = MAIN);
   TimerJob(std::function<JobContinuation(JobContext *)>,
            std::chrono::duration<double> time, JobExecutionPhase phase = MAIN);
-  virtual ~TimerJob(){};
+  ~TimerJob() override = default;
 
   /**
    * @brief Restarts the timer by resetting the start point
    */
   void RestartTimer();
 
-  virtual bool IsReadyForExecution(const JobContext &context) final override;
+  bool IsReadyForExecution(const JobContext &context) final;
 };
 } // namespace jobsystem::job
 

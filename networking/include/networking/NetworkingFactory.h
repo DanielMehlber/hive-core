@@ -12,13 +12,24 @@ using namespace networking::websockets;
 #endif
 
 namespace networking {
+/**
+ * Constructs various objects of the networking module
+ */
 class NetworkingFactory {
 public:
+  /**
+   * @brief Create new web-socket peer implementation
+   * @tparam ServerImpl Implementation type of IWebSocketPeer interface
+   * @tparam Args Arguments types
+   * @param args Arguments that will be passed to the implementation's
+   * constructor
+   * @return a shared web-socket peer implementation
+   */
   template <typename ServerImpl = DEFAULT_WEBSOCKET_PEER_IMPL, typename... Args>
   static SharedWebSocketPeer CreateWebSocketPeer(Args... args);
 };
 
-template <typename ServerImpl = DEFAULT_WEBSOCKET_PEER_IMPL, typename... Args>
+template <typename ServerImpl, typename... Args>
 inline SharedWebSocketPeer
 NetworkingFactory::CreateWebSocketPeer(Args... args) {
   return std::static_pointer_cast<IWebSocketPeer>(

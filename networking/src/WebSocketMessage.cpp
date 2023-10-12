@@ -13,7 +13,7 @@ WebSocketMessage::WebSocketMessage(const std::string &message_type,
                                    const std::string &id)
     : m_type{message_type}, m_uuid{id} {}
 
-WebSocketMessage::~WebSocketMessage() {}
+WebSocketMessage::~WebSocketMessage() = default;
 
 void WebSocketMessage::SetAttribute(const std::string &attribute_key,
                                     const std::string &attribute_value) {
@@ -42,9 +42,9 @@ std::set<std::string> WebSocketMessage::GetAttributeNames() const noexcept {
 
 bool WebSocketMessage::EqualsTo(
     std::shared_ptr<WebSocketMessage> other) const noexcept {
-  if (m_uuid.compare(other->m_uuid) != 0) {
+  if (m_uuid != other->m_uuid) {
     return false;
-  } else if (m_type.compare(other->m_type) != 0) {
+  } else if (m_type != other->m_type) {
     return false;
   } else if (m_attributes.size() != other->m_attributes.size()) {
     return false;
@@ -58,7 +58,7 @@ bool WebSocketMessage::EqualsTo(
       return false;
     }
 
-    if (value.compare(other->m_attributes.at(name)) != 0) {
+    if (value != other->m_attributes.at(name)) {
       return false;
     }
   }

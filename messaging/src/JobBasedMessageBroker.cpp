@@ -64,8 +64,7 @@ bool messaging::impl::JobBasedMessageBroker::HasSubscriber(
   if (m_topic_subscribers.contains(topic)) {
     const auto &listener_list = m_topic_subscribers.at(topic);
     for (auto listener : listener_list) {
-      if (!listener.expired() &&
-          listener.lock()->GetId().compare(listener_id) == 0) {
+      if (!listener.expired() && listener.lock()->GetId() == listener_id) {
         return true;
       }
     }

@@ -25,7 +25,7 @@ public:
    * @brief Get number of current job cycle
    * @return current job cycle number
    */
-  size_t GetCycleNumber() noexcept;
+  size_t GetCycleNumber() const noexcept;
 
   /**
    * @brief Get the managing instance of the current job execution
@@ -34,7 +34,7 @@ public:
   JobManager *GetJobManager() noexcept;
 };
 
-inline size_t jobsystem::JobContext::GetCycleNumber() noexcept {
+inline size_t jobsystem::JobContext::GetCycleNumber() const noexcept {
   return m_cycle_number;
 }
 
