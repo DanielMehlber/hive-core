@@ -27,7 +27,7 @@ public:
         m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {};
 
   FunctionalMessageSubscriber
-  operator=(std::function<void(const SharedMessage)> func) {
+  operator=(const std::function<void(const SharedMessage)> &func) {
     return FunctionalMessageSubscriber(func);
   };
 

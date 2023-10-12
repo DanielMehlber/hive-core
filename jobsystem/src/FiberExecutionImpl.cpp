@@ -54,17 +54,13 @@ void FiberExecutionImpl::Start(JobManager *manager) {
       std::make_unique<boost::fibers::buffered_channel<std::function<void()>>>(
           1024);
 
-  std::shared_ptr<boost::fibers::barrier> m_init_sync_barrier =
-      std::make_shared<boost::fibers::barrier>(m_worker_thread_count + 1);
-  // Spawn worker threads: They will add themselfes to the workforce
+  // Spawn worker threads: They will add themselves to the workforce
   for (int i = 0; i < m_worker_thread_count; i++) {
-    auto worker = std::make_shared<std::thread>(std::bind(
-        &FiberExecutionImpl::ExecuteWorker, this, m_init_sync_barrier));
+    auto worker = std::make_shared<std::thread>(
+        std::bind(&FiberExecutionImpl::ExecuteWorker, this));
     m_worker_threads.push_back(worker);
   }
 
-  // wait until all threads have started
-  // m_init_sync_barrier->wait();
   m_current_state = JobExecutionState::RUNNING;
   m_managing_instance = manager;
 }
@@ -87,20 +83,16 @@ void FiberExecutionImpl::Stop() {
   m_managing_instance = nullptr;
 }
 
-void FiberExecutionImpl::ExecuteWorker(
-    std::shared_ptr<boost::fibers::barrier> m_init_sync_barrier) {
+void FiberExecutionImpl::ExecuteWorker() {
 
   /*
-   * Work stealing = a scheduler takes fibers from other threads when it has no
+   * Work sharing = a scheduler takes fibers from other threads when it has no
    * work in its queue. Each scheduler is managing a thread, so this allows the
    * usage and collaboration of mutliple threads for execution.
    *
    * From this call on, the thread is a fiber iteself.
    */
   boost::fibers::use_scheduling_algorithm<boost::fibers::algo::shared_work>();
-
-  // wait for all worker threads to be ready
-  // m_init_sync_barrier->wait();
 
   /*
    * Remember: This is no longer a thread: It is a fiber. This is also not a

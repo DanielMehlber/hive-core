@@ -46,6 +46,7 @@ protected:
    * @brief All counters that track the progress of this job.
    */
   std::list<std::shared_ptr<JobCounter>> m_counters;
+  std::mutex m_counters_mutex;
 
   /**
    * @brief Notifies all counters that this job has finished and removes them
@@ -54,7 +55,7 @@ protected:
   void FinishJob();
 
 public:
-  Job(std::function<JobContinuation(JobContext *)>, const std::string &id,
+  Job(std::function<JobContinuation(JobContext *)>, std::string id,
       JobExecutionPhase phase = MAIN);
   explicit Job(std::function<JobContinuation(JobContext *)>,
                JobExecutionPhase phase = MAIN);

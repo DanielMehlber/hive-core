@@ -50,8 +50,7 @@ private:
    * @brief Processes jobs as fibers.
    * @note This is run by the worker threads
    */
-  void
-  ExecuteWorker(std::shared_ptr<boost::fibers::barrier> m_init_sync_barrier);
+  void ExecuteWorker();
 
 public:
   FiberExecutionImpl();

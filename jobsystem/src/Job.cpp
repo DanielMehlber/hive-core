@@ -15,13 +15,14 @@ JobContinuation Job::Execute(JobContext *context) {
 }
 
 void Job::AddCounter(std::shared_ptr<JobCounter> counter) {
+  std::unique_lock counter_lock(m_counters_mutex);
   counter->Increase();
   m_counters.push_back(counter);
 }
 
-Job::Job(std::function<JobContinuation(JobContext *)> workload,
-         const std::string &id, JobExecutionPhase phase)
-    : m_workload{workload}, m_id{id}, m_phase{phase} {}
+Job::Job(std::function<JobContinuation(JobContext *)> workload, std::string id,
+         JobExecutionPhase phase)
+    : m_workload{workload}, m_id{std::move(id)}, m_phase{phase} {}
 
 Job::Job(std::function<JobContinuation(JobContext *)> workload,
          JobExecutionPhase phase)
@@ -29,6 +30,7 @@ Job::Job(std::function<JobContinuation(JobContext *)> workload,
       m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {}
 
 void Job::FinishJob() {
+  std::unique_lock counter_lock(m_counters_mutex);
   while (!m_counters.empty()) {
     auto counter = m_counters.back();
     m_counters.pop_back();

@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "jobsystem/job/TimerJob.h"
 
 using namespace jobsystem::job;
@@ -5,11 +7,11 @@ using namespace jobsystem::job;
 TimerJob::TimerJob(std::function<JobContinuation(JobContext *)> workload,
                    const std::string &id, std::chrono::duration<double> time,
                    JobExecutionPhase phase)
-    : Job(workload, id), m_time{time} {}
+    : Job(workload, id, phase), m_time{time} {}
 
 TimerJob::TimerJob(std::function<JobContinuation(JobContext *)> workload,
                    std::chrono::duration<double> time, JobExecutionPhase phase)
-    : Job(workload), m_time{time} {}
+    : Job(workload, phase), m_time{time} {}
 
 void TimerJob::RestartTimer() {
   m_timer_start = std::chrono::high_resolution_clock::now();

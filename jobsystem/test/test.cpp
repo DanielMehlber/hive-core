@@ -132,6 +132,30 @@ TEST(JobSystem, jobs_kicking_jobs) {
   ASSERT_FALSE(jobDCompleted);
 }
 
+// Checks that no jobs are getting lost (due to data races)
+TEST(JobSystem, job_bulk) {
+  JobManager manager;
+  SharedJobCounter absolute_counter = JobSystemFactory::CreateCounter();
+
+  for (int i = 0; i < 20; i++) {
+    SharedJob job = JobSystemFactory::CreateJob(
+        [absolute_counter, &manager](JobContext *context) {
+          for (int i = 0; i < 10; i++) {
+            SharedJob job = JobSystemFactory::CreateJob(
+                [](JobContext *) { return JobContinuation::DISPOSE; });
+            job->AddCounter(absolute_counter);
+            manager.KickJob(job);
+          }
+          return JobContinuation::DISPOSE;
+        });
+    job->AddCounter(absolute_counter);
+    manager.KickJob(job);
+  }
+
+  manager.InvokeCycleAndWait();
+  ASSERT_TRUE(absolute_counter->IsFinished());
+}
+
 TEST(JobSystem, wait_for_job_inside_job) {
 // single threaded job implementations do not allow waiting inside jobs because
 // doing so is the only surefire way to deadlock the entire execution

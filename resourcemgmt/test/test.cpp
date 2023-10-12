@@ -11,7 +11,7 @@ private:
   std::chrono::duration<long double> m_delay;
 
 public:
-  DummyLoader(std::chrono::duration<long double> delay = 0.5s)
+  explicit DummyLoader(std::chrono::duration<long double> delay = 0.5s)
       : m_delay{delay} {};
 
   const std::string &GetId() const noexcept override {

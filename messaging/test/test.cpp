@@ -11,11 +11,11 @@ TEST(Messaging, receive_message) {
   bool message_received_c = false;
 
   auto subscriber_a = messaging::MessagingFactory::CreateSubscriber(
-      [&](const SharedMessage event) { message_received_a = true; });
+      [&](SharedMessage event) { message_received_a = true; });
   auto subscriber_b = messaging::MessagingFactory::CreateSubscriber(
-      [&](const SharedMessage event) { message_received_b = true; });
+      [&](SharedMessage event) { message_received_b = true; });
   auto subscriber_c = messaging::MessagingFactory::CreateSubscriber(
-      [&](const SharedMessage event) { message_received_c = true; });
+      [&](SharedMessage event) { message_received_c = true; });
 
   broker->AddSubscriber(subscriber_a, "test-event");
   broker->AddSubscriber(subscriber_b, "test-event");
@@ -38,9 +38,9 @@ TEST(Messaging, subscriber_unsubscribe) {
   std::atomic_int message_received_counter_b = 0;
 
   auto subscriber_a = messaging::MessagingFactory::CreateSubscriber(
-      [&](const SharedMessage event) { message_received_counter_a++; });
+      [&](SharedMessage event) { message_received_counter_a++; });
   auto subscriber_b = messaging::MessagingFactory::CreateSubscriber(
-      [&](const SharedMessage event) { message_received_counter_b++; });
+      [&](SharedMessage event) { message_received_counter_b++; });
 
   broker->AddSubscriber(subscriber_a, "test-event");
   broker->AddSubscriber(subscriber_b, "test-event");
@@ -67,14 +67,14 @@ TEST(Messaging, subscriber_destroyed) {
   std::atomic_int message_received_counter_b = 0;
 
   auto subscriber_a = messaging::MessagingFactory::CreateSubscriber(
-      [&](const SharedMessage event) { message_received_counter_a++; });
+      [&](SharedMessage event) { message_received_counter_a++; });
   broker->AddSubscriber(subscriber_a, "test-event");
 
   auto msg = messaging::MessagingFactory::CreateMessage("test-event");
 
   {
     auto subscriber_b = messaging::MessagingFactory::CreateSubscriber(
-        [&](const SharedMessage event) { message_received_counter_b++; });
+        [&](SharedMessage event) { message_received_counter_b++; });
     broker->AddSubscriber(subscriber_b, "test-event");
     broker->PublishMessage(msg);
     job_manager->InvokeCycleAndWait();

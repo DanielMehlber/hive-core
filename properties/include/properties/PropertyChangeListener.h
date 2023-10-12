@@ -18,7 +18,7 @@ class PropertyChangeListener : public messaging::IMessageSubscriber {
 protected:
   const std::string m_property_listener_id;
 
-  void HandleMessage(const messaging::SharedMessage message) override;
+  void HandleMessage(messaging::SharedMessage message) override;
   std::string GetId() const override;
 
 public:

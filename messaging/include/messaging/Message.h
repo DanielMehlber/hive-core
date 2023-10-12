@@ -33,8 +33,8 @@ protected:
 
 public:
   Message() = delete;
-  explicit Message(const std::string &topic)
-      : topic{topic}, m_id{boost::uuids::random_generator()()} {};
+  explicit Message(std::string topic)
+      : topic{std::move(topic)}, m_id{boost::uuids::random_generator()()} {};
   virtual ~Message() = default;
 
   uuid GetId() const noexcept;
