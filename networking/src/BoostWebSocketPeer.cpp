@@ -168,7 +168,12 @@ networking::websockets::BoostWebSocketPeer::GetConnection(
   const std::string connection_id = connectionIdFromUrl(uri).value();
   std::unique_lock lock(m_connections_mutex);
   if (m_connections.contains(connection_id)) {
-    return m_connections.at(connection_id);
+    auto connection = m_connections.at(connection_id);
+    if (connection->IsUsable()) {
+      return connection;
+    } else {
+      return {};
+    }
   } else {
     return {};
   }
@@ -195,9 +200,8 @@ void BoostWebSocketPeer::InitConnectionEstablisher() {
   }
 }
 
-std::future<void>
-BoostWebSocketPeer::Send(const std::string &uri,
-                         SharedWebSocketMessage message) noexcept {
+std::future<void> BoostWebSocketPeer::Send(const std::string &uri,
+                                           SharedWebSocketMessage message) {
   auto opt_connection = GetConnection(uri);
   if (opt_connection.has_value()) {
     return opt_connection.value()->Send(message);

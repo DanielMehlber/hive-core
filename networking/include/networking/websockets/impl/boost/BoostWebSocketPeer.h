@@ -113,9 +113,8 @@ public:
   virtual std::list<SharedWebSocketMessageConsumer>
   GetConsumersOfType(const std::string &type_name) noexcept override;
 
-  virtual std::future<void>
-  Send(const std::string &uri,
-       SharedWebSocketMessage message) noexcept override;
+  virtual std::future<void> Send(const std::string &uri,
+                                 SharedWebSocketMessage message) override;
 
   virtual std::future<void>
   EstablishConnectionTo(const std::string &uri) noexcept override;

@@ -59,8 +59,6 @@ private:
                      boost::beast::error_code error_code,
                      std::size_t bytes_transferred);
 
-  bool IsUsable() const;
-
 public:
   /**
    * @brief Constructs a new web-socket connection handler
@@ -98,6 +96,8 @@ public:
   std::future<void> Send(SharedWebSocketMessage message);
 
   std::string GetRemoteHostAddress() const;
+
+  bool IsUsable() const;
 };
 
 inline std::string BoostWebSocketConnection::GetRemoteHostAddress() const {

@@ -50,7 +50,7 @@ public:
    * contains exception if it failed.
    */
   virtual std::future<void> Send(const std::string &uri,
-                                 SharedWebSocketMessage message) noexcept = 0;
+                                 SharedWebSocketMessage message) = 0;
 
   /**
    * @brief Establishes connection with another socket server
