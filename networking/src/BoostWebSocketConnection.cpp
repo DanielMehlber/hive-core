@@ -31,7 +31,8 @@ void BoostWebSocketConnection::StartReceivingMessages() {
 }
 
 void BoostWebSocketConnection::OnMessageReceived(
-    beast::error_code error_code, std::size_t bytes_transferred) {
+    beast::error_code error_code,
+    [[maybe_unused]] std::size_t bytes_transferred) {
 
   // check for closing message
   if (error_code == websocket::error::closed ||
@@ -102,7 +103,6 @@ BoostWebSocketConnection::Send(SharedWebSocketMessage message) {
   std::promise<void> sending_promise;
   std::future<void> sending_future = sending_promise.get_future();
 
-  WebSocketMessageConverter converter;
   std::string payload =
       networking::websockets::WebSocketMessageConverter::ToJson(message);
 

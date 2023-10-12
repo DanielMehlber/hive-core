@@ -30,6 +30,7 @@ BoostWebSocketPeer::BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
 
   if (init_server_at_startup) {
     InitAndStartConnectionListener();
+    std::unique_lock running_lock(m_running_mutex);
     m_running = true;
   }
 
@@ -40,12 +41,14 @@ BoostWebSocketPeer::BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
 }
 
 BoostWebSocketPeer::~BoostWebSocketPeer() {
+  std::unique_lock running_lock(m_running_mutex);
   m_running = false;
+  running_lock.unlock();
 
   // close all endpoints
   std::unique_lock conn_lock(m_connections_mutex);
   m_connection_listener->ShutDown();
-  for (auto connection : m_connections) {
+  for (const auto &connection : m_connections) {
     connection.second->Close();
   }
   conn_lock.unlock();
@@ -111,13 +114,12 @@ void BoostWebSocketPeer::CleanUpConsumersOf(const std::string &type) noexcept {
 
 void BoostWebSocketPeer::ProcessReceivedMessage(
     std::string data, SharedBoostWebSocketConnection over_connection) {
-
+  std::unique_lock running_lock(m_running_mutex);
   if (!m_running) {
     return;
   }
 
   // convert payload into message
-  WebSocketMessageConverter converter;
   SharedWebSocketMessage message;
   try {
     message = networking::websockets::WebSocketMessageConverter::FromJson(data);
@@ -149,6 +151,7 @@ std::optional<std::string> connectionIdFromUrl(const std::string &url) {
 }
 
 void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
+  std::unique_lock running_lock(m_running_mutex);
   if (!m_running) {
     return;
   }
@@ -160,9 +163,9 @@ void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
                     std::placeholders::_1, std::placeholders::_2));
   connection->StartReceivingMessages();
 
-  std::unique_lock conn_lock(m_connections_mutex);
-
   auto connection_id = connectionIdFromUrl(url).value();
+
+  std::unique_lock conn_lock(m_connections_mutex);
   m_connections[connection_id] = connection;
 }
 

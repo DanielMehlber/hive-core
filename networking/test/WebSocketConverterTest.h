@@ -8,7 +8,6 @@
 using namespace networking::websockets;
 
 TEST(WebSockets, message_converter_serializing) {
-  WebSocketMessageConverter converter;
 
   SharedWebSocketMessage message =
       std::make_shared<WebSocketMessage>("some-type");

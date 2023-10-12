@@ -5,13 +5,12 @@
 
 using namespace networking::websockets;
 
-WebSocketMessage::WebSocketMessage(const std::string &message_type)
+WebSocketMessage::WebSocketMessage(std::string message_type)
     : m_type{message_type},
       m_uuid{boost::uuids::to_string(boost::uuids::random_generator()())} {}
 
-WebSocketMessage::WebSocketMessage(const std::string &message_type,
-                                   const std::string &id)
-    : m_type{message_type}, m_uuid{id} {}
+WebSocketMessage::WebSocketMessage(std::string message_type, std::string id)
+    : m_type{message_type}, m_uuid{std::move(id)} {}
 
 WebSocketMessage::~WebSocketMessage() = default;
 

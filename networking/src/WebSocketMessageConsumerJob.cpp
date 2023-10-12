@@ -1,5 +1,6 @@
 #include "networking/websockets/WebSocketMessageConsumerJob.h"
 #include <functional>
+#include <utility>
 
 using namespace networking::websockets;
 using namespace std::placeholders;
@@ -13,7 +14,7 @@ WebSocketMessageConsumerJob::WebSocketMessageConsumerJob(
 
 jobsystem::job::JobContinuation
 networking::websockets::WebSocketMessageConsumerJob::ConsumeMessage(
-    jobsystem::JobContext *context) {
+    [[maybe_unused]] jobsystem::JobContext *context) {
   m_consumer->ProcessReceivedMessage(m_message);
   return jobsystem::job::JobContinuation::DISPOSE;
 }

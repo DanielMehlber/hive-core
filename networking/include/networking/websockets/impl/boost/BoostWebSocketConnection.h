@@ -52,7 +52,7 @@ private:
    * @param bytes_transferred count of received bytes from the remote host
    */
   void OnMessageReceived(boost::beast::error_code error_code,
-                         std::size_t bytes_transferred);
+                         [[maybe_unused]] std::size_t bytes_transferred);
 
   /**
    * Callback function that will be called when a message has been sent to some

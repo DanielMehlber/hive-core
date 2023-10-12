@@ -30,7 +30,8 @@ private:
   /**
    * @brief Indicates if the web socket peer is currently running
    */
-  std::atomic_bool m_running{false};
+  bool m_running{false};
+  mutable std::mutex m_running_mutex;
 
   /**
    * @brief The job system is required to react to received messages

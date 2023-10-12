@@ -14,9 +14,9 @@ class WebSocketMessageConsumerJob : public jobsystem::job::Job {
 protected:
   const SharedWebSocketMessage m_message;
   const SharedWebSocketMessageConsumer m_consumer;
-  
+
   jobsystem::job::JobContinuation
-  ConsumeMessage(jobsystem::JobContext *context);
+  ConsumeMessage([[maybe_unused]] jobsystem::JobContext *context);
 
 public:
   WebSocketMessageConsumerJob(SharedWebSocketMessageConsumer consumer,

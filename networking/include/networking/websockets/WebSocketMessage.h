@@ -34,8 +34,8 @@ protected:
   std::map<std::string, std::string> m_attributes;
 
 public:
-  explicit WebSocketMessage(const std::string &message_type);
-  WebSocketMessage(const std::string &message_type, const std::string &id);
+  explicit WebSocketMessage(std::string message_type);
+  WebSocketMessage(std::string message_type, std::string id);
   virtual ~WebSocketMessage();
 
   /**

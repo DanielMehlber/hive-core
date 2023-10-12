@@ -25,12 +25,14 @@ SharedWebSocketPeer SetupWebSocketPeer(SharedJobManager job_manager, int port) {
 
 class TestConsumer : public IWebSocketMessageConsumer {
 public:
-  std::atomic<size_t> counter{0};
+  std::mutex counter_mutex;
+  size_t counter{0};
   const std::string GetMessageType() const noexcept override {
     return "test-type";
   }
   void ProcessReceivedMessage(
       SharedWebSocketMessage received_message) noexcept override {
+    std::unique_lock lock(counter_mutex);
     counter++;
   }
 };
