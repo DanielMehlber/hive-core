@@ -5,6 +5,7 @@ using namespace resourcemgmt;
 
 void ThreadPoolResourceManager::RegisterLoader(
     std::shared_ptr<IResourceLoader> loader) {
+  std::unique_lock registered_loaders_lock(m_registered_loaders_mutex);
   if (m_registered_loaders.contains(loader->GetId())) {
     THROW_EXCEPTION(DuplicateLoaderIdException,
                     "loader id '" << loader->GetId()
@@ -15,6 +16,7 @@ void ThreadPoolResourceManager::RegisterLoader(
 }
 
 void ThreadPoolResourceManager::UnregisterLoader(const std::string &id) {
+  std::unique_lock registered_loaders_lock(m_registered_loaders_mutex);
   m_registered_loaders.erase(id);
   LOG_DEBUG("resource loader '" << id << "' unregistered");
 }
@@ -83,6 +85,7 @@ ThreadPoolResourceManager::LoadResource(const std::string &uri) {
     resource_url = uri;
   }
 
+  std::unique_lock registered_loaders_lock(m_registered_loaders_mutex);
   bool resource_loader_exists =
       m_registered_loaders.contains(resource_loader_id);
 
@@ -94,6 +97,7 @@ ThreadPoolResourceManager::LoadResource(const std::string &uri) {
   }
 
   auto resource_loader = m_registered_loaders[resource_loader_id];
+  registered_loaders_lock.unlock();
 
   auto loading_promise = std::make_shared<std::promise<SharedResource>>();
   std::function<void()> loading_function = [loading_promise, resource_loader,

@@ -64,6 +64,7 @@ void BoostWebSocketPeer::AddConsumer(
   if (is_valid_consumer) {
     SharedWebSocketMessageConsumer shared_consumer = consumer.lock();
     const auto &consumer_message_type = shared_consumer->GetMessageType();
+    std::unique_lock consumers_lock(m_consumers_mutex);
     m_consumers[consumer_message_type].push_back(consumer);
     LOG_DEBUG("added web-socket message consumer for message type '"
               << consumer_message_type << "'");
@@ -76,11 +77,15 @@ void BoostWebSocketPeer::AddConsumer(
 std::list<SharedWebSocketMessageConsumer>
 BoostWebSocketPeer::GetConsumersOfType(const std::string &type_name) noexcept {
   std::list<SharedWebSocketMessageConsumer> ret_consumer_list;
+
+  std::unique_lock consumers_lock(m_consumers_mutex);
   if (m_consumers.contains(type_name)) {
     auto &consumer_list = m_consumers[type_name];
 
+    consumers_lock.unlock();
     // remove expired references to consumers
     CleanUpConsumersOf(type_name);
+    consumers_lock.lock();
 
     // collect all remaining consumers in the list
     for (auto consumer : consumer_list) {
@@ -95,6 +100,7 @@ BoostWebSocketPeer::GetConsumersOfType(const std::string &type_name) noexcept {
 
 void BoostWebSocketPeer::CleanUpConsumersOf(const std::string &type) noexcept {
   if (m_consumers.contains(type)) {
+    std::unique_lock consumers_lock(m_consumers_mutex);
     auto &consumer_list = m_consumers[type];
     consumer_list.remove_if(
         [](const std::weak_ptr<IWebSocketMessageConsumer> con) {

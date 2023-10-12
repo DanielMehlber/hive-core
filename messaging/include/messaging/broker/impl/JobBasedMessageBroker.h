@@ -22,6 +22,7 @@ private:
    */
   std::map<std::string, std::vector<std::weak_ptr<IMessageSubscriber>>>
       m_topic_subscribers;
+  mutable std::mutex m_topic_subscribers_mutex;
 
   std::shared_ptr<JobManager> m_job_manager;
 
@@ -36,12 +37,12 @@ public:
   ~JobBasedMessageBroker() override;
 
   void PublishMessage(SharedMessage event) override;
-  bool HasSubscriber(const std::string &listener_id,
+  bool HasSubscriber(const std::string &subscriber_id,
                      const std::string &topic) const override;
   void AddSubscriber(std::weak_ptr<IMessageSubscriber> listener,
                      const std::string &topic) override;
   void RemoveSubscriber(std::weak_ptr<IMessageSubscriber> listener) override;
-  void RemoveSubscriberFromTopic(std::weak_ptr<IMessageSubscriber> listener,
+  void RemoveSubscriberFromTopic(std::weak_ptr<IMessageSubscriber> subscriber,
                                  const std::string &topic) override;
   void RemoveAllSubscribers() override;
 };

@@ -23,21 +23,23 @@ JobBasedMessageBroker::~JobBasedMessageBroker() {
 }
 
 void JobBasedMessageBroker::CleanUpSubscribers() {
-  for (auto &[topic, original_listeners] : m_topic_subscribers) {
-    std::vector<std::weak_ptr<IMessageSubscriber>> new_listeners;
-    for (auto &listener : original_listeners) {
-      if (!listener.expired()) {
-        new_listeners.push_back(listener);
+  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
+  for (auto &[topic, original_subscribers] : m_topic_subscribers) {
+    std::vector<std::weak_ptr<IMessageSubscriber>> new_subscribers;
+    for (auto &subscriber : original_subscribers) {
+      if (!subscriber.expired()) {
+        new_subscribers.push_back(subscriber);
       }
     }
 
-    original_listeners.swap(new_listeners);
+    original_subscribers.swap(new_subscribers);
   }
 }
 
 void JobBasedMessageBroker::PublishMessage(SharedMessage event) {
   const auto &topic_name = event->GetTopic();
 
+  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
   if (m_topic_subscribers.contains(topic_name)) {
     auto &subscribers_of_topic = m_topic_subscribers.at(topic_name);
     for (auto &subscriber : subscribers_of_topic) {
@@ -60,11 +62,12 @@ void JobBasedMessageBroker::PublishMessage(SharedMessage event) {
 }
 
 bool messaging::impl::JobBasedMessageBroker::HasSubscriber(
-    const std::string &listener_id, const std::string &topic) const {
+    const std::string &subscriber_id, const std::string &topic) const {
   if (m_topic_subscribers.contains(topic)) {
-    const auto &listener_list = m_topic_subscribers.at(topic);
-    for (auto listener : listener_list) {
-      if (!listener.expired() && listener.lock()->GetId() == listener_id) {
+    const auto &subscriber_list = m_topic_subscribers.at(topic);
+    for (auto subscriber : subscriber_list) {
+      if (!subscriber.expired() &&
+          subscriber.lock()->GetId() == subscriber_id) {
         return true;
       }
     }
@@ -75,6 +78,7 @@ bool messaging::impl::JobBasedMessageBroker::HasSubscriber(
 
 void JobBasedMessageBroker::AddSubscriber(
     std::weak_ptr<IMessageSubscriber> listener, const std::string &topic) {
+  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
   if (!HasSubscriber(listener.lock()->GetId(), topic)) {
     if (!m_topic_subscribers.contains(topic)) {
       std::vector<std::weak_ptr<IMessageSubscriber>> vec;
@@ -92,16 +96,18 @@ void JobBasedMessageBroker::RemoveSubscriber(
 }
 
 void JobBasedMessageBroker::RemoveSubscriberFromTopic(
-    std::weak_ptr<IMessageSubscriber> listener, const std::string &topic) {
+    std::weak_ptr<IMessageSubscriber> subscriber, const std::string &topic) {
+  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
   if (m_topic_subscribers.contains(topic)) {
-    auto &listener_set = m_topic_subscribers.at(topic);
-    for (auto listener_iter = listener_set.begin();
-         listener_iter != listener_set.end(); listener_iter++) {
-      // always check if listener is still valid
-      if ((*listener_iter).expired()) {
-        listener_set.erase(listener_iter);
-      } else if ((*listener_iter).lock()->GetId() == listener.lock()->GetId()) {
-        listener_set.erase(listener_iter);
+    auto &subscriber_list = m_topic_subscribers.at(topic);
+    for (auto subscriber_iter = subscriber_list.begin();
+         subscriber_iter != subscriber_list.end(); subscriber_iter++) {
+      // always check if subscriber is still valid
+      if ((*subscriber_iter).expired()) {
+        subscriber_list.erase(subscriber_iter);
+      } else if ((*subscriber_iter).lock()->GetId() ==
+                 subscriber.lock()->GetId()) {
+        subscriber_list.erase(subscriber_iter);
         break;
       }
     }
@@ -109,5 +115,6 @@ void JobBasedMessageBroker::RemoveSubscriberFromTopic(
 }
 
 void JobBasedMessageBroker::RemoveAllSubscribers() {
+  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
   m_topic_subscribers.clear();
 }

@@ -48,6 +48,7 @@ private:
    */
   std::map<std::string, std::list<std::weak_ptr<IWebSocketMessageConsumer>>>
       m_consumers;
+  mutable std::mutex m_consumers_mutex;
 
   /**
    * @brief Acts as execution environment for asynchronous operations, such as
