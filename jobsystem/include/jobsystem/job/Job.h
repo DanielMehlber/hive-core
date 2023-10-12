@@ -80,7 +80,7 @@ public:
    * @brief Adds counter for this job to the counter list.
    * @param counter additional counter
    */
-  void AddCounter(std::shared_ptr<JobCounter> counter);
+  void AddCounter(const std::shared_ptr<JobCounter> &counter);
 
   JobState GetState() noexcept;
   void SetState(JobState state) noexcept;

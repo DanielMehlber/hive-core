@@ -42,7 +42,8 @@ networking::websockets::WebSocketMessageConverter::FromJson(
   }
 }
 
-std::string WebSocketMessageConverter::ToJson(SharedWebSocketMessage message) {
+std::string
+WebSocketMessageConverter::ToJson(const SharedWebSocketMessage &message) {
   auto id = message->GetId();
   json::object message_body;
   message_body["id"] = message->GetId();

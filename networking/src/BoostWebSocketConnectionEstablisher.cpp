@@ -5,6 +5,7 @@
 #include <logging/Logging.h>
 #include <regex>
 #include <string>
+#include <utility>
 
 using namespace networking::websockets;
 using namespace networking;
@@ -21,7 +22,7 @@ BoostWebSocketConnectionEstablisher::BoostWebSocketConnectionEstablisher(
     std::function<void(std::string, stream_type &&)> connection_consumer)
     : m_resolver{asio::make_strand(*execution_context)},
       m_execution_context{execution_context},
-      m_connection_consumer{connection_consumer} {}
+      m_connection_consumer{std::move(connection_consumer)} {}
 
 std::future<void> BoostWebSocketConnectionEstablisher::EstablishConnectionTo(
     const std::string &uri) {

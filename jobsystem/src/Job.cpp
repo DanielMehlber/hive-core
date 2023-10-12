@@ -2,6 +2,7 @@
 #include "logging/Logging.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <utility>
 
 using namespace jobsystem::job;
 
@@ -14,7 +15,7 @@ JobContinuation Job::Execute(JobContext *context) {
   return continuation;
 }
 
-void Job::AddCounter(std::shared_ptr<JobCounter> counter) {
+void Job::AddCounter(const std::shared_ptr<JobCounter> &counter) {
   std::unique_lock counter_lock(m_counters_mutex);
   counter->Increase();
   m_counters.push_back(counter);
@@ -22,11 +23,11 @@ void Job::AddCounter(std::shared_ptr<JobCounter> counter) {
 
 Job::Job(std::function<JobContinuation(JobContext *)> workload, std::string id,
          JobExecutionPhase phase)
-    : m_workload{workload}, m_id{std::move(id)}, m_phase{phase} {}
+    : m_workload{std::move(workload)}, m_id{std::move(id)}, m_phase{phase} {}
 
 Job::Job(std::function<JobContinuation(JobContext *)> workload,
          JobExecutionPhase phase)
-    : m_workload{workload}, m_phase{phase},
+    : m_workload{std::move(workload)}, m_phase{phase},
       m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {}
 
 void Job::FinishJob() {

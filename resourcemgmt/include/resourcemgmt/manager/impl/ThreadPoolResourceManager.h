@@ -22,7 +22,7 @@ private:
   std::condition_variable m_loading_queue_condition;
   mutable std::mutex m_loading_queue_mutex;
 
-  std::vector<std::shared_ptr<std::thread>> m_loading_threads;
+  std::vector<std::thread> m_loading_threads;
   bool m_terminate{false};
 
   void LoadResourcesWorker();

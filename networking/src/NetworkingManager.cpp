@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "networking/NetworkingManager.h"
 
 using namespace networking;
@@ -5,7 +7,8 @@ using namespace networking::websockets;
 
 NetworkingManager::NetworkingManager(props::SharedPropertyProvider properties,
                                      jobsystem::SharedJobManager job_manager)
-    : m_job_manager{job_manager}, m_property_provider{properties} {
+    : m_job_manager{std::move(job_manager)},
+      m_property_provider{std::move(properties)} {
 
   // configuration section
   bool auto_init_websocket_server =

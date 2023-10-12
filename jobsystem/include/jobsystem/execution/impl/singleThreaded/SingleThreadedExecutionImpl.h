@@ -37,7 +37,7 @@ private:
 public:
   SingleThreadedExecutionImpl();
   virtual ~SingleThreadedExecutionImpl();
-  void Schedule(std::shared_ptr<Job> job);
+  void Schedule(const std::shared_ptr<Job> &job);
   void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
   void Start(JobManager *manager);
   void Stop();

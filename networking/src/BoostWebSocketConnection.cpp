@@ -2,6 +2,7 @@
 #include "logging/Logging.h"
 #include "networking/websockets/WebSocketMessageConverter.h"
 #include <boost/asio.hpp>
+#include <utility>
 
 using namespace networking::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -14,7 +15,8 @@ BoostWebSocketConnection::BoostWebSocketConnection(
     stream_type &&socket,
     std::function<void(const std::string &, SharedBoostWebSocketConnection)>
         on_message_received)
-    : m_socket(std::move(socket)), m_on_message_received{on_message_received} {
+    : m_socket(std::move(socket)),
+      m_on_message_received{std::move(on_message_received)} {
 
   m_remote_endpoint_data = m_socket.next_layer().socket().remote_endpoint();
 }
@@ -90,7 +92,7 @@ void BoostWebSocketConnection::Close() {
 BoostWebSocketConnection::~BoostWebSocketConnection() { Close(); }
 
 std::future<void>
-BoostWebSocketConnection::Send(SharedWebSocketMessage message) {
+BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
 
   if (!m_socket.is_open()) {
     LOG_WARN("Cannot sent message via web-socket to remote host "

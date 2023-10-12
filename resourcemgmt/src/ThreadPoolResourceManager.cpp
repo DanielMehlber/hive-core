@@ -44,17 +44,17 @@ ThreadPoolResourceManager::ThreadPoolResourceManager(
     size_t loading_thread_count)
     : m_terminate{false} {
   for (int i = 0; i < loading_thread_count; i++) {
-    auto th = std::make_shared<std::thread>(
-        &ThreadPoolResourceManager::LoadResourcesWorker, this);
-    m_loading_threads.push_back(th);
+    auto th =
+        std::thread(&ThreadPoolResourceManager::LoadResourcesWorker, this);
+    m_loading_threads.push_back(std::move(th));
   }
 }
 
 ThreadPoolResourceManager::~ThreadPoolResourceManager() {
   m_terminate = true;
   m_loading_queue_condition.notify_all();
-  for (auto th : m_loading_threads) {
-    th->join();
+  for (auto &th : m_loading_threads) {
+    th.join();
   }
 }
 

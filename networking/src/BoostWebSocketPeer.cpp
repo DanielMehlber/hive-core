@@ -3,6 +3,7 @@
 #include "networking/websockets/WebSocketMessageConsumerJob.h"
 #include "networking/websockets/WebSocketMessageConverter.h"
 #include <regex>
+#include <utility>
 
 using namespace networking;
 using namespace networking::websockets;
@@ -14,7 +15,7 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 BoostWebSocketPeer::BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
                                        props::SharedPropertyProvider properties)
-    : m_job_manager{job_manager}, m_property_provider{properties} {
+    : m_job_manager{std::move(job_manager)}, m_property_provider{properties} {
 
   bool init_server_at_startup =
       properties->GetOrElse("net.ws.server.auto-init", true);

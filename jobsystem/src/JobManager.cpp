@@ -39,7 +39,7 @@ void JobManager::PrintStatusLog() {
 #endif
 }
 
-void JobManager::KickJob(SharedJob job) {
+void JobManager::KickJob(const SharedJob &job) {
   switch (job->GetPhase()) {
   case INIT: {
     std::unique_lock queue_lock(m_init_queue_mutex);
@@ -81,7 +81,7 @@ void JobManager::KickJob(SharedJob job) {
 
 void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
                                         std::mutex &queue_mutex,
-                                        SharedJobCounter counter) {
+                                        const SharedJobCounter &counter) {
   std::unique_lock lock(queue_mutex);
   while (!queue.empty()) {
     auto job = queue.front();
@@ -104,7 +104,7 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
 
 void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
                                      std::mutex &queue_mutex,
-                                     SharedJobCounter counter) {
+                                     const SharedJobCounter &counter) {
   ScheduleAllJobsInQueue(queue, queue_mutex, counter);
   WaitForCompletion(counter);
 }
@@ -155,7 +155,7 @@ void JobManager::InvokeCycleAndWait() {
 #endif
 }
 
-void JobManager::KickJobForNextCycle(SharedJob job) {
+void JobManager::KickJobForNextCycle(const SharedJob &job) {
   /*
    * When a job is detached, but is currently in execution (so it can't be
    * removed easily from any queues), its id is black-listed for the upcoming

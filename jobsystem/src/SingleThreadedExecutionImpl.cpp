@@ -11,7 +11,7 @@ SingleThreadedExecutionImpl::SingleThreadedExecutionImpl() {
 
 SingleThreadedExecutionImpl::~SingleThreadedExecutionImpl() { Stop(); }
 
-void SingleThreadedExecutionImpl::Schedule(std::shared_ptr<Job> job) {
+void SingleThreadedExecutionImpl::Schedule(const std::shared_ptr<Job> &job) {
   std::unique_lock lock(m_execution_queue_mutex);
   m_execution_queue.push(job);
   job->SetState(JobState::AWAITING_EXECUTION);

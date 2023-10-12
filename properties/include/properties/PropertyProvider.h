@@ -73,13 +73,13 @@ public:
    * of properties in the tree.
    */
   void RegisterListener(const std::string &path,
-                        SharedPropertyListener listener);
+                        const SharedPropertyListener &listener);
 
   /**
    * @brief Unregisters a property listener from all paths in the property tree.
    * @param listener listener that will be unregistered.
    */
-  void UnregisterListener(SharedPropertyListener listener);
+  void UnregisterListener(const SharedPropertyListener &listener);
 };
 
 template <typename PropType>

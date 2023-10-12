@@ -105,7 +105,7 @@ public:
    * @param message web-socket message that will be sent
    * @return future indicating that the message has been sent
    */
-  std::future<void> Send(SharedWebSocketMessage message);
+  std::future<void> Send(const SharedWebSocketMessage &message);
 
   /**
    * @return address of the connected remote endpoint

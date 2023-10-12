@@ -27,7 +27,7 @@ public:
    * @param message message object that will be converted into json
    * @return the json string
    */
-  static std::string ToJson(SharedWebSocketMessage message);
+  static std::string ToJson(const SharedWebSocketMessage &message);
 };
 } // namespace networking::websockets
 

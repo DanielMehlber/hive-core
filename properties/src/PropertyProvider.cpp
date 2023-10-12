@@ -6,7 +6,7 @@
 using namespace props;
 
 PropertyProvider::PropertyProvider(messaging::SharedBroker message_broker)
-    : m_message_broker{message_broker} {}
+    : m_message_broker{std::move(message_broker)} {}
 
 PropertyProvider::~PropertyProvider() = default;
 
@@ -43,15 +43,16 @@ std::string buildTopicName(const std::string &path) {
   return stream.str();
 }
 
-void PropertyProvider::RegisterListener(const std::string &path,
-                                        SharedPropertyListener listener) {
+void PropertyProvider::RegisterListener(
+    const std::string &path, const SharedPropertyListener &listener) {
   std::shared_ptr<messaging::IMessageSubscriber> subscriber =
       std::static_pointer_cast<messaging::IMessageSubscriber>(listener);
 
   m_message_broker->AddSubscriber(subscriber, buildTopicName(path));
 }
 
-void PropertyProvider::UnregisterListener(SharedPropertyListener listener) {
+void PropertyProvider::UnregisterListener(
+    const SharedPropertyListener &listener) {
   std::shared_ptr<messaging::IMessageSubscriber> subscriber =
       std::static_pointer_cast<messaging::IMessageSubscriber>(listener);
 

@@ -13,6 +13,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <utility>
 
 using namespace jobsystem::job;
 using namespace jobsystem::execution;
@@ -93,7 +94,8 @@ private:
    * instances pushed into the execution
    */
   void ExecuteQueueAndWait(std::queue<SharedJob> &queue,
-                           std::mutex &queue_mutex, SharedJobCounter counter);
+                           std::mutex &queue_mutex,
+                           const SharedJobCounter &counter);
 
   /**
    * @brief Pushes all job instances contained in the passed queue to the
@@ -106,7 +108,7 @@ private:
    */
   void ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
                               std::mutex &queue_mutex,
-                              SharedJobCounter counter);
+                              const SharedJobCounter &counter);
 
   /**
    * @brief The continuation requeue blacklist is used when cancelling jobs by
@@ -129,7 +131,7 @@ public:
    * @param job job that should be executed
    * @note The job will be executed when the execution cycle has been invoked
    */
-  void KickJob(SharedJob job);
+  void KickJob(const SharedJob &job);
 
   /**
    * @brief Ensures that a job which is not yet in execution will not be
@@ -144,7 +146,7 @@ public:
    * @param job job that should be executed
    * @note This is useful for re-queueing jobs for later execution
    */
-  void KickJobForNextCycle(SharedJob job);
+  void KickJobForNextCycle(const SharedJob &job);
 
   /**
    * @brief Starts a new execution cycle and passes queued jobs to the
@@ -178,7 +180,7 @@ public:
 
 inline void
 JobManager::WaitForCompletion(std::shared_ptr<IJobWaitable> counter) {
-  m_execution.WaitForCompletion(counter);
+  m_execution.WaitForCompletion(std::move(counter));
 }
 
 template <typename FutureType>

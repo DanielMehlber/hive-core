@@ -10,7 +10,7 @@ WebSocketMessageConsumerJob::WebSocketMessageConsumerJob(
     : jobsystem::job::Job(
           std::bind(&WebSocketMessageConsumerJob::ConsumeMessage, this, _1),
           "consume-web-socket-message-type-" + message->GetType()),
-      m_consumer{consumer}, m_message{message} {}
+      m_consumer{std::move(consumer)}, m_message{message} {}
 
 jobsystem::job::JobContinuation
 networking::websockets::WebSocketMessageConsumerJob::ConsumeMessage(
