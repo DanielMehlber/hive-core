@@ -2,6 +2,7 @@
 #define JOBBASEDMESSAGEBROKER_H
 
 #include "jobsystem/manager/JobManager.h"
+#include "messaging/Messaging.h"
 #include "messaging/broker/IMessageBroker.h"
 #include "messaging/subscriber/IMessageSubscriber.h"
 #include <map>
@@ -13,7 +14,8 @@ using namespace jobsystem;
 using namespace messaging;
 
 namespace messaging::impl {
-class JobBasedMessageBroker final : public messaging::IMessageBroker {
+class MESSAGING_API JobBasedMessageBroker final
+    : public messaging::IMessageBroker {
 private:
   /**
    * @brief Maps the topic name (as string) to all of its subscribers.

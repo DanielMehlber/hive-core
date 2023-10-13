@@ -1,6 +1,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include "messaging/Messaging.h"
 #include <any>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -11,7 +12,7 @@
 using namespace boost::uuids;
 
 namespace messaging {
-class Message {
+class MESSAGING_API Message {
 protected:
   /**
    * @brief Message topic name used to differentiate different kinds of messages

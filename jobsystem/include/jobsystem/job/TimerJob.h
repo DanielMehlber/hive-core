@@ -2,6 +2,7 @@
 #define TIMERJOB_H
 
 #include "Job.h"
+#include "jobsystem/JobSystem.h"
 #include <chrono>
 
 namespace jobsystem::job {
@@ -12,7 +13,7 @@ namespace jobsystem::job {
  * useful to create jobs which execute in certain time-intercals instead of
  * every cycle.
  */
-class TimerJob : public Job {
+class JOBSYSTEM_API TimerJob : public Job {
 private:
   /**
    * @brief Point in time where the timer was started. This is not the creation

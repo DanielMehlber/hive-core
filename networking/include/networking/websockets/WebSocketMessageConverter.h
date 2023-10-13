@@ -3,6 +3,7 @@
 
 #include "WebSocketMessage.h"
 #include "common/exceptions/ExceptionsBase.h"
+#include "networking/Networking.h"
 
 namespace networking::websockets {
 
@@ -11,7 +12,7 @@ DECLARE_EXCEPTION(MessagePayloadInvalidException);
 /**
  * Converts the payload of web-socket messages to data objects and vice versa.
  */
-class WebSocketMessageConverter {
+class NETWORKING_API WebSocketMessageConverter {
 public:
   /**
    * Generates a web-socket data object from json payload

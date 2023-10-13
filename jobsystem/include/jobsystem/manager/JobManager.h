@@ -8,7 +8,7 @@
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/TimerJob.h"
-#include "logging/Logging.h"
+#include "logging/LogManager.h"
 #include <future>
 #include <memory>
 #include <queue>
@@ -31,7 +31,7 @@ namespace jobsystem {
  * holds all job instances that must be executed in the current or following
  * execution cycles.
  */
-class JobManager {
+class JOBSYSTEM_API JobManager {
 private:
   /**
    * @brief All jobs for the initialization phase of the cycle are collected

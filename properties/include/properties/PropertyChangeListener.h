@@ -1,8 +1,9 @@
 #ifndef PROPERTYCHANGELISTENER_H
 #define PROPERTYCHANGELISTENER_H
 
-#include "logging/Logging.h"
-#include "messaging/Messaging.h"
+#include "logging/LogManager.h"
+#include "messaging/subscriber/IMessageSubscriber.h"
+#include "properties/Properties.h"
 #include <memory>
 
 namespace props {
@@ -14,7 +15,8 @@ namespace props {
  * the property system is founded on the messaging system and makes heavy use of
  * it.
  */
-class PropertyChangeListener : public messaging::IMessageSubscriber {
+class PROPERTIES_API PropertyChangeListener
+    : public messaging::IMessageSubscriber {
 protected:
   const std::string m_property_listener_id;
 

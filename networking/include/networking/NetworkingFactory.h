@@ -1,6 +1,7 @@
 #ifndef NETWORKINGFACTORY_H
 #define NETWORKINGFACTORY_H
 
+#include "networking/Networking.h"
 #include "websockets/IWebSocketPeer.h"
 #include "websockets/impl/boost/BoostWebSocketPeer.h"
 #include <memory>
@@ -15,7 +16,7 @@ namespace networking {
 /**
  * Constructs various objects of the networking module
  */
-class NetworkingFactory {
+class NETWORKING_API NetworkingFactory {
 public:
   /**
    * @brief Create new web-socket peer implementation

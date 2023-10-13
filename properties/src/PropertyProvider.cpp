@@ -1,4 +1,5 @@
 #include "properties/PropertyProvider.h"
+#include "messaging/MessagingFactory.h"
 #include <sstream>
 #include <utility>
 #include <vector>

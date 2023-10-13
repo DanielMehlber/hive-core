@@ -1,6 +1,6 @@
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 #include "jobsystem/manager/JobManager.h"
-#include "logging/Logging.h"
+#include "logging/LogManager.h"
 
 using namespace jobsystem::execution::impl;
 using namespace jobsystem::job;

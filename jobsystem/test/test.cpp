@@ -1,4 +1,6 @@
 #include "jobsystem/JobSystem.h"
+#include "jobsystem/JobSystemFactory.h"
+#include "jobsystem/manager/JobManager.h"
 #include <gtest/gtest.h>
 
 using namespace jobsystem;
@@ -166,7 +168,7 @@ TEST(JobSystem, wait_for_job_inside_job) {
   std::vector<short> order;
 
   SharedJob job = JobSystemFactory::CreateJob([&](JobContext *) {
-    SharedJobCounter counter = JOB_COUNTER();
+    SharedJobCounter counter = JobSystemFactory::CreateCounter();
     SharedJob otherJob = JobSystemFactory::CreateJob([&](JobContext *) {
       order.push_back(1);
       return JobContinuation::DISPOSE;
@@ -214,7 +216,7 @@ TEST(JobSystem, detach_jobs_mid_execution) {
   std::atomic<short> execution_counter = 0;
   JobManager manager;
 
-  SharedJobCounter detach_job_counter = JOB_COUNTER();
+  SharedJobCounter detach_job_counter = JobSystemFactory::CreateCounter();
   SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
     context->GetJobManager()->WaitForCompletion(detach_job_counter);
     execution_counter++;

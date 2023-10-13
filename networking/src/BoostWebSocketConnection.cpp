@@ -1,5 +1,5 @@
 #include "networking/websockets/impl/boost/BoostWebSocketConnection.h"
-#include "logging/Logging.h"
+#include "logging/LogManager.h"
 #include "networking/websockets/WebSocketMessageConverter.h"
 #include <boost/asio.hpp>
 #include <utility>

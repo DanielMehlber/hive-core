@@ -1,11 +1,12 @@
 #include "../ILogger.h"
+#include "logging/Logging.h"
 
 namespace logging::logger::impl {
 
 /**
  * @brief Logger implementation that uses Boost.Log
  */
-class BoostLogger : public logger::ILogger {
+class NETWORKING_API BoostLogger : public logger::ILogger {
 public:
   BoostLogger();
   virtual ~BoostLogger();

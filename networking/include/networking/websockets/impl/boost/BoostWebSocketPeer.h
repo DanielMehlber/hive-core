@@ -4,14 +4,16 @@
 #include "BoostWebSocketConnection.h"
 #include "BoostWebSocketConnectionEstablisher.h"
 #include "BoostWebSocketConnectionListener.h"
+#include "jobsystem/JobSystemFactory.h"
+#include "jobsystem/manager/JobManager.h"
+#include "networking/Networking.h"
+#include "networking/websockets/IWebSocketPeer.h"
+#include "properties/PropertyProvider.h"
 #include <atomic>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
-#include <jobsystem/JobSystem.h>
 #include <list>
 #include <map>
-#include <networking/websockets/IWebSocketPeer.h>
-#include <properties/PropertyProvider.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
@@ -25,7 +27,7 @@ DECLARE_EXCEPTION(NoSuchPeerException);
  * @brief This implementation of IWebSocketServer uses WebSocket++ to provide
  * a web-socket communication peer.
  */
-class BoostWebSocketPeer : public IWebSocketPeer {
+class NETWORKING_API BoostWebSocketPeer : public IWebSocketPeer {
 private:
   /**
    * @brief Indicates if the web socket peer is currently running

@@ -1,20 +1,20 @@
-#ifndef MESSAGING_H
-#define MESSAGING_H
+#ifndef PROPERTIES_H
+#define PROPERTIES_H
 
 #ifdef _WIN32
 // For Windows (MSVC compiler)
 #ifdef EXPORT_DLL
 
 // When building the library
-#define MESSAGING_API __declspec(dllexport)
+#define PROPERTIES_API __declspec(dllexport)
 #else
 
 // When using the library
-#define MESSAGING_API __declspec(dllimport)
+#define PROPERTIES_API __declspec(dllimport)
 #endif
 #else
 // For other platforms (Linux, macOS)
-#define MESSAGING_API
+#define PROPERTIES_API
 #endif
 
-#endif /* MESSAGING_H */
+#endif // PROPERTIES_H

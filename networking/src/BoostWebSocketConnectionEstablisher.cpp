@@ -1,8 +1,8 @@
 #include "networking/websockets/impl/boost/BoostWebSocketConnectionEstablisher.h"
+#include "logging/LogManager.h"
 #include "networking/util/UrlParser.h"
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
-#include <logging/Logging.h>
 #include <regex>
 #include <string>
 #include <utility>

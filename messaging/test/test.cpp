@@ -1,4 +1,4 @@
-#include "messaging/Messaging.h"
+#include "messaging/MessagingFactory.h"
 #include <gtest/gtest.h>
 #include <jobsystem/manager/JobManager.h>
 

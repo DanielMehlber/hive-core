@@ -1,5 +1,5 @@
 #include "jobsystem/job/Job.h"
-#include "logging/Logging.h"
+#include "logging/LogManager.h"
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <utility>

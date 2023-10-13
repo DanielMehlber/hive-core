@@ -1,6 +1,7 @@
 #ifndef MESSAGEBROKERFACTORY_H
 #define MESSAGEBROKERFACTORY_H
 
+#include "messaging/Messaging.h"
 #include "messaging/broker/IMessageBroker.h"
 #include "messaging/broker/impl/JobBasedMessageBroker.h"
 #include "messaging/subscriber/IMessageSubscriber.h"
@@ -11,7 +12,7 @@ namespace messaging {
 typedef impl::JobBasedMessageBroker DefaultBrokerImpl;
 typedef FunctionalMessageSubscriber DefaultSubscriberImpl;
 
-class MessagingFactory {
+class MESSAGING_API MessagingFactory {
 public:
   template <typename BrokerImpl = DefaultBrokerImpl, typename... Args>
   static SharedBroker CreateBroker(Args... arguments);

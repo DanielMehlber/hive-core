@@ -1,7 +1,8 @@
 #ifndef PROPERTYCHANGELISTENERTEST_H
 #define PROPERTYCHANGELISTENERTEST_H
 
-#include "logging/Logging.h"
+#include "logging/LogManager.h"
+#include "messaging/MessagingFactory.h"
 #include "properties/PropertyChangeListener.h"
 #include "properties/PropertyProvider.h"
 #include <gtest/gtest.h>

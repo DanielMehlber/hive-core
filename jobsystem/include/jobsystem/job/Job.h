@@ -6,6 +6,7 @@
 #include "JobExecutionPhase.h"
 #include "JobExitBehavior.h"
 #include "JobState.h"
+#include "jobsystem/JobSystem.h"
 #include <functional>
 #include <list>
 #include <memory>
@@ -18,7 +19,7 @@ namespace jobsystem::job {
  * work that must be executed for the job to complete and metadata used in this
  * process.
  */
-class Job {
+class JOBSYSTEM_API Job {
 protected:
   /**
    * @brief ID of this job

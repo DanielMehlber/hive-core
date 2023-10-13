@@ -1,6 +1,7 @@
 #ifndef BOOSTWEBSOCKETCONNECTION_H
 #define BOOSTWEBSOCKETCONNECTION_H
 
+#include "networking/Networking.h"
 #include "networking/websockets/WebSocketMessage.h"
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
@@ -15,7 +16,7 @@ typedef boost::beast::websocket::stream<boost::beast::tcp_stream> stream_type;
 DECLARE_EXCEPTION(ConnectionClosedException);
 DECLARE_EXCEPTION(MessageSendingException);
 
-class BoostWebSocketConnection
+class NETWORKING_API BoostWebSocketConnection
     : public std::enable_shared_from_this<BoostWebSocketConnection> {
 private:
   /**

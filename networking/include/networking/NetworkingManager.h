@@ -3,6 +3,7 @@
 
 #include "NetworkingFactory.h"
 #include "jobsystem/JobSystem.h"
+#include "networking/Networking.h"
 #include "properties/PropertyProvider.h"
 #include <memory>
 
@@ -11,7 +12,7 @@ namespace networking {
 /**
  * @brief Central networking manager that provides connectivity.
  */
-class NetworkingManager {
+class NETWORKING_API NetworkingManager {
 private:
   props::SharedPropertyProvider m_property_provider;
   jobsystem::SharedJobManager m_job_manager;

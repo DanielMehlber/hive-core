@@ -2,13 +2,14 @@
 #define PROPERTYFACTORY_H
 
 #include "PropertyProvider.h"
+#include "properties/Properties.h"
 
 namespace props {
 
 /**
  * @brief Factory for all property-system related creation of instances.
  */
-class PropertyFactory {
+class PROPERTIES_API PropertyFactory {
 public:
   static SharedPropertyProvider
   CreatePropertyProvider(messaging::SharedBroker message_broker);

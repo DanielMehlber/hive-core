@@ -2,7 +2,7 @@
 #define WEBSOCKETPEERTEST_H
 
 #include "jobsystem/JobSystem.h"
-#include "messaging/Messaging.h"
+#include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
 #include "properties/PropertyFactory.h"
 

@@ -1,4 +1,4 @@
-#include "logging/Logging.h"
+#include "logging/LogManager.h"
 #include "networking/websockets/WebSocketMessageConverter.h"
 #include <boost/json.hpp>
 

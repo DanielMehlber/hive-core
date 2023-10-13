@@ -2,6 +2,7 @@
 #define FUNCTIONALMESSAGESUBSCRIBER_H
 
 #include "messaging/Message.h"
+#include "messaging/Messaging.h"
 #include "messaging/subscriber/IMessageSubscriber.h"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -10,7 +11,7 @@
 #include <string>
 
 namespace messaging {
-class FunctionalMessageSubscriber : public IMessageSubscriber {
+class MESSAGING_API FunctionalMessageSubscriber : public IMessageSubscriber {
 protected:
   const std::function<void(const SharedMessage)> m_function;
   const std::string m_id;

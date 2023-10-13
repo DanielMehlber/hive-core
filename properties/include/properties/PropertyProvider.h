@@ -2,9 +2,10 @@
 #define PROPERTYPROVIDER_H
 
 #include "PropertyChangeListener.h"
+#include "messaging/broker/IMessageBroker.h"
+#include "properties/Properties.h"
 #include <boost/property_tree/ptree.hpp>
 #include <memory>
-#include <messaging/Messaging.h>
 #include <optional>
 #include <string>
 
@@ -16,7 +17,8 @@ namespace props {
  * every property has a path in the hierarchy. This enables grouping and
  * listening to subsets of properties.
  */
-class PropertyProvider : std::enable_shared_from_this<PropertyProvider> {
+class PROPERTIES_API PropertyProvider
+    : std::enable_shared_from_this<PropertyProvider> {
 protected:
   messaging::SharedBroker m_message_broker;
   boost::property_tree::ptree m_property_tree;
