@@ -14,12 +14,8 @@
 #include <boost/beast/websocket.hpp>
 #include <list>
 #include <map>
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
 
 namespace networking::websockets {
-
-typedef websocketpp::server<websocketpp::config::asio> server;
 
 DECLARE_EXCEPTION(NoSuchPeerException);
 

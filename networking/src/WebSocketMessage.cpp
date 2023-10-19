@@ -1,13 +1,10 @@
 #include "networking/websockets/WebSocketMessage.h"
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
+#include "common/uuid/UuidGenerator.h"
 
 using namespace networking::websockets;
 
 WebSocketMessage::WebSocketMessage(std::string message_type)
-    : m_type{message_type},
-      m_uuid{boost::uuids::to_string(boost::uuids::random_generator()())} {}
+    : m_type{message_type}, m_uuid{common::uuid::UuidGenerator::Random()} {}
 
 WebSocketMessage::WebSocketMessage(std::string message_type, std::string id)
     : m_type{message_type}, m_uuid{std::move(id)} {}

@@ -1,15 +1,12 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include "common/uuid/UuidGenerator.h"
 #include "messaging/Messaging.h"
 #include <any>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
 #include <map>
 #include <memory>
 #include <optional>
-
-using namespace boost::uuids;
 
 namespace messaging {
 class MESSAGING_API Message {
@@ -30,22 +27,24 @@ protected:
   /**
    * @brief Unique id of this event instance.
    */
-  uuid m_id;
+  std::string m_id;
 
 public:
   Message() = delete;
   explicit Message(std::string topic)
-      : topic{std::move(topic)}, m_id{boost::uuids::random_generator()()} {};
+      : topic{std::move(topic)}, m_id{common::uuid::UuidGenerator::Random()} {};
   virtual ~Message() = default;
 
-  uuid GetId() const noexcept;
+  std::string GetId() const noexcept;
+
   template <typename T> void SetPayload(const std::string &key, T value);
   template <typename T>
   std::optional<T> GetPayload(const std::string &key) const;
   const std::string &GetTopic() const;
 };
 
-inline uuid Message::GetId() const noexcept { return m_id; }
+inline std::string Message::GetId() const noexcept { return m_id; }
+
 template <typename T>
 inline void Message::SetPayload(const std::string &key, T value) {
   m_payload[key] = value;

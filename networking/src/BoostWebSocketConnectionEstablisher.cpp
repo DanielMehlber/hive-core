@@ -18,7 +18,7 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 BoostWebSocketConnectionEstablisher::BoostWebSocketConnectionEstablisher(
     std::shared_ptr<boost::asio::io_context> execution_context,
-    props::SharedPropertyProvider provider,
+    [[maybe_unused]] props::SharedPropertyProvider provider,
     std::function<void(std::string, stream_type &&)> connection_consumer)
     : m_resolver{asio::make_strand(*execution_context)},
       m_execution_context{execution_context},

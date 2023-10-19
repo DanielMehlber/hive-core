@@ -1,7 +1,5 @@
 #include "properties/PropertyChangeListener.h"
-#include <boost/uuid/random_generator.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
+#include "common/uuid/UuidGenerator.h"
 
 using namespace props;
 
@@ -23,7 +21,6 @@ std::string props::PropertyChangeListener::GetId() const {
 }
 
 PropertyChangeListener::PropertyChangeListener()
-    : m_property_listener_id{
-          boost::uuids::to_string(boost::uuids::random_generator()())} {};
+    : m_property_listener_id{common::uuid::UuidGenerator::Random()} {};
 
 PropertyChangeListener::~PropertyChangeListener() = default;

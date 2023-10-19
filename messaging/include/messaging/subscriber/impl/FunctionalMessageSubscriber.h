@@ -1,12 +1,10 @@
 #ifndef FUNCTIONALMESSAGESUBSCRIBER_H
 #define FUNCTIONALMESSAGESUBSCRIBER_H
 
+#include "common/uuid/UuidGenerator.h"
 #include "messaging/Message.h"
 #include "messaging/Messaging.h"
 #include "messaging/subscriber/IMessageSubscriber.h"
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include <functional>
 #include <string>
 
@@ -20,12 +18,10 @@ public:
   FunctionalMessageSubscriber() = delete;
   explicit FunctionalMessageSubscriber(
       const std::function<void(const SharedMessage)> &func)
-      : m_function{func},
-        m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {};
+      : m_function{func}, m_id{common::uuid::UuidGenerator::Random()} {};
   explicit FunctionalMessageSubscriber(
       const std::function<void(const SharedMessage)> &&func)
-      : m_function{func},
-        m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {};
+      : m_function{func}, m_id{common::uuid::UuidGenerator::Random()} {};
 
   FunctionalMessageSubscriber
   operator=(const std::function<void(const SharedMessage)> &func) {

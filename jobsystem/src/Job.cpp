@@ -1,7 +1,6 @@
 #include "jobsystem/job/Job.h"
+#include "common/uuid/UuidGenerator.h"
 #include "logging/LogManager.h"
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include <utility>
 
 using namespace jobsystem::job;
@@ -28,7 +27,7 @@ Job::Job(std::function<JobContinuation(JobContext *)> workload, std::string id,
 Job::Job(std::function<JobContinuation(JobContext *)> workload,
          JobExecutionPhase phase)
     : m_workload{std::move(workload)}, m_phase{phase},
-      m_id{boost::uuids::to_string(boost::uuids::random_generator()())} {}
+      m_id{common::uuid::UuidGenerator::Random()} {}
 
 void Job::FinishJob() {
   std::unique_lock counter_lock(m_counters_mutex);

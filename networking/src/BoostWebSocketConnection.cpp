@@ -119,7 +119,8 @@ BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
 
 void BoostWebSocketConnection::OnMessageSent(
     std::promise<void> &&promise, SharedWebSocketMessage message,
-    boost::beast::error_code error_code, std::size_t bytes_transferred) {
+    boost::beast::error_code error_code,
+    [[maybe_unused]] std::size_t bytes_transferred) {
   if (error_code) {
     LOG_WARN("Sending message via web-socket to remote host "
              << m_remote_endpoint_data.address().to_string() << ":"
