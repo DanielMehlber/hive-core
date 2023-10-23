@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 
@@ -15,13 +16,13 @@ namespace services {
  */
 enum ServiceResponseStatus {
   /** Successful service execution */
-  OK,
+  OK = 0,
   /** Parameters were missing or of wrong type */
-  PARAMETER_ERROR,
+  PARAMETER_ERROR = 10,
   /** Service failed due to internal errors */
-  INTERNAL_ERROR,
+  INTERNAL_ERROR = 20,
   /** Service implementation is not longer available */
-  GONE
+  GONE = 30
 };
 
 /**
@@ -61,21 +62,34 @@ public:
    * @param name of the result value
    * @param value of the result
    */
-  template <typename T> void SetResult(const std::string &name, const T &value);
+  template <typename T> void SetResult(const std::string &name, T value);
 
   std::optional<std::string> GetResult(const std::string &name);
 
+  std::set<std::string> GetResultNames() const;
+
   ServiceResponseStatus GetStatus() const;
   void SetStatus(ServiceResponseStatus mStatus);
+
   std::string GetStatusMessage() const;
   void SetStatusMessage(const std::string &mStatusMessage);
+
+  std::string GetTransactionId() const;
 };
 
 template <typename T>
-void ServiceResponse::SetResult(const std::string &name, const T &value) {
-  std::stringstream ss;
-  ss << value;
-  m_result_values[name] = ss.str();
+inline void ServiceResponse::SetResult(const std::string &name, T value) {
+  m_result_values[name] = std::to_string(value);
+}
+
+template <>
+inline void ServiceResponse::SetResult<std::string>(const std::string &name,
+                                                    std::string value) {
+  m_result_values[name] = std::move(value);
+}
+
+inline std::string ServiceResponse::GetTransactionId() const {
+  return m_transaction_id;
 }
 
 typedef std::shared_ptr<ServiceResponse> SharedServiceResponse;

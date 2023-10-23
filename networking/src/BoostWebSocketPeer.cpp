@@ -134,7 +134,8 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   std::string message_type = message->GetType();
   auto consumer_list = GetConsumersOfType(message_type);
   for (auto consumer : consumer_list) {
-    auto job = std::make_shared<WebSocketMessageConsumerJob>(consumer, message);
+    auto job = std::make_shared<WebSocketMessageConsumerJob>(
+        consumer, message, over_connection->GetConnectionInfo());
     m_job_manager->KickJob(job);
   }
 }
@@ -248,5 +249,15 @@ void BoostWebSocketPeer::CloseConnectionTo(const std::string &uri) noexcept {
       m_connections.at(connection_id)->Close();
       m_connections.erase(connection_id);
     }
+  }
+}
+
+bool BoostWebSocketPeer::HasConnectionTo(
+    const std::string &uri) const noexcept {
+  std::unique_lock lock(m_connections_mutex);
+  if (m_connections.contains(uri)) {
+    return m_connections.at(uri)->IsUsable();
+  } else {
+    return false;
   }
 };

@@ -142,3 +142,9 @@ void BoostWebSocketConnection::OnMessageSent(
             << m_remote_endpoint_data.address().to_string() << ":"
             << m_remote_endpoint_data.port());
 }
+
+WebSocketConnectionInfo BoostWebSocketConnection::GetConnectionInfo() const {
+  WebSocketConnectionInfo info;
+  info.SetHostname(GetRemoteHostAddress());
+  return std::move(info);
+}

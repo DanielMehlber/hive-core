@@ -2,6 +2,7 @@
 #define BOOSTWEBSOCKETCONNECTION_H
 
 #include "networking/Networking.h"
+#include "networking/websockets/WebSocketConnectionInfo.h"
 #include "networking/websockets/WebSocketMessage.h"
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
@@ -119,10 +120,17 @@ public:
    * @return true, if the connection can be used for sending/receiving messages
    */
   bool IsUsable() const;
+
+  /**
+   * Generates connection info object from current connection data
+   * @return connection info object
+   */
+  WebSocketConnectionInfo GetConnectionInfo() const;
 };
 
 inline std::string BoostWebSocketConnection::GetRemoteHostAddress() const {
-  return m_remote_endpoint_data.address().to_string();
+  return m_remote_endpoint_data.address().to_string() + ":" +
+         std::to_string(m_remote_endpoint_data.port());
 }
 
 inline bool BoostWebSocketConnection::IsUsable() const {

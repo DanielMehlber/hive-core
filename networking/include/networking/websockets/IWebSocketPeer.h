@@ -70,6 +70,14 @@ public:
    * @note connections that are not established will be ignored.
    */
   virtual void CloseConnectionTo(const std::string &uri) noexcept = 0;
+
+  /**
+   * @brief Checks if this peer is currently connected to an endpoint with this
+   * url
+   * @param uri identifier of connection
+   * @return true, if there is an established connection to this host
+   */
+  virtual bool HasConnectionTo(const std::string &uri) const noexcept = 0;
 };
 
 typedef std::shared_ptr<IWebSocketPeer> SharedWebSocketPeer;

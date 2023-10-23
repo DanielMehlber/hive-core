@@ -1,5 +1,3 @@
-#include <utility>
-
 #include "services/ServiceResponse.h"
 
 using namespace services;
@@ -30,4 +28,13 @@ std::string ServiceResponse::GetStatusMessage() const {
 
 void ServiceResponse::SetStatusMessage(const std::string &mStatusMessage) {
   m_status_message = mStatusMessage;
+}
+
+std::set<std::string> ServiceResponse::GetResultNames() const {
+  std::set<std::string> set;
+  for (const auto &items : m_result_values) {
+    set.insert(items.first);
+  }
+
+  return std::move(set);
 }

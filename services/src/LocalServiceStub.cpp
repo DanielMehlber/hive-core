@@ -5,9 +5,10 @@ using namespace services;
 using namespace services::impl;
 
 LocalServiceStub::LocalServiceStub(
+    std::string service_name,
     std::function<std::future<SharedServiceResponse>(SharedServiceRequest)>
         func)
-    : m_func(std::move(func)) {}
+    : m_func(std::move(func)), m_service_name(std::move(service_name)) {}
 
 std::future<SharedServiceResponse>
 LocalServiceStub::Call(SharedServiceRequest request,
@@ -20,10 +21,11 @@ LocalServiceStub::Call(SharedServiceRequest request,
       completion_promise->get_future();
 
   jobsystem::job::SharedJob job = jobsystem::JobSystemFactory::CreateJob(
-      [request, this,
+      [request,
+       _this = std::static_pointer_cast<LocalServiceStub>(shared_from_this()),
        completion_promise](jobsystem::JobContext *context) mutable {
         try {
-          auto result = this->m_func(request);
+          auto result = _this->m_func(request);
           context->GetJobManager()->WaitForCompletion(result);
           completion_promise->set_value(result.get());
         } catch (...) {
@@ -39,3 +41,5 @@ LocalServiceStub::Call(SharedServiceRequest request,
 
   return completion_future;
 }
+
+std::string LocalServiceStub::GetServiceName() { return m_service_name; }

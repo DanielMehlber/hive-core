@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 
@@ -33,6 +34,7 @@ protected:
 
 public:
   explicit ServiceRequest(std::string service_name);
+  ServiceRequest(std::string service_name, std::string transaction_id);
 
   /**
    * Set parameter value of request
@@ -47,17 +49,23 @@ public:
    * @param name identifier of parameter in request
    * @return parameter value as string (if it exists)
    */
-  std::optional<std::string> GetParameter(const std::string &name);
+  std::optional<std::string> GetParameter(const std::string &name) const;
 
   std::string GetServiceName() const;
   std::string GetTransactionId() const;
+
+  std::set<std::string> GetParameterNames() const;
 };
 
 template <typename T>
-void ServiceRequest::SetParameter(const std::string &name, const T &t) {
-  std::stringstream ss;
-  ss << t;
-  m_parameters[name] = ss.str();
+inline void ServiceRequest::SetParameter(const std::string &name, const T &t) {
+  m_parameters[name] = std::to_string(t);
+}
+
+template <>
+inline void ServiceRequest::SetParameter<std::string>(const std::string &name,
+                                                      const std::string &t) {
+  m_parameters[name] = t;
 }
 
 typedef std::shared_ptr<ServiceRequest> SharedServiceRequest;

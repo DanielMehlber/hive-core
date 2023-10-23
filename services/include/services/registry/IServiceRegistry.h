@@ -1,7 +1,7 @@
 #ifndef ISERVICEREGISTRY_H
 #define ISERVICEREGISTRY_H
 
-#include "../stub/IServiceStub.h"
+#include "services/caller/IServiceCaller.h"
 #include <memory>
 
 namespace services {
@@ -19,8 +19,7 @@ public:
    * @attention if a service with this name is already registered, it will be
    * overwritten
    */
-  virtual void Register(const std::string &name,
-                        const SharedServiceStub &stub) = 0;
+  virtual void Register(const SharedServiceStub &stub) = 0;
 
   /**
    * Unregister service by its service name
@@ -33,8 +32,8 @@ public:
    * @param name unique service name
    * @return a service stub, if the service exists, when it has been resolved
    */
-  virtual std::future<std::optional<SharedServiceStub>>
-  Find(const std::string &name) noexcept = 0;
+  virtual std::future<std::optional<SharedServiceCaller>>
+  Find(const std::string &name, bool only_local = false) noexcept = 0;
 };
 
 typedef std::shared_ptr<IServiceRegistry> SharedServiceRegistry;

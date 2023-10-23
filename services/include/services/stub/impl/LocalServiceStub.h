@@ -9,7 +9,7 @@ using namespace services;
 namespace services::impl {
 
 /**
- * Service stub for a service that will be executed using jobs in this running
+ * Service that will be executed using jobs in this running
  * process.
  */
 class LocalServiceStub : public IServiceStub {
@@ -20,9 +20,12 @@ protected:
   std::function<std::future<SharedServiceResponse>(SharedServiceRequest)>
       m_func;
 
+  std::string m_service_name;
+
 public:
   LocalServiceStub() = delete;
   explicit LocalServiceStub(
+      std::string service_name,
       std::function<std::future<SharedServiceResponse>(SharedServiceRequest)>
           func);
   virtual ~LocalServiceStub() = default;
@@ -32,6 +35,10 @@ public:
        jobsystem::SharedJobManager job_manager) override;
 
   bool IsUsable() override { return true; };
+
+  std::string GetServiceName() override;
+
+  bool IsLocal() override { return true; };
 };
 
 } // namespace services::impl

@@ -4,16 +4,17 @@
 using namespace networking::websockets;
 
 WebSocketMessage::WebSocketMessage(std::string message_type)
-    : m_type{message_type}, m_uuid{common::uuid::UuidGenerator::Random()} {}
+    : m_type{std::move(message_type)},
+      m_uuid{common::uuid::UuidGenerator::Random()} {}
 
 WebSocketMessage::WebSocketMessage(std::string message_type, std::string id)
-    : m_type{message_type}, m_uuid{std::move(id)} {}
+    : m_type{std::move(message_type)}, m_uuid{std::move(id)} {}
 
 WebSocketMessage::~WebSocketMessage() = default;
 
 void WebSocketMessage::SetAttribute(const std::string &attribute_key,
-                                    const std::string &attribute_value) {
-  m_attributes[attribute_key] = attribute_value;
+                                    std::string attribute_value) {
+  m_attributes[attribute_key] = std::move(attribute_value);
 }
 
 std::optional<std::string>

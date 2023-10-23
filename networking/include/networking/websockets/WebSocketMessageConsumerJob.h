@@ -15,13 +15,15 @@ class NETWORKING_API WebSocketMessageConsumerJob : public jobsystem::job::Job {
 protected:
   const SharedWebSocketMessage m_message;
   const SharedWebSocketMessageConsumer m_consumer;
+  const WebSocketConnectionInfo m_connection_info;
 
   jobsystem::job::JobContinuation
   ConsumeMessage([[maybe_unused]] jobsystem::JobContext *context);
 
 public:
   WebSocketMessageConsumerJob(SharedWebSocketMessageConsumer consumer,
-                              SharedWebSocketMessage message);
+                              SharedWebSocketMessage message,
+                              WebSocketConnectionInfo connection_info);
 };
 } // namespace networking::websockets
 

@@ -4,6 +4,7 @@
 #include "jobsystem/JobSystem.h"
 #include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
+#include "networking/websockets/WebSocketConnectionInfo.h"
 #include "properties/PropertyFactory.h"
 
 using namespace networking;
@@ -59,11 +60,10 @@ class TestConsumer : public IWebSocketMessageConsumer {
 public:
   std::mutex counter_mutex;
   size_t counter{0};
-  const std::string GetMessageType() const noexcept override {
-    return "test-type";
-  }
+  std::string GetMessageType() const noexcept override { return "test-type"; }
   void ProcessReceivedMessage(
-      SharedWebSocketMessage received_message) noexcept override {
+      SharedWebSocketMessage received_message,
+      WebSocketConnectionInfo connection_info) noexcept override {
     std::unique_lock lock(counter_mutex);
     counter++;
   }

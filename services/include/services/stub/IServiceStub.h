@@ -1,20 +1,19 @@
 #ifndef ISERVICESTUB_H
 #define ISERVICESTUB_H
 
-#include "../ServiceRequest.h"
-#include "../ServiceResponse.h"
 #include "jobsystem/manager/JobManager.h"
+#include "services/ServiceRequest.h"
+#include "services/ServiceResponse.h"
 #include <future>
 
 namespace services {
 
 /**
- * @brief Generic interface for service stubs, which act like a handle to the
- * actual service implementation. Service Implementation can be called directly
- * (when located on the same agent) or using network protocols (when located on
- * a remote host).
+ * @brief Generic interface for services, which act as service implementation.
+ * It can be called directly (when located on the same agent) or using network
+ * protocols (when located on a remote host).
  */
-class IServiceStub {
+class IServiceStub : public std::enable_shared_from_this<IServiceStub> {
 public:
   /**
    * Calls the service using parameters and returns a response eventually
@@ -33,6 +32,17 @@ public:
    * @return true, if service can be called
    */
   virtual bool IsUsable() = 0;
+
+  /**
+   * @return service name of this stub
+   */
+  virtual std::string GetServiceName() = 0;
+
+  /**
+   * @return true, if service is located on this instance (callable using direct
+   * call)
+   */
+  virtual bool IsLocal() = 0;
 };
 
 typedef std::shared_ptr<IServiceStub> SharedServiceStub;

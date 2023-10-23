@@ -1,7 +1,7 @@
 #ifndef LOCALSERVICEREGISTRYTEST_H
 #define LOCALSERVICEREGISTRYTEST_H
 
-#include "services/registry/impl/LocalServiceRegistry.h"
+#include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
 #include "services/stub/impl/LocalServiceStub.h"
 #include <gtest/gtest.h>
 
@@ -12,9 +12,9 @@ class AddingService : public services::impl::LocalServiceStub {
 public:
   AddingService()
       : services::impl::LocalServiceStub(
-            std::bind(&AddingService::Call, this, _1)){};
+            "add", std::bind(&AddingService::Add, this, _1)){};
 
-  std::future<SharedServiceResponse> Call(SharedServiceRequest request) {
+  std::future<SharedServiceResponse> Add(SharedServiceRequest request) {
     auto opt_a = request->GetParameter("a");
     auto opt_b = request->GetParameter("b");
     std::promise<SharedServiceResponse> completion_promise;
@@ -51,21 +51,21 @@ public:
 
 TEST(ServiceTests, adding_service) {
   SharedServiceRegistry registry =
-      std::make_shared<services::impl::LocalServiceRegistry>();
+      std::make_shared<services::impl::LocalOnlyServiceRegistry>();
 
   SharedServiceStub adding_service = std::make_shared<AddingService>();
   jobsystem::SharedJobManager job_manager =
       std::make_shared<jobsystem::JobManager>();
 
-  registry->Register("add", adding_service);
+  registry->Register(adding_service);
 
-  SharedServiceStub service_stub = registry->Find("add").get().value();
+  SharedServiceCaller service_caller = registry->Find("add").get().value();
 
   SharedServiceRequest request = std::make_shared<ServiceRequest>("add");
   request->SetParameter("a", 5);
   request->SetParameter("b", 6);
 
-  auto result_fut = service_stub->Call(request, job_manager);
+  auto result_fut = service_caller->Call(request, job_manager);
   job_manager->InvokeCycleAndWait();
 
   result_fut.wait();

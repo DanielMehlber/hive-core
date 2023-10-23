@@ -59,7 +59,7 @@ private:
    * @brief Maps host addresses to the connection established with the host.
    */
   std::map<std::string, SharedBoostWebSocketConnection> m_connections;
-  std::mutex m_connections_mutex;
+  mutable std::mutex m_connections_mutex;
 
   std::shared_ptr<BoostWebSocketConnectionEstablisher> m_connection_establisher;
   std::shared_ptr<BoostWebSocketConnectionListener> m_connection_listener;
@@ -119,6 +119,8 @@ public:
   EstablishConnectionTo(const std::string &uri) noexcept override;
 
   void CloseConnectionTo(const std::string &uri) noexcept override;
+
+  bool HasConnectionTo(const std::string &uri) const noexcept;
 };
 } // namespace networking::websockets
 

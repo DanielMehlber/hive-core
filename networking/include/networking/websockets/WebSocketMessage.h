@@ -56,7 +56,7 @@ public:
    * @param attribute_value new value of the attribute
    */
   void SetAttribute(const std::string &attribute_key,
-                    const std::string &attribute_value);
+                    std::string attribute_value);
 
   /**
    * @brief Returns the value of an attribute (if it exists)
