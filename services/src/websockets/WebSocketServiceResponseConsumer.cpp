@@ -22,6 +22,7 @@ void WebSocketServiceResponseConsumer::ProcessReceivedMessage(
   SharedServiceResponse response = opt_response.value();
   std::string transaction_id = response->GetTransactionId();
 
+  std::unique_lock lock(m_promises_mutex);
   if (!m_promises.contains(transaction_id)) {
     LOG_WARN("received service response for unknown request "
              << transaction_id);
@@ -58,6 +59,6 @@ void WebSocketServiceResponseConsumer::ProcessReceivedMessage(
 void WebSocketServiceResponseConsumer::AddResponsePromise(
     const std::string &request_id,
     std::promise<SharedServiceResponse> &&response_promise) {
-
+  std::unique_lock lock(m_promises_mutex);
   m_promises[request_id] = std::move(response_promise);
 }

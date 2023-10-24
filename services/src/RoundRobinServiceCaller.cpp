@@ -7,8 +7,9 @@ using namespace services;
 using namespace jobsystem;
 
 bool RoundRobinServiceCaller::IsCallable() const noexcept {
+  std::unique_lock lock(m_service_stubs_mutex);
   for (const auto &stub : m_service_stubs) {
-    if (stub->IsUsable()) {
+    if (stub->IsCallable()) {
       return true;
     }
   }
@@ -17,6 +18,7 @@ bool RoundRobinServiceCaller::IsCallable() const noexcept {
 }
 
 void RoundRobinServiceCaller::AddServiceStub(SharedServiceStub stub) {
+  std::unique_lock lock(m_service_stubs_mutex);
   m_service_stubs.push_back(stub);
 }
 
@@ -64,19 +66,20 @@ RoundRobinServiceCaller::Call(SharedServiceRequest request,
 
 std::optional<SharedServiceStub>
 RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
-
+  std::unique_lock lock(m_service_stubs_mutex);
   // just do one round-trip searching for finding a callable service stub.
   // Otherwise, there is none.
   size_t tries = 0;
   while (tries < m_service_stubs.size()) {
-    size_t next_index = std::min(m_service_stubs.size() - 1, m_last_index) +
-                        1 % m_service_stubs.size();
+    size_t next_index =
+        (std::min(m_service_stubs.size() - 1, m_last_index) + 1) %
+        m_service_stubs.size();
 
     const SharedServiceStub &stub = m_service_stubs.at(next_index);
     tries++;
     m_last_index = next_index;
 
-    if (stub->IsUsable()) {
+    if (stub->IsCallable()) {
       if (only_local) {
         if (!stub->IsLocal()) {
           return {};
@@ -90,11 +93,24 @@ RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
 }
 
 bool RoundRobinServiceCaller::ContainsLocallyCallable() const noexcept {
+  std::unique_lock lock(m_service_stubs_mutex);
   for (const auto &stub : m_service_stubs) {
-    if (stub->IsUsable() && stub->IsLocal()) {
+    if (stub->IsCallable() && stub->IsLocal()) {
       return true;
     }
   }
 
   return false;
+}
+
+size_t RoundRobinServiceCaller::GetCallableCount() const noexcept {
+  std::unique_lock lock(m_service_stubs_mutex);
+  size_t count = 0;
+  for (auto &stubs : m_service_stubs) {
+    if (stubs->IsCallable()) {
+      count++;
+    }
+  }
+
+  return count;
 }

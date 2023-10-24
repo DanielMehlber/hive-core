@@ -10,6 +10,7 @@ using namespace networking::websockets;
 namespace services::impl {
 class WebSocketServiceResponseConsumer : public IWebSocketMessageConsumer {
 private:
+  mutable std::mutex m_promises_mutex;
   std::map<std::string, std::promise<SharedServiceResponse>> m_promises;
 
 public:

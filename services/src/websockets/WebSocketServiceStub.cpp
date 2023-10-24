@@ -17,7 +17,7 @@ WebSocketServiceStub::WebSocketServiceStub(
       m_service_name(std::move(service_name)),
       m_response_consumer(std::move(response_consumer)) {}
 
-bool WebSocketServiceStub::IsUsable() {
+bool WebSocketServiceStub::IsCallable() {
   if (m_web_socket_peer.expired()) {
     return false;
   }
@@ -35,20 +35,10 @@ WebSocketServiceStub::Call(SharedServiceRequest request,
       [_this =
            std::static_pointer_cast<WebSocketServiceStub>(shared_from_this()),
        request, promise](JobContext *context) {
-        if (_this->IsUsable()) {
+        if (_this->IsCallable()) {
           LOG_DEBUG("calling remote web-socket service '"
                     << request->GetServiceName() << "' at endpoint "
                     << _this->m_remote_host_name);
-
-          SharedWebSocketMessage message =
-              WebSocketServiceMessagesConverter::FromServiceRequest(*request);
-          std::future<void> sending_future =
-              _this->m_web_socket_peer.lock()->Send(_this->m_remote_host_name,
-                                                    message);
-
-          // wait until request has been sent and register promise for
-          // resolution
-          context->GetJobManager()->WaitForCompletion(sending_future);
 
           if (!_this->m_response_consumer.expired()) {
             _this->m_response_consumer.lock()->AddResponsePromise(
@@ -64,6 +54,17 @@ WebSocketServiceStub::Call(SharedServiceRequest request,
                                      "its consumer has been destroyed");
             promise->set_exception(std::make_exception_ptr(exception));
           }
+
+          SharedWebSocketMessage message =
+              WebSocketServiceMessagesConverter::FromServiceRequest(*request);
+
+          std::future<void> sending_future =
+              _this->m_web_socket_peer.lock()->Send(_this->m_remote_host_name,
+                                                    message);
+
+          // wait until request has been sent and register promise for
+          // resolution
+          context->GetJobManager()->WaitForCompletion(sending_future);
 
         } else {
           LOG_ERR("cannot call remote web-socket service "

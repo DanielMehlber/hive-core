@@ -46,6 +46,7 @@ void WebSocketServiceRegistry::Register(const SharedServiceStub &stub) {
 
   std::string name = stub->GetServiceName();
 
+  std::unique_lock lock(m_registered_callers_mutex);
   if (!m_registered_callers.contains(name)) {
     m_registered_callers[name] = std::make_shared<RoundRobinServiceCaller>();
   }
@@ -60,6 +61,7 @@ void WebSocketServiceRegistry::Register(const SharedServiceStub &stub) {
 }
 
 void WebSocketServiceRegistry::Unregister(const std::string &name) {
+  std::unique_lock lock(m_registered_callers_mutex);
   if (m_registered_callers.contains(name)) {
     m_registered_callers.erase(name);
     LOG_DEBUG(
@@ -74,6 +76,7 @@ WebSocketServiceRegistry::Find(const std::string &name,
   std::promise<std::optional<SharedServiceCaller>> promise;
   std::future<std::optional<SharedServiceCaller>> future = promise.get_future();
 
+  std::unique_lock lock(m_registered_callers_mutex);
   if (m_registered_callers.contains(name)) {
     SharedServiceCaller caller = m_registered_callers.at(name);
 

@@ -7,6 +7,8 @@ using namespace std::placeholders;
 
 class AddingServiceStub : public services::impl::LocalServiceStub {
 public:
+  std::atomic_size_t count{0};
+
   AddingServiceStub()
       : services::impl::LocalServiceStub(
             "add", std::bind(&AddingServiceStub::Add, this, _1)){};
@@ -40,10 +42,11 @@ public:
     }
 
     completion_promise.set_value(response);
+    count++;
     return completion_future;
   }
 
-  bool IsUsable() override { return true; }
+  bool IsCallable() override { return true; }
 };
 
 SharedServiceRequest GenerateAddingRequest(int a, int b) {

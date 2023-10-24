@@ -11,7 +11,9 @@ namespace services::impl {
 
 class WebSocketServiceRegistry : public IServiceRegistry {
 protected:
+  mutable std::mutex m_registered_callers_mutex;
   std::map<std::string, SharedServiceCaller> m_registered_callers;
+
   std::weak_ptr<IWebSocketPeer> m_web_socket_peer;
   jobsystem::SharedJobManager m_job_manager;
 

@@ -12,6 +12,7 @@ namespace services::impl {
 class RoundRobinServiceCaller : public IServiceCaller {
 private:
   /** List of service stubs */
+  mutable std::mutex m_service_stubs_mutex;
   std::vector<SharedServiceStub> m_service_stubs;
 
   /** Last selected index (necessary for round robin) */
@@ -29,6 +30,8 @@ public:
   bool ContainsLocallyCallable() const noexcept override;
 
   void AddServiceStub(SharedServiceStub stub) override;
+
+  size_t GetCallableCount() const noexcept override;
 };
 
 } // namespace services::impl

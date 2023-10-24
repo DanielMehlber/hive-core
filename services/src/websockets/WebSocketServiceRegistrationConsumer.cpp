@@ -19,7 +19,7 @@ void WebSocketServiceRegistrationConsumer::ProcessReceivedMessage(
 
   WebSocketServiceRegistrationMessage registration_message(received_message);
   LOG_INFO("received web-socket service registration of service '"
-           << registration_message.GetServiceName() << "' on host "
+           << registration_message.GetServiceName() << "' from host "
            << connection_info.GetHostname());
 
   SharedServiceStub stub = std::make_shared<WebSocketServiceStub>(

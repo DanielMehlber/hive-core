@@ -49,6 +49,11 @@ public:
    * @param stub stub to add
    */
   virtual void AddServiceStub(SharedServiceStub stub) = 0;
+
+  /**
+   * @return current count of executable services
+   */
+  virtual size_t GetCallableCount() const noexcept = 0;
 };
 
 typedef std::shared_ptr<IServiceCaller> SharedServiceCaller;

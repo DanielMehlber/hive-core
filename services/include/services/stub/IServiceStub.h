@@ -31,7 +31,7 @@ public:
    * Checks if the service can be used currently
    * @return true, if service can be called
    */
-  virtual bool IsUsable() = 0;
+  virtual bool IsCallable() = 0;
 
   /**
    * @return service name of this stub

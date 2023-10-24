@@ -34,7 +34,7 @@ public:
   Call(SharedServiceRequest request,
        jobsystem::SharedJobManager job_manager) override;
 
-  bool IsUsable() override { return true; };
+  bool IsCallable() override { return true; };
 
   std::string GetServiceName() override;
 
