@@ -74,21 +74,28 @@ TEST(JobSystem, auto_requeue) {
 
 TEST(JobSystem, timer_job) {
   JobManager manager;
-  bool job_executed = false;
+  size_t job_executed = 0;
   auto timer_job = JobSystemFactory::CreateJob<TimerJob>(
       [&](JobContext *) {
-        job_executed = true;
+        job_executed++;
         return JobContinuation::REQUEUE;
       },
-      1s);
+      1s, CLEAN_UP);
 
   manager.KickJob(timer_job);
   manager.InvokeCycleAndWait();
-  ASSERT_FALSE(job_executed);
+  ASSERT_EQ(0, job_executed);
 
   std::this_thread::sleep_for(1s);
   manager.InvokeCycleAndWait();
-  ASSERT_TRUE(job_executed);
+  ASSERT_EQ(1, job_executed);
+
+  manager.InvokeCycleAndWait();
+  ASSERT_EQ(1, job_executed);
+
+  std::this_thread::sleep_for(1s);
+  manager.InvokeCycleAndWait();
+  ASSERT_EQ(2, job_executed);
 }
 
 TEST(JobSystem, jobs_kicking_jobs) {
@@ -155,6 +162,9 @@ TEST(JobSystem, job_bulk) {
   }
 
   manager.InvokeCycleAndWait();
+  if (!absolute_counter->IsFinished()) {
+    throw "";
+  }
   ASSERT_TRUE(absolute_counter->IsFinished());
 }
 

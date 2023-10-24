@@ -63,7 +63,7 @@ private:
    * time-interval jobs).
    */
   std::queue<SharedJob> m_next_cycle_queue;
-  std::mutex m_next_cycle_queue_mutex;
+  mutable std::mutex m_next_cycle_queue_mutex;
 
   /**
    * @brief Some jobs must be prevented from being rescheduled for the next

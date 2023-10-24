@@ -13,7 +13,7 @@ JobManager::JobManager() {
         PrintStatusLog();
         return JobContinuation::REQUEUE;
       },
-      1s);
+      "print-job-system-stats", 1s);
   KickJob(job);
 #endif
 
@@ -148,6 +148,8 @@ void JobManager::InvokeCycleAndWait() {
   m_current_state = CYCLE_CLEAN_UP;
   ExecuteQueueAndWait(m_clean_up_queue, m_clean_up_queue_mutex,
                       m_clean_up_phase_counter);
+
+  m_current_state = READY;
 
   ResetContinuationRequeueBlacklist();
 #ifndef NDEBUG
