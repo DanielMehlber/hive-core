@@ -24,6 +24,7 @@ private:
    * @brief TCP stream that allows interaction with the communication partner.
    */
   stream_type m_socket;
+  mutable std::mutex m_socket_mutex;
 
   /**
    * @brief Buffer for received messages
@@ -134,6 +135,7 @@ inline std::string BoostWebSocketConnection::GetRemoteHostAddress() const {
 }
 
 inline bool BoostWebSocketConnection::IsUsable() const {
+  std::unique_lock lock(m_socket_mutex);
   return m_socket.is_open();
 }
 

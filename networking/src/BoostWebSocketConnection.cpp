@@ -38,14 +38,18 @@ void BoostWebSocketConnection::OnMessageReceived(
 
   // check for closing message
   if (error_code == websocket::error::closed ||
-      error_code == http::error::end_of_stream) {
+      error_code == http::error::end_of_stream ||
+      error_code == boost::asio::error::connection_reset) {
     LOG_WARN("remote host " << m_remote_endpoint_data.address().to_string()
                             << ":" << m_remote_endpoint_data.port()
                             << " has closed the web-socket connection");
 
-    // shut down the TCP connection as well
-    m_socket.next_layer().socket().shutdown(tcp::socket::shutdown_send,
-                                            error_code);
+    Close();
+    return;
+  } else if (error_code == asio::error::operation_aborted) {
+    LOG_DEBUG("local host has cancelled listening to web-socket message from "
+              << m_remote_endpoint_data.address().to_string() << ":"
+              << m_remote_endpoint_data.port());
     return;
   } else if (error_code) {
     LOG_ERR("failed to receive web-socket message from host "
@@ -55,7 +59,7 @@ void BoostWebSocketConnection::OnMessageReceived(
   }
 
   // extract sent bytes and pass them to the callback function
-  const auto received_data = boost::beast::buffers_to_string(m_buffer.data());
+  std::string received_data = boost::beast::buffers_to_string(m_buffer.data());
   m_buffer.consume(m_buffer.size());
 
   // read next message asynchronously
@@ -74,20 +78,19 @@ void BoostWebSocketConnection::AsyncReceiveMessage() {
 }
 
 void BoostWebSocketConnection::Close() {
+  std::unique_lock lock(m_socket_mutex);
   if (m_socket.is_open()) {
-    m_socket.async_close(
-        beast::websocket::close_code::normal, [this](beast::error_code ec) {
-          if (ec) {
-            LOG_WARN("closing web-socket connection to "
-                     << m_remote_endpoint_data.address().to_string() << ":"
-                     << m_remote_endpoint_data.port()
-                     << "failed: " << ec.message());
-          } else {
-            LOG_INFO("closed web-socket connection to "
-                     << m_remote_endpoint_data.address().to_string() << ":"
-                     << m_remote_endpoint_data.port());
-          }
-        });
+    beast::error_code error_code;
+    m_socket.close(beast::websocket::close_code::normal, error_code);
+    // shut down the TCP connection as well
+    if (m_socket.next_layer().socket().is_open()) {
+      m_socket.next_layer().socket().shutdown(tcp::socket::shutdown_send,
+                                              error_code);
+    }
+
+    LOG_INFO("closed web-socket connection to "
+             << m_remote_endpoint_data.address().to_string() << ":"
+             << m_remote_endpoint_data.port());
   }
 }
 
@@ -95,7 +98,7 @@ BoostWebSocketConnection::~BoostWebSocketConnection() { Close(); }
 
 std::future<void>
 BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
-
+  std::unique_lock lock(m_socket_mutex);
   if (!m_socket.is_open()) {
     LOG_WARN("Cannot sent message via web-socket to remote host "
              << m_remote_endpoint_data.address().to_string() << ":"

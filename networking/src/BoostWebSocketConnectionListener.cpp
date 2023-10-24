@@ -101,7 +101,13 @@ void BoostWebSocketConnectionListener::StartAcceptingAnotherConnection() {
 
 void BoostWebSocketConnectionListener::ProcessTcpConnection(
     boost::beast::error_code error_code, boost::asio::ip::tcp::socket socket) {
-  if (error_code) {
+
+  if (error_code == asio::error::operation_aborted) {
+    LOG_DEBUG("local web-socket connection acceptor at "
+              << m_local_endpoint->address().to_string() << ":"
+              << m_local_endpoint->port() << " has stopped");
+    return;
+  } else if (error_code) {
     LOG_ERR(
         "server was not able to accept TCP connection for web-socket stream: "
         << error_code.message());
@@ -172,6 +178,7 @@ void BoostWebSocketConnectionListener::ProcessWebSocketHandshake(
 void BoostWebSocketConnectionListener::ShutDown() {
   LOG_DEBUG("web-socket connection listener has been shut down")
   if (m_incoming_connection_acceptor->is_open()) {
+    m_incoming_connection_acceptor->cancel();
     m_incoming_connection_acceptor->close();
   }
 }

@@ -12,6 +12,7 @@ namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
 namespace asio = boost::asio;           // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+using namespace std::chrono_literals;
 
 BoostWebSocketPeer::BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
                                        props::SharedPropertyProvider properties)
@@ -39,6 +40,49 @@ BoostWebSocketPeer::BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
     std::thread execution([this]() { m_execution_context->run(); });
     m_execution_threads.push_back(std::move(execution));
   }
+
+  SetupCleanUpJob();
+}
+
+void BoostWebSocketPeer::SetupCleanUpJob() {
+  SharedJob clean_up_job = jobsystem::JobSystemFactory::CreateJob<TimerJob>(
+      [weak_this = weak_from_this()](jobsystem::JobContext *context) {
+        if (weak_this.expired()) {
+          return DISPOSE;
+        }
+
+        // clean up consumers that are not referencing any valid ones
+        auto _this = weak_this.lock();
+        for (auto &consumer : _this->m_consumers) {
+          _this->CleanUpConsumersOf(consumer.first);
+        }
+
+        // clean up connections that are not usable anymore
+        std::unique_lock lock(_this->m_connections_mutex);
+        size_t size_before = _this->m_connections.size();
+        for (auto it = _this->m_connections.begin();
+             it != _this->m_connections.end();
+             /* no increment here */) {
+          if (it->second->IsUsable()) {
+            it = _this->m_connections.erase(it);
+          } else {
+            ++it;
+          }
+        }
+
+        size_t difference = size_before - _this->m_connections.size();
+        if (difference > 0) {
+          LOG_INFO("cleaned up " << difference
+                                 << " unusable or dead connections");
+        }
+
+        return REQUEUE;
+      },
+      "boost-web-socket-peer-clean-up-" +
+          std::to_string(m_local_endpoint->port()),
+      5s, CLEAN_UP);
+
+  m_job_manager->KickJob(clean_up_job);
 }
 
 BoostWebSocketPeer::~BoostWebSocketPeer() {
@@ -303,4 +347,16 @@ BoostWebSocketPeer::Broadcast(const SharedWebSocketMessage &message) {
 
   m_job_manager->KickJob(job);
   return future;
+}
+
+size_t BoostWebSocketPeer::GetActiveConnectionCount() const {
+  std::unique_lock lock(m_connections_mutex);
+  size_t count = 0;
+  for (auto &connection : m_connections) {
+    if (connection.second->IsUsable()) {
+      count++;
+    }
+  }
+
+  return count;
 };

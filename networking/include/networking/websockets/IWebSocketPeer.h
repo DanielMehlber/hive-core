@@ -62,6 +62,12 @@ public:
   Broadcast(const SharedWebSocketMessage &message) = 0;
 
   /**
+   * Counts active and usable connections
+   * @return count of active and usable connections
+   */
+  virtual size_t GetActiveConnectionCount() const = 0;
+
+  /**
    * @brief Establishes connection with another socket server
    * @param uri where the other socket server listenes for new connections
    * @return a future indicating success or failure of the connecting process.

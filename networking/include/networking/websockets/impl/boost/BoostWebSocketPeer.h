@@ -104,6 +104,8 @@ private:
   void InitAndStartConnectionListener();
   void InitConnectionEstablisher();
 
+  void SetupCleanUpJob();
+
 public:
   BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
                      props::SharedPropertyProvider properties);
@@ -125,6 +127,8 @@ public:
   std::future<size_t> Broadcast(const SharedWebSocketMessage &message) override;
 
   bool HasConnectionTo(const std::string &uri) const noexcept override;
+
+  size_t GetActiveConnectionCount() const override;
 };
 } // namespace networking::websockets
 

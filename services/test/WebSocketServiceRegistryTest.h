@@ -16,6 +16,10 @@ using namespace services::impl;
 using namespace networking;
 using namespace common::test;
 
+#define REGISTRY_OF(x) std::get<1>(x)
+#define WEB_SOCKET_OF(x) std::get<0>(x)
+#define NODE std::tuple<SharedWebSocketPeer, SharedServiceRegistry>
+
 SharedWebSocketPeer setupPeer(size_t port, const SharedJobManager &job_manager,
                               const SharedBroker &message_broker) {
   props::SharedPropertyProvider property_provider =
@@ -26,44 +30,45 @@ SharedWebSocketPeer setupPeer(size_t port, const SharedJobManager &job_manager,
   return NetworkingFactory::CreateWebSocketPeer(job_manager, property_provider);
 }
 
+NODE setupNode(size_t port, const SharedJobManager &job_manager,
+               const SharedBroker &message_broker) {
+  // setup first peer
+  SharedWebSocketPeer web_socket_peer =
+      setupPeer(port, job_manager, message_broker);
+  SharedServiceRegistry registry =
+      std::make_shared<services::impl::WebSocketServiceRegistry>(
+          web_socket_peer, job_manager);
+
+  return {web_socket_peer, registry};
+}
+
 TEST(ServiceTests, web_socket_run_single_remote_service) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
   messaging::SharedBroker message_broker =
       messaging::MessagingFactory::CreateBroker(job_manager);
 
-  // setup first peer
-  SharedWebSocketPeer web_socket_peer_a =
-      setupPeer(9005, job_manager, message_broker);
-  SharedServiceRegistry registry_a =
-      std::make_shared<services::impl::WebSocketServiceRegistry>(
-          web_socket_peer_a, job_manager);
-
-  // setup second peer
-  SharedWebSocketPeer web_socket_peer_b =
-      setupPeer(9006, job_manager, message_broker);
-  SharedServiceRegistry registry_b =
-      std::make_shared<services::impl::WebSocketServiceRegistry>(
-          web_socket_peer_b, job_manager);
+  NODE node1 = setupNode(9005, job_manager, message_broker);
+  NODE node2 = setupNode(9006, job_manager, message_broker);
 
   // first establish connection in order to broadcast the connection
   auto connection_progress =
-      web_socket_peer_a->EstablishConnectionTo("127.0.0.1:9006");
+      WEB_SOCKET_OF(node1)->EstablishConnectionTo("127.0.0.1:9006");
 
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
 
   SharedServiceStub local_service = std::make_shared<AddingServiceStub>();
-  registry_a->Register(local_service);
+  REGISTRY_OF(node1)->Register(local_service);
   job_manager->InvokeCycleAndWait();
 
   TryAssertUntilTimeout(
-      [registry_b, job_manager] {
+      [&node2, job_manager] {
         job_manager->InvokeCycleAndWait();
-        return registry_b->Find("add").get().has_value();
+        return REGISTRY_OF(node2)->Find("add").get().has_value();
       },
       10s);
 
-  SharedServiceCaller caller = registry_b->Find("add").get().value();
+  SharedServiceCaller caller = REGISTRY_OF(node2)->Find("add").get().value();
   auto result_fut = caller->Call(GenerateAddingRequest(3, 5), job_manager);
   job_manager->InvokeCycleAndWait();
 
@@ -77,23 +82,19 @@ TEST(ServiceTests, web_service_load_balancing) {
   messaging::SharedBroker message_broker =
       messaging::MessagingFactory::CreateBroker(job_manager);
 
-  // setup first peer
-  SharedWebSocketPeer main_web_socket_peer =
-      setupPeer(9004, job_manager, message_broker);
-  SharedServiceRegistry main_registry =
-      std::make_shared<services::impl::WebSocketServiceRegistry>(
-          main_web_socket_peer, job_manager);
+  NODE main_node = setupNode(9004, job_manager, message_broker);
+  SharedServiceRegistry main_registry = REGISTRY_OF(main_node);
+  SharedWebSocketPeer main_web_socket_peer = WEB_SOCKET_OF(main_node);
 
   std::vector<std::tuple<SharedWebSocketPeer, SharedServiceRegistry,
                          std::shared_ptr<AddingServiceStub>>>
       peers;
+
   for (int i = 9005; i < 9010; i++) {
-    // setup first peer
-    SharedWebSocketPeer web_socket_peer =
-        setupPeer(i, job_manager, message_broker);
-    SharedServiceRegistry registry =
-        std::make_shared<services::impl::WebSocketServiceRegistry>(
-            web_socket_peer, job_manager);
+    NODE node = setupNode(i, job_manager, message_broker);
+
+    SharedWebSocketPeer web_socket_peer = WEB_SOCKET_OF(node);
+    SharedServiceRegistry registry = REGISTRY_OF(node);
 
     // first establish connection in order to broadcast the connection
     auto connection_progress =
@@ -110,11 +111,11 @@ TEST(ServiceTests, web_service_load_balancing) {
 
   // register service at peers
   for (auto &peer : peers) {
-    std::get<1>(peer)->Register(std::get<2>(peer));
+    REGISTRY_OF(peer)->Register(std::get<2>(peer));
   }
-
   job_manager->InvokeCycleAndWait();
 
+  // wait until remote services have been registered due to service broadcast
   TryAssertUntilTimeout(
       [main_registry, job_manager] {
         job_manager->InvokeCycleAndWait();
@@ -149,6 +150,45 @@ TEST(ServiceTests, web_service_load_balancing) {
   for (auto &peer : peers) {
     ASSERT_EQ(1, std::get<2>(peer)->count);
   }
+}
+
+TEST(ServiceTests, web_socket_peer_destroyed) {
+  SharedJobManager job_manager = std::make_shared<JobManager>();
+  messaging::SharedBroker message_broker =
+      messaging::MessagingFactory::CreateBroker(job_manager);
+
+  auto node1 = setupNode(9005, job_manager, message_broker);
+  std::string connected_port;
+
+  {
+    auto node2 = setupNode(9006, job_manager, message_broker);
+    auto progress =
+        WEB_SOCKET_OF(node2)->EstablishConnectionTo("127.0.0.1:9005");
+
+    ASSERT_NO_THROW(progress.get());
+
+    SharedServiceStub adding_service = std::make_shared<AddingServiceStub>();
+    REGISTRY_OF(node2)->Register(adding_service);
+
+    // wait until service is available to node1 (because node2 provides it)
+    TryAssertUntilTimeout(
+        [job_manager, &node1] {
+          job_manager->InvokeCycleAndWait();
+          return REGISTRY_OF(node1)->Find("add").get().has_value();
+        },
+        10s);
+  }
+
+  // we need to wait until the connection closed
+  TryAssertUntilTimeout(
+      [job_manager, &node1] {
+        job_manager->InvokeCycleAndWait();
+        return WEB_SOCKET_OF(node1)->GetActiveConnectionCount() == 0;
+      },
+      10s);
+
+  // scenario: both node2 and its services are gone.
+  ASSERT_FALSE(REGISTRY_OF(node1)->Find("add").get().has_value());
 }
 
 #endif // WEBSOCKETMESSAGEREGISTRYTEST_H
