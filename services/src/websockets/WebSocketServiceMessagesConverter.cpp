@@ -16,7 +16,7 @@ WebSocketServiceMessagesConverter::ToServiceResponse(
   }
 
   auto opt_status_code = message.GetAttribute("status");
-  if (!opt_transaction_id.has_value()) {
+  if (!opt_status_code.has_value()) {
     LOG_WARN("web-socket message is not a valid service response: status code "
              "is missing");
     return {};
@@ -51,7 +51,7 @@ SharedWebSocketMessage WebSocketServiceMessagesConverter::FromServiceRequest(
     const services::ServiceRequest &request) {
 
   SharedWebSocketMessage message =
-      std::make_shared<WebSocketMessage>(MESSAGE_TYPE_SERVICE_RESPONSE);
+      std::make_shared<WebSocketMessage>("service-request");
 
   for (const auto &result_name : request.GetParameterNames()) {
     message->SetAttribute(result_name,
@@ -96,7 +96,7 @@ SharedWebSocketMessage WebSocketServiceMessagesConverter::FromServiceResponse(
     ServiceResponse &&response) {
 
   SharedWebSocketMessage message =
-      std::make_shared<WebSocketMessage>(MESSAGE_TYPE_SERVICE_RESPONSE);
+      std::make_shared<WebSocketMessage>("service-response");
 
   for (const auto &result_name : response.GetResultNames()) {
     message->SetAttribute(result_name,

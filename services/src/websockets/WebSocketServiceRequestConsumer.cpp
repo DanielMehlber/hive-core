@@ -99,4 +99,6 @@ void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
 
         return JobContinuation::DISPOSE;
       });
+
+  m_job_manager->KickJob(job);
 }

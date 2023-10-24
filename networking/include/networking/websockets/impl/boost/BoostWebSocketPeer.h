@@ -23,7 +23,9 @@ DECLARE_EXCEPTION(NoSuchPeerException);
  * @brief This implementation of IWebSocketServer uses WebSocket++ to provide
  * a web-socket communication peer.
  */
-class NETWORKING_API BoostWebSocketPeer : public IWebSocketPeer {
+class NETWORKING_API BoostWebSocketPeer
+    : public IWebSocketPeer,
+      public std::enable_shared_from_this<BoostWebSocketPeer> {
 private:
   /**
    * @brief Indicates if the web socket peer is currently running
@@ -120,7 +122,9 @@ public:
 
   void CloseConnectionTo(const std::string &uri) noexcept override;
 
-  bool HasConnectionTo(const std::string &uri) const noexcept;
+  std::future<size_t> Broadcast(const SharedWebSocketMessage &message) override;
+
+  bool HasConnectionTo(const std::string &uri) const noexcept override;
 };
 } // namespace networking::websockets
 

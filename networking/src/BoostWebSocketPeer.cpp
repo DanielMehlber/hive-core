@@ -260,4 +260,47 @@ bool BoostWebSocketPeer::HasConnectionTo(
   } else {
     return false;
   }
+}
+
+std::future<size_t>
+BoostWebSocketPeer::Broadcast(const SharedWebSocketMessage &message) {
+
+  std::shared_ptr<std::promise<size_t>> promise =
+      std::make_shared<std::promise<size_t>>();
+  std::future<size_t> future = promise->get_future();
+
+  SharedJob job = jobsystem::JobSystemFactory::CreateJob(
+      [_this = shared_from_this(), message,
+       promise](jobsystem::JobContext *context) {
+        std::list<std::future<void>> futures;
+        size_t count{};
+
+        // first fire message using all available connections
+        std::unique_lock lock(_this->m_connections_mutex);
+        for (auto &connection_tuple : _this->m_connections) {
+          auto connection = connection_tuple.second;
+          if (connection->IsUsable()) {
+            auto future = connection->Send(message);
+            futures.push_back(std::move(future));
+          }
+        }
+
+        // wait for messages to be sent
+        lock.unlock();
+        for (auto &future : futures) {
+          context->GetJobManager()->WaitForCompletion(future);
+          count++;
+          try {
+            future.get();
+          } catch (std::exception &exception) {
+            count--;
+          }
+        }
+
+        promise->set_value(count);
+        return JobContinuation::DISPOSE;
+      });
+
+  m_job_manager->KickJob(job);
+  return future;
 };

@@ -5,8 +5,6 @@
 #include "services/ServiceResponse.h"
 #include <future>
 
-#define MESSAGE_TYPE_WS_SERVICE_RESPONSE "service-response"
-
 using namespace networking::websockets;
 
 namespace services::impl {
@@ -34,7 +32,7 @@ public:
 
 inline std::string
 WebSocketServiceResponseConsumer::GetMessageType() const noexcept {
-  return MESSAGE_TYPE_WS_SERVICE_RESPONSE;
+  return "service-response";
 }
 
 } // namespace services::impl

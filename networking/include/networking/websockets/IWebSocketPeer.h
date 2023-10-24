@@ -17,7 +17,7 @@ DECLARE_EXCEPTION(PeerSetupException);
  * @brief A generic interface declaring a web-socket peer that can accept
  * connections,
  */
-class IWebSocketPeer : public std::enable_shared_from_this<IWebSocketPeer> {
+class IWebSocketPeer {
 public:
   /**
    * @brief Adds a consumer for a specific type of arriving messages to the
@@ -51,6 +51,15 @@ public:
    */
   virtual std::future<void> Send(const std::string &uri,
                                  SharedWebSocketMessage message) = 0;
+
+  /**
+   * @brief Sends some message to all currently connected peers asynchronously
+   * @param message message that will be broadcast
+   * @return a future representing the broadcast progress and holding the count
+   * of recipients.
+   */
+  virtual std::future<size_t>
+  Broadcast(const SharedWebSocketMessage &message) = 0;
 
   /**
    * @brief Establishes connection with another socket server

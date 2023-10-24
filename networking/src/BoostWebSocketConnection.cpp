@@ -54,13 +54,15 @@ void BoostWebSocketConnection::OnMessageReceived(
     return;
   }
 
+  // extract sent bytes and pass them to the callback function
+  const auto received_data = boost::beast::buffers_to_string(m_buffer.data());
+  m_buffer.consume(m_buffer.size());
+
   // read next message asynchronously
   if (IsUsable()) {
     AsyncReceiveMessage();
   }
 
-  // extract sent bytes and pass them to the callback function
-  const auto received_data = boost::beast::buffers_to_string(m_buffer.data());
   m_on_message_received(received_data, shared_from_this());
 }
 

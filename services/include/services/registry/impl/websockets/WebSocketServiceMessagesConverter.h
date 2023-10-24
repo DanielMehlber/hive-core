@@ -7,8 +7,6 @@
 
 using namespace networking::websockets;
 
-#define MESSAGE_TYPE_SERVICE_RESPONSE "service-response"
-
 namespace services::impl {
 
 /**

@@ -77,9 +77,12 @@ RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
     m_last_index = next_index;
 
     if (stub->IsUsable()) {
-      if ((!only_local) && stub->IsLocal()) {
-        return stub;
+      if (only_local) {
+        if (!stub->IsLocal()) {
+          return {};
+        }
       }
+      return stub;
     }
   }
 

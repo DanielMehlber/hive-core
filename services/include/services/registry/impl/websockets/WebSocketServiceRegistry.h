@@ -13,6 +13,7 @@ class WebSocketServiceRegistry : public IServiceRegistry {
 protected:
   std::map<std::string, SharedServiceCaller> m_registered_callers;
   std::weak_ptr<IWebSocketPeer> m_web_socket_peer;
+  jobsystem::SharedJobManager m_job_manager;
 
   SharedWebSocketMessageConsumer m_registration_consumer;
   SharedWebSocketMessageConsumer m_response_consumer;

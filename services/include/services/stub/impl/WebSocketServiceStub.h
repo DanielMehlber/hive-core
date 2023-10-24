@@ -10,7 +10,7 @@ using namespace networking::websockets;
 
 namespace services::impl {
 
-DECLARE_EXCEPTION(NotCallableException);
+DECLARE_EXCEPTION(CallFailedException);
 
 /**
  * Service Stub for services that can be called using websockets.
@@ -31,14 +31,14 @@ private:
    * response consumer. It receives responses and can therefore resolve the
    * promise.
    */
-  std::shared_ptr<WebSocketServiceResponseConsumer> m_response_consumer;
+  std::weak_ptr<WebSocketServiceResponseConsumer> m_response_consumer;
 
 public:
   WebSocketServiceStub() = delete;
   explicit WebSocketServiceStub(
       std::string service_name, std::weak_ptr<IWebSocketPeer> peer,
       std::string remote_host_name,
-      std::shared_ptr<WebSocketServiceResponseConsumer> response_consumer);
+      std::weak_ptr<WebSocketServiceResponseConsumer> response_consumer);
 
   std::future<SharedServiceResponse>
   Call(SharedServiceRequest request,
