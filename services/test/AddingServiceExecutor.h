@@ -1,19 +1,19 @@
-#ifndef ADDINGSERVICESTUB_H
-#define ADDINGSERVICESTUB_H
+#ifndef ADDINGSERVICEEXECUTOR_H
+#define ADDINGSERVICEEXECUTOR_H
 
-#include "services/stub/impl/LocalServiceStub.h"
+#include "services/executor/impl/LocalServiceExecutor.h"
 
 using namespace std::placeholders;
 
-class AddingServiceStub : public services::impl::LocalServiceStub {
+class AddingServiceExecutor : public services::impl::LocalServiceExecutor {
 public:
   std::atomic_size_t count{0};
 
-  AddingServiceStub()
-      : services::impl::LocalServiceStub(
-            "add", std::bind(&AddingServiceStub::Add, this, _1)){};
+  AddingServiceExecutor()
+      : services::impl::LocalServiceExecutor(
+            "add", std::bind(&AddingServiceExecutor::Add, this, _1)){};
 
-  std::future<SharedServiceResponse> Add(SharedServiceRequest request) {
+  std::future<SharedServiceResponse> Add(const SharedServiceRequest &request) {
     auto opt_a = request->GetParameter("a");
     auto opt_b = request->GetParameter("b");
     std::promise<SharedServiceResponse> completion_promise;
@@ -56,8 +56,8 @@ SharedServiceRequest GenerateAddingRequest(int a, int b) {
   return request;
 }
 
-int GetResultOfAddition(SharedServiceResponse result) {
+int GetResultOfAddition(const SharedServiceResponse &result) {
   return std::stoi(result->GetResult("sum").value());
 }
 
-#endif // ADDINGSERVICESTUB_H
+#endif // ADDINGSERVICEEXECUTOR_H

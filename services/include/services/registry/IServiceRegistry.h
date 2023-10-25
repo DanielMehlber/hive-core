@@ -7,28 +7,28 @@
 namespace services {
 
 /**
- * Acts as service look-up: Services can be centrally managed and registered,
- * for others to find and use.
+ * Acts as service look-up: Services can be centrally managed, registered and
+ * queried.
  */
 class IServiceRegistry {
 public:
   /**
-   * Register a new service to the registry
-   * @param name name of this service
-   * @param stub service to register
-   * @attention if a service with this name is already registered, it will be
-   * overwritten
+   * Register a new service executor.
+   * @param stub service executor to register
+   * @attention if a service with the same service name is already registered,
+   * it will be replaced.
    */
-  virtual void Register(const SharedServiceStub &stub) = 0;
+  virtual void Register(const SharedServiceExecutor &stub) = 0;
 
   /**
-   * Unregister service by its service name
+   * Unregister all service executors by their service name.
    * @param name of service
+   * @attention This will remote all executors, both remote and local.
    */
   virtual void Unregister(const std::string &name) = 0;
 
   /**
-   * Tries to find a service using this service registry
+   * Tries to find a service in the registry asynchronously.
    * @param name unique service name
    * @return a service stub, if the service exists, when it has been resolved
    */

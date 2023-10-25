@@ -1,18 +1,18 @@
-#include "services/stub/impl/LocalServiceStub.h"
+#include "services/executor/impl/LocalServiceExecutor.h"
 #include "common/uuid/UuidGenerator.h"
 
 using namespace services;
 using namespace services::impl;
 
-LocalServiceStub::LocalServiceStub(
+LocalServiceExecutor::LocalServiceExecutor(
     std::string service_name,
     std::function<std::future<SharedServiceResponse>(SharedServiceRequest)>
         func)
     : m_func(std::move(func)), m_service_name(std::move(service_name)) {}
 
 std::future<SharedServiceResponse>
-LocalServiceStub::Call(SharedServiceRequest request,
-                       jobsystem::SharedJobManager job_manager) {
+LocalServiceExecutor::Call(SharedServiceRequest request,
+                           jobsystem::SharedJobManager job_manager) {
 
   // for when the job has resolved
   std::shared_ptr<std::promise<SharedServiceResponse>> completion_promise =
@@ -21,8 +21,7 @@ LocalServiceStub::Call(SharedServiceRequest request,
       completion_promise->get_future();
 
   jobsystem::job::SharedJob job = jobsystem::JobSystemFactory::CreateJob(
-      [request,
-       _this = std::static_pointer_cast<LocalServiceStub>(shared_from_this()),
+      [request, _this = shared_from_this(),
        completion_promise](jobsystem::JobContext *context) mutable {
         try {
           auto result = _this->m_func(request);
@@ -42,4 +41,4 @@ LocalServiceStub::Call(SharedServiceRequest request,
   return completion_future;
 }
 
-std::string LocalServiceStub::GetServiceName() { return m_service_name; }
+std::string LocalServiceExecutor::GetServiceName() { return m_service_name; }

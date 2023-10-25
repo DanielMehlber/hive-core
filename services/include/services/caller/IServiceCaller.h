@@ -3,7 +3,7 @@
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "jobsystem/manager/JobManager.h"
-#include "services/stub/IServiceStub.h"
+#include "services/executor/IServiceExecutor.h"
 #include <future>
 
 namespace services {
@@ -11,17 +11,17 @@ namespace services {
 DECLARE_EXCEPTION(NoCallableServiceFound);
 
 /**
- * Selects a service stub for a specific service name and calls it. A caller is
- * necessary to model the 1:n relationship between a service call and its
- * service stubs: A service can be provided by multiple service stubs (e.g. by
- * different hosts in the network using web-sockets). Therefore the caller must
- * select a service stub given a strategy (that can be used for load-balancing).
+ * A service can be provided by multiple both local and remote executors at
+ * once. A service caller selects the next execution to call (given some
+ * strategy) to ensure performance and fairness among service executors.
  */
-class IServiceCaller : public std::enable_shared_from_this<IServiceCaller> {
+class IServiceCaller {
 public:
   /**
-   * Selects a service stub from a possible set of stubs.
-   * @note Executed as job
+   * Selects a service execution from all listed executions given some strategy
+   * and call it. Fairness among executors is important to distribute the
+   * workload evenly.
+   * @note Executed as job in the job-system.
    * @param request represents input parameters for the service call
    * @param job_manager manages and executes spawned job later
    * @param only_local if only local services should be considered for execution
@@ -32,7 +32,8 @@ public:
        bool only_local = false) noexcept = 0;
 
   /**
-   * Checks if there are callable services
+   * Checks if there are currently callable and usable service executions
+   * available.
    * @return true, if there are some callable services
    */
   virtual bool IsCallable() const noexcept = 0;
@@ -45,13 +46,13 @@ public:
   virtual bool ContainsLocallyCallable() const noexcept = 0;
 
   /**
-   * Adds service stub to collection of service stubs.
-   * @param stub stub to add
+   * Adds service executor to this caller.
+   * @param executor to add
    */
-  virtual void AddServiceStub(SharedServiceStub stub) = 0;
+  virtual void AddExecutor(SharedServiceExecutor executor) = 0;
 
   /**
-   * @return current count of executable services
+   * @return current count of executable/callable services
    */
   virtual size_t GetCallableCount() const noexcept = 0;
 };

@@ -4,7 +4,7 @@
 
 using namespace services::impl;
 
-void LocalOnlyServiceRegistry::Register(const SharedServiceStub &stub) {
+void LocalOnlyServiceRegistry::Register(const SharedServiceExecutor &stub) {
 
   std::string name = stub->GetServiceName();
 
@@ -12,7 +12,7 @@ void LocalOnlyServiceRegistry::Register(const SharedServiceStub &stub) {
     m_registered_services[name] = std::make_shared<RoundRobinServiceCaller>();
   }
 
-  m_registered_services.at(name)->AddServiceStub(stub);
+  m_registered_services.at(name)->AddExecutor(stub);
 
   LOG_DEBUG("new service '" << name
                             << "' has been registered in local registry");

@@ -5,9 +5,10 @@ using namespace services;
 using namespace services::impl;
 using namespace std::placeholders;
 
-void broadcastServiceRegistration(std::weak_ptr<IWebSocketPeer> sender,
-                                  SharedServiceStub stub,
-                                  jobsystem::SharedJobManager job_manager) {
+void broadcastServiceRegistration(
+    const std::weak_ptr<IWebSocketPeer> &sender,
+    const SharedServiceExecutor &stub,
+    const jobsystem::SharedJobManager &job_manager) {
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
       [sender, stub](jobsystem::JobContext *context) {
         if (sender.expired()) {
@@ -42,7 +43,7 @@ void broadcastServiceRegistration(std::weak_ptr<IWebSocketPeer> sender,
   job_manager->KickJob(job);
 }
 
-void WebSocketServiceRegistry::Register(const SharedServiceStub &stub) {
+void WebSocketServiceRegistry::Register(const SharedServiceExecutor &stub) {
 
   std::string name = stub->GetServiceName();
 
@@ -55,7 +56,7 @@ void WebSocketServiceRegistry::Register(const SharedServiceStub &stub) {
     broadcastServiceRegistration(m_web_socket_peer, stub, m_job_manager);
   }
 
-  m_registered_callers.at(name)->AddServiceStub(stub);
+  m_registered_callers.at(name)->AddExecutor(stub);
   LOG_DEBUG("new service '" << name
                             << "' has been registered in web-socket registry");
 }

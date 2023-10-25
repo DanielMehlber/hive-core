@@ -3,12 +3,18 @@
 
 #include "networking/websockets/IWebSocketMessageConsumer.h"
 #include "services/ServiceResponse.h"
+#include "services/Services.h"
 #include <future>
 
 using namespace networking::websockets;
 
 namespace services::impl {
-class WebSocketServiceResponseConsumer : public IWebSocketMessageConsumer {
+
+/**
+ * Processes incoming service responses of recently called remote services.
+ */
+class SERVICES_API WebSocketServiceResponseConsumer
+    : public IWebSocketMessageConsumer {
 private:
   mutable std::mutex m_promises_mutex;
   std::map<std::string, std::promise<SharedServiceResponse>> m_promises;

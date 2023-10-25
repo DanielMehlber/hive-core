@@ -1,12 +1,11 @@
 add_library(services
-        ServiceStub.cpp
         ServiceRequest.cpp
         ServiceResponse.cpp
-        LocalServiceStub.cpp
+        LocalServiceExecutor.cpp
         RoundRobinServiceCaller.cpp
         local-only/LocalOnlyServiceRegistry.cpp
         websockets/WebSocketServiceRegistrationConsumer.cpp
-        websockets/WebSocketServiceStub.cpp
+        websockets/WebSocketServiceExecutor.cpp
         websockets/WebSocketServiceResponseConsumer.cpp
         websockets/WebSocketServiceMessagesConverter.cpp
         websockets/WebSocketServiceRegistry.cpp

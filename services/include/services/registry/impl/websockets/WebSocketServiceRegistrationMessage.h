@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "networking/websockets/WebSocketMessage.h"
+#include "services/Services.h"
 
 using namespace networking::websockets;
 
@@ -13,9 +14,9 @@ namespace services::impl {
 
 /**
  * Web-Socket message sent, when a peer wants to offer some if its services to
- * another peer.
+ * another one.
  */
-class WebSocketServiceRegistrationMessage {
+class SERVICES_API WebSocketServiceRegistrationMessage {
 private:
   SharedWebSocketMessage m_message;
 

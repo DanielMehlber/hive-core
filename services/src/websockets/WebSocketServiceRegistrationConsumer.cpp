@@ -1,12 +1,12 @@
 #include "services/registry/impl/websockets/WebSocketServiceRegistrationConsumer.h"
 #include "logging/LogManager.h"
 #include "networking/websockets/WebSocketConnectionInfo.h"
-#include "services/stub/impl/WebSocketServiceStub.h"
+#include "services/executor/impl/WebSocketServiceExecutor.h"
 
 using namespace services::impl;
 
 WebSocketServiceRegistrationConsumer::WebSocketServiceRegistrationConsumer(
-    std::function<void(SharedServiceStub)> consumer,
+    std::function<void(SharedServiceExecutor)> consumer,
     std::weak_ptr<WebSocketServiceResponseConsumer> response_consumer,
     std::weak_ptr<IWebSocketPeer> web_socket_peer)
     : m_consumer(std::move(consumer)),
@@ -22,7 +22,7 @@ void WebSocketServiceRegistrationConsumer::ProcessReceivedMessage(
            << registration_message.GetServiceName() << "' from host "
            << connection_info.GetHostname());
 
-  SharedServiceStub stub = std::make_shared<WebSocketServiceStub>(
+  SharedServiceExecutor stub = std::make_shared<WebSocketServiceExecutor>(
       registration_message.GetServiceName(), m_web_socket_peer,
       connection_info.GetHostname(), m_response_consumer);
 

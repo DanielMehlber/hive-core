@@ -1,13 +1,13 @@
 #ifndef WEBSOCKETMESSAGEREGISTRYTEST_H
 #define WEBSOCKETMESSAGEREGISTRYTEST_H
 
-#include "AddingServiceStub.h"
+#include "AddingServiceExecutor.h"
 #include "common/test/TryAssertUntilTimeout.h"
 #include "jobsystem/manager/JobManager.h"
 #include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
+#include "services/executor/impl/LocalServiceExecutor.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
-#include "services/stub/impl/LocalServiceStub.h"
 #include <gtest/gtest.h>
 
 using namespace jobsystem;
@@ -57,7 +57,8 @@ TEST(ServiceTests, web_socket_run_single_remote_service) {
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
 
-  SharedServiceStub local_service = std::make_shared<AddingServiceStub>();
+  SharedServiceExecutor local_service =
+      std::make_shared<AddingServiceExecutor>();
   REGISTRY_OF(node1)->Register(local_service);
   job_manager->InvokeCycleAndWait();
 
@@ -87,7 +88,7 @@ TEST(ServiceTests, web_service_load_balancing) {
   SharedWebSocketPeer main_web_socket_peer = WEB_SOCKET_OF(main_node);
 
   std::vector<std::tuple<SharedWebSocketPeer, SharedServiceRegistry,
-                         std::shared_ptr<AddingServiceStub>>>
+                         std::shared_ptr<AddingServiceExecutor>>>
       peers;
 
   for (int i = 9005; i < 9010; i++) {
@@ -103,8 +104,8 @@ TEST(ServiceTests, web_service_load_balancing) {
     connection_progress.wait();
     ASSERT_NO_THROW(connection_progress.get());
 
-    std::shared_ptr<AddingServiceStub> service =
-        std::make_shared<AddingServiceStub>();
+    std::shared_ptr<AddingServiceExecutor> service =
+        std::make_shared<AddingServiceExecutor>();
 
     peers.emplace_back(web_socket_peer, registry, service);
   }
@@ -167,7 +168,8 @@ TEST(ServiceTests, web_socket_peer_destroyed) {
 
     ASSERT_NO_THROW(progress.get());
 
-    SharedServiceStub adding_service = std::make_shared<AddingServiceStub>();
+    SharedServiceExecutor adding_service =
+        std::make_shared<AddingServiceExecutor>();
     REGISTRY_OF(node2)->Register(adding_service);
 
     // wait until service is available to node1 (because node2 provides it)

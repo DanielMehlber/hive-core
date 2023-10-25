@@ -1,5 +1,5 @@
-#ifndef ISERVICESTUB_H
-#define ISERVICESTUB_H
+#ifndef ISERVICEEXECUTOR_H
+#define ISERVICEEXECUTOR_H
 
 #include "jobsystem/manager/JobManager.h"
 #include "services/ServiceRequest.h"
@@ -9,11 +9,11 @@
 namespace services {
 
 /**
- * @brief Generic interface for services, which act as service implementation.
- * It can be called directly (when located on the same agent) or using network
- * protocols (when located on a remote host).
+ * @brief Generic interface for service executors which represent a single
+ * service implementation
+ * @note services can be executed locally or remotely on another machine.
  */
-class IServiceStub : public std::enable_shared_from_this<IServiceStub> {
+class IServiceExecutor {
 public:
   /**
    * Calls the service using parameters and returns a response eventually
@@ -28,24 +28,26 @@ public:
        jobsystem::SharedJobManager job_manager) = 0;
 
   /**
-   * Checks if the service can be used currently
+   * Checks if the service can be currently called
    * @return true, if service can be called
    */
   virtual bool IsCallable() = 0;
 
   /**
-   * @return service name of this stub
+   * @return name of this executor's service
    */
   virtual std::string GetServiceName() = 0;
 
   /**
-   * @return true, if service is located on this instance (callable using direct
-   * call)
+   * @return true, if service is located on this node (callable using direct
+   * call).
+   * @note services can be located on the same node (direct call) or on another
+   * (remote call).
    */
   virtual bool IsLocal() = 0;
 };
 
-typedef std::shared_ptr<IServiceStub> SharedServiceStub;
+typedef std::shared_ptr<IServiceExecutor> SharedServiceExecutor;
 } // namespace services
 
-#endif // ISERVICESTUB_H
+#endif // ISERVICEEXECUTOR_H

@@ -2,6 +2,7 @@
 #define WEBSOCKETSERVICEREGISTRY_H
 
 #include "networking/websockets/IWebSocketPeer.h"
+#include "services/Services.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistrationConsumer.h"
 #include "services/registry/impl/websockets/WebSocketServiceRequestConsumer.h"
@@ -9,7 +10,10 @@
 
 namespace services::impl {
 
-class WebSocketServiceRegistry : public IServiceRegistry {
+/**
+ * A registry for both local and remote web-socket services.
+ */
+class SERVICES_API WebSocketServiceRegistry : public IServiceRegistry {
 protected:
   mutable std::mutex m_registered_callers_mutex;
   std::map<std::string, SharedServiceCaller> m_registered_callers;
@@ -26,7 +30,7 @@ public:
       const SharedWebSocketPeer &web_socket_peer,
       const jobsystem::SharedJobManager &job_manager);
 
-  void Register(const SharedServiceStub &stub) override;
+  void Register(const SharedServiceExecutor &stub) override;
 
   void Unregister(const std::string &name) override;
 

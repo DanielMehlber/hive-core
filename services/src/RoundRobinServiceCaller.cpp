@@ -1,14 +1,14 @@
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "jobsystem/manager/JobManager.h"
-#include <math.h>
+#include <cmath>
 
 using namespace services::impl;
 using namespace services;
 using namespace jobsystem;
 
 bool RoundRobinServiceCaller::IsCallable() const noexcept {
-  std::unique_lock lock(m_service_stubs_mutex);
-  for (const auto &stub : m_service_stubs) {
+  std::unique_lock lock(m_service_executors_mutex);
+  for (const auto &stub : m_service_executors) {
     if (stub->IsCallable()) {
       return true;
     }
@@ -17,9 +17,9 @@ bool RoundRobinServiceCaller::IsCallable() const noexcept {
   return false;
 }
 
-void RoundRobinServiceCaller::AddServiceStub(SharedServiceStub stub) {
-  std::unique_lock lock(m_service_stubs_mutex);
-  m_service_stubs.push_back(stub);
+void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor stub) {
+  std::unique_lock lock(m_service_executors_mutex);
+  m_service_executors.push_back(stub);
 }
 
 std::future<SharedServiceResponse>
@@ -32,14 +32,13 @@ RoundRobinServiceCaller::Call(SharedServiceRequest request,
   std::future<SharedServiceResponse> future = promise->get_future();
 
   SharedJob job = JobSystemFactory::CreateJob(
-      [_this = std::static_pointer_cast<RoundRobinServiceCaller>(
-           shared_from_this()),
-       promise, request, only_local, job_manager](JobContext *context) {
-        std::optional<SharedServiceStub> opt_stub =
+      [_this = shared_from_this(), promise, request, only_local,
+       job_manager](JobContext *context) {
+        std::optional<SharedServiceExecutor> opt_stub =
             _this->SelectNextUsableCaller(only_local);
         if (opt_stub.has_value()) {
           // call stub
-          SharedServiceStub stub = opt_stub.value();
+          SharedServiceExecutor stub = opt_stub.value();
           auto result_future = stub->Call(request, job_manager);
 
           // wait for call to complete
@@ -64,18 +63,18 @@ RoundRobinServiceCaller::Call(SharedServiceRequest request,
   return future;
 }
 
-std::optional<SharedServiceStub>
+std::optional<SharedServiceExecutor>
 RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
-  std::unique_lock lock(m_service_stubs_mutex);
+  std::unique_lock lock(m_service_executors_mutex);
   // just do one round-trip searching for finding a callable service stub.
   // Otherwise, there is none.
   size_t tries = 0;
-  while (tries < m_service_stubs.size()) {
+  while (tries < m_service_executors.size()) {
     size_t next_index =
-        (std::min(m_service_stubs.size() - 1, m_last_index) + 1) %
-        m_service_stubs.size();
+        (std::min(m_service_executors.size() - 1, m_last_index) + 1) %
+        m_service_executors.size();
 
-    const SharedServiceStub &stub = m_service_stubs.at(next_index);
+    const SharedServiceExecutor &stub = m_service_executors.at(next_index);
     tries++;
     m_last_index = next_index;
 
@@ -93,8 +92,8 @@ RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
 }
 
 bool RoundRobinServiceCaller::ContainsLocallyCallable() const noexcept {
-  std::unique_lock lock(m_service_stubs_mutex);
-  for (const auto &stub : m_service_stubs) {
+  std::unique_lock lock(m_service_executors_mutex);
+  for (const auto &stub : m_service_executors) {
     if (stub->IsCallable() && stub->IsLocal()) {
       return true;
     }
@@ -104,9 +103,9 @@ bool RoundRobinServiceCaller::ContainsLocallyCallable() const noexcept {
 }
 
 size_t RoundRobinServiceCaller::GetCallableCount() const noexcept {
-  std::unique_lock lock(m_service_stubs_mutex);
+  std::unique_lock lock(m_service_executors_mutex);
   size_t count = 0;
-  for (auto &stubs : m_service_stubs) {
+  for (auto &stubs : m_service_executors) {
     if (stubs->IsCallable()) {
       count++;
     }

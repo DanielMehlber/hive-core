@@ -1,9 +1,9 @@
 #ifndef LOCALSERVICEREGISTRYTEST_H
 #define LOCALSERVICEREGISTRYTEST_H
 
-#include "AddingServiceStub.h"
+#include "AddingServiceExecutor.h"
+#include "services/executor/impl/LocalServiceExecutor.h"
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
-#include "services/stub/impl/LocalServiceStub.h"
 #include <gtest/gtest.h>
 
 using namespace services;
@@ -13,7 +13,8 @@ TEST(ServiceTests, adding_service) {
   SharedServiceRegistry registry =
       std::make_shared<services::impl::LocalOnlyServiceRegistry>();
 
-  SharedServiceStub adding_service = std::make_shared<AddingServiceStub>();
+  SharedServiceExecutor adding_service =
+      std::make_shared<AddingServiceExecutor>();
   jobsystem::SharedJobManager job_manager =
       std::make_shared<jobsystem::JobManager>();
 

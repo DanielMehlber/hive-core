@@ -1,6 +1,7 @@
 #ifndef ROUNDROBINSERVICECALLER_H
 #define ROUNDROBINSERVICECALLER_H
 
+#include "services/Services.h"
 #include "services/caller/IServiceCaller.h"
 #include <vector>
 
@@ -9,16 +10,18 @@ namespace services::impl {
 /**
  * Calls service stubs in sequential order every time a call is requested.
  */
-class RoundRobinServiceCaller : public IServiceCaller {
+class SERVICES_API RoundRobinServiceCaller
+    : public IServiceCaller,
+      public std::enable_shared_from_this<RoundRobinServiceCaller> {
 private:
   /** List of service stubs */
-  mutable std::mutex m_service_stubs_mutex;
-  std::vector<SharedServiceStub> m_service_stubs;
+  mutable std::mutex m_service_executors_mutex;
+  std::vector<SharedServiceExecutor> m_service_executors;
 
   /** Last selected index (necessary for round robin) */
   size_t m_last_index{0};
 
-  std::optional<SharedServiceStub> SelectNextUsableCaller(bool only_local);
+  std::optional<SharedServiceExecutor> SelectNextUsableCaller(bool only_local);
 
 public:
   std::future<SharedServiceResponse>
@@ -29,7 +32,7 @@ public:
 
   bool ContainsLocallyCallable() const noexcept override;
 
-  void AddServiceStub(SharedServiceStub stub) override;
+  void AddExecutor(SharedServiceExecutor stub) override;
 
   size_t GetCallableCount() const noexcept override;
 };

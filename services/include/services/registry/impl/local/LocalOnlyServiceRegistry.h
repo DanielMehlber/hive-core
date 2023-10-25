@@ -1,6 +1,7 @@
 #ifndef LOCALONLYSERVICEREGISTRY_H
 #define LOCALONLYSERVICEREGISTRY_H
 
+#include "services/Services.h"
 #include "services/registry/IServiceRegistry.h"
 #include <future>
 #include <map>
@@ -10,14 +11,17 @@ using namespace services;
 namespace services::impl {
 
 /**
- * Contains services that have been registered on this host
+ * A registry for services that can be called directly.
+ * @attention This registry does not have any registration, request-response
+ * implementations for remote service calls. It is only meant for local
+ * services.
  */
-class LocalOnlyServiceRegistry : public IServiceRegistry {
+class SERVICES_API LocalOnlyServiceRegistry : public IServiceRegistry {
 protected:
   std::map<std::string, SharedServiceCaller> m_registered_services;
 
 public:
-  void Register(const SharedServiceStub &stub) override;
+  void Register(const SharedServiceExecutor &stub) override;
 
   void Unregister(const std::string &name) override;
 

@@ -1,14 +1,14 @@
 #include <utility>
 
 #include "common/uuid/UuidGenerator.h"
+#include "services/executor/impl/WebSocketServiceExecutor.h"
 #include "services/registry/impl/websockets/WebSocketServiceMessagesConverter.h"
-#include "services/stub/impl/WebSocketServiceStub.h"
 
 using namespace services::impl;
 using namespace services;
 using namespace jobsystem;
 
-WebSocketServiceStub::WebSocketServiceStub(
+WebSocketServiceExecutor::WebSocketServiceExecutor(
     std::string service_name, std::weak_ptr<IWebSocketPeer> peer,
     std::string remote_host_name,
     std::weak_ptr<WebSocketServiceResponseConsumer> response_consumer)
@@ -17,7 +17,7 @@ WebSocketServiceStub::WebSocketServiceStub(
       m_service_name(std::move(service_name)),
       m_response_consumer(std::move(response_consumer)) {}
 
-bool WebSocketServiceStub::IsCallable() {
+bool WebSocketServiceExecutor::IsCallable() {
   if (m_web_socket_peer.expired()) {
     return false;
   }
@@ -26,15 +26,13 @@ bool WebSocketServiceStub::IsCallable() {
 }
 
 std::future<SharedServiceResponse>
-WebSocketServiceStub::Call(SharedServiceRequest request,
-                           jobsystem::SharedJobManager job_manager) {
+WebSocketServiceExecutor::Call(SharedServiceRequest request,
+                               jobsystem::SharedJobManager job_manager) {
 
   auto promise = std::make_shared<std::promise<SharedServiceResponse>>();
   std::future<SharedServiceResponse> future = promise->get_future();
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
-      [_this =
-           std::static_pointer_cast<WebSocketServiceStub>(shared_from_this()),
-       request, promise](JobContext *context) {
+      [_this = shared_from_this(), request, promise](JobContext *context) {
         if (_this->IsCallable()) {
           LOG_DEBUG("calling remote web-socket service '"
                     << request->GetServiceName() << "' at endpoint "
@@ -83,4 +81,6 @@ WebSocketServiceStub::Call(SharedServiceRequest request,
   return future;
 }
 
-std::string WebSocketServiceStub::GetServiceName() { return m_service_name; }
+std::string WebSocketServiceExecutor::GetServiceName() {
+  return m_service_name;
+}

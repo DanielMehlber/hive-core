@@ -1,7 +1,8 @@
-#ifndef LOCALSERVICESTUB_H
-#define LOCALSERVICESTUB_H
+#ifndef LOCALSERVICEEXECUTOR_H
+#define LOCALSERVICEEXECUTOR_H
 
-#include "services/stub/IServiceStub.h"
+#include "services/Services.h"
+#include "services/executor/IServiceExecutor.h"
 #include <functional>
 
 using namespace services;
@@ -9,10 +10,13 @@ using namespace services;
 namespace services::impl {
 
 /**
- * Service that will be executed using jobs in this running
- * process.
+ * Executes services using a direct function call.
+ * @attention service must be located on the same node. This executor does not
+ * support remote service calls.
  */
-class LocalServiceStub : public IServiceStub {
+class SERVICES_API LocalServiceExecutor
+    : public IServiceExecutor,
+      public std::enable_shared_from_this<LocalServiceExecutor> {
 protected:
   /**
    * Function that will be called to execute this service
@@ -23,12 +27,12 @@ protected:
   std::string m_service_name;
 
 public:
-  LocalServiceStub() = delete;
-  explicit LocalServiceStub(
+  LocalServiceExecutor() = delete;
+  explicit LocalServiceExecutor(
       std::string service_name,
       std::function<std::future<SharedServiceResponse>(SharedServiceRequest)>
           func);
-  virtual ~LocalServiceStub() = default;
+  virtual ~LocalServiceExecutor() = default;
 
   std::future<SharedServiceResponse>
   Call(SharedServiceRequest request,
@@ -43,4 +47,4 @@ public:
 
 } // namespace services::impl
 
-#endif // LOCALSERVICESTUB_H
+#endif // LOCALSERVICEEXECUTOR_H

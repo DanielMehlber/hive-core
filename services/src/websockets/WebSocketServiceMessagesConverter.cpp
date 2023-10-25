@@ -66,7 +66,7 @@ SharedWebSocketMessage WebSocketServiceMessagesConverter::FromServiceRequest(
 
 std::optional<SharedServiceRequest>
 WebSocketServiceMessagesConverter::ToServiceRequest(
-    SharedWebSocketMessage message) {
+    const SharedWebSocketMessage &message) {
 
   auto opt_transaction_id = message->GetAttribute("transaction-id");
   if (!opt_transaction_id.has_value()) {

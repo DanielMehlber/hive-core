@@ -4,6 +4,7 @@
 #include "networking/websockets/WebSocketMessage.h"
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
+#include "services/Services.h"
 
 using namespace networking::websockets;
 
@@ -12,7 +13,7 @@ namespace services::impl {
 /**
  * Converts web-socket message objects to service objects
  */
-class WebSocketServiceMessagesConverter {
+class SERVICES_API WebSocketServiceMessagesConverter {
 public:
   /**
    * Consumes and converts a received web-socket message to a service response
@@ -40,7 +41,7 @@ public:
    * @return service request object
    */
   static std::optional<SharedServiceRequest>
-  ToServiceRequest(SharedWebSocketMessage message);
+  ToServiceRequest(const SharedWebSocketMessage &message);
 
   /**
    * Consumes and Converts a request object to a web-socket message.
