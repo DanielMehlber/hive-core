@@ -6,15 +6,15 @@
 #ifdef EXPORT_DLL
 
 // When building the library
-#define LOGGING_API __declspec(dllexport)
+#define SCENE_API __declspec(dllexport)
 #else
 
 // When using the library
-#define LOGGING_API __declspec(dllimport)
+#define SCENE_API __declspec(dllimport)
 #endif
 #else
 // For other platforms (Linux, macOS)
-#define LOGGING_API
+#define SCENE_API
 #endif
 
 #endif

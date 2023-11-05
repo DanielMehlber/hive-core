@@ -12,7 +12,7 @@ namespace logging {
 /**
  * @brief Provides a logger implementations
  */
-class NETWORKING_API LogManager {
+class LogManager {
 private:
   static std::shared_ptr<logger::ILogger> m_logger;
 

@@ -16,8 +16,8 @@ namespace resourcemgmt {
 class IResourceLoader {
 public:
   /**
-   * @brief Get id of this resource loader. This id will be used to determin the
-   * resource loader when the resource manager receives a resource request.
+   * @brief Get id of this resource loader. This id will be used to determine
+   * the resource loader when the resource manager receives a resource request.
    * @return id of this loader
    */
   virtual const std::string &GetId() const noexcept = 0;

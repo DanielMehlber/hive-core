@@ -1,20 +1,20 @@
-#ifndef LOGGING_EXPORT_MACRO_H
-#define LOGGING_EXPORT_MACRO_H
+#ifndef SERVICES_H
+#define SERVICES_H
 
 #ifdef _WIN32
 // For Windows (MSVC compiler)
 #ifdef EXPORT_DLL
 
 // When building the library
-#define LOGGING_API __declspec(dllexport)
+#define GRAPHICS_API __declspec(dllexport)
 #else
 
 // When using the library
-#define LOGGING_API __declspec(dllimport)
+#define GRAPHICS_API __declspec(dllimport)
 #endif
 #else
 // For other platforms (Linux, macOS)
-#define LOGGING_API
+#define GRAPHICS_API
 #endif
 
-#endif
+#endif // SERVICES_H

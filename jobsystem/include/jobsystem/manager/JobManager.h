@@ -38,7 +38,7 @@ private:
    * here.
    */
   std::queue<SharedJob> m_init_queue;
-  std::mutex m_init_queue_mutex;
+  mutable std::mutex m_init_queue_mutex;
   SharedJobCounter m_init_phase_counter;
 
   /**
@@ -46,14 +46,14 @@ private:
    * here.
    */
   std::queue<SharedJob> m_main_queue;
-  std::mutex m_main_queue_mutex;
+  mutable std::mutex m_main_queue_mutex;
   SharedJobCounter m_main_phase_counter;
 
   /**
    * @brief All jobs for the clean-up phase of the cycle are collected here.
    */
   std::queue<SharedJob> m_clean_up_queue;
-  std::mutex m_clean_up_queue_mutex;
+  mutable std::mutex m_clean_up_queue_mutex;
   SharedJobCounter m_clean_up_phase_counter;
 
   /**
