@@ -30,8 +30,8 @@ private:
   int m_queueFamily;
 
   VkExtent2D m_size{2048, 1024};
-  VkFormat m_image_format = VK_FORMAT_R8G8B8A8_UNORM;
-  VkFormat m_depth_format = VK_FORMAT_D32_SFLOAT;
+  VkFormat m_color_image_format = VK_FORMAT_R8G8B8A8_UNORM;
+  VkFormat m_depth_image_format = VK_FORMAT_D32_SFLOAT;
 
   VkSampleCountFlagBits m_sample_count = VK_SAMPLE_COUNT_1_BIT;
 
