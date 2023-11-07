@@ -1,10 +1,11 @@
 #ifndef ONSCREENRENDERER_H
 #define ONSCREENRENDERER_H
 
+#include "graphics/Graphics.h"
 #include "graphics/renderer/IRenderer.h"
 
 namespace graphics {
-class OnscreenRenderer : public IRenderer {
+class GRAPHICS_API OnscreenRenderer : public IRenderer {
 protected:
   scene::SharedScene m_scene;
   vsg::ref_ptr<vsg::Window> m_window;
@@ -14,7 +15,7 @@ protected:
   void SetupCamera();
 
 public:
-  OnscreenRenderer(
+  explicit OnscreenRenderer(
       scene::SharedScene scene = std::make_shared<scene::SceneManager>());
 
   bool Render() override;

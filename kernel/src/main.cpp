@@ -26,21 +26,9 @@ int main() {
 
   auto renderer = graphics::OffscreenRenderer(scene);
 
-  // renderer.SetScene(scene);
-
   renderer.Resize(100, 100);
 
   while (renderer.Render()) {
-    auto result = renderer.GetResult().value();
-    auto color_buffer = result->ExtractColorData();
-    int count = 0;
-    for (unsigned char c : color_buffer) {
-      if (c != 0 && c != 255) {
-        count++;
-      }
-    }
-
-    LOG_INFO(count);
   }
 
   return 0;

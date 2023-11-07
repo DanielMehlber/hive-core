@@ -28,6 +28,8 @@ public:
   virtual void Resize(int width, int height) = 0;
 };
 
+typedef std::shared_ptr<IRenderer> SharedRenderer;
+
 } // namespace graphics
 
 #endif // IRENDERER_H

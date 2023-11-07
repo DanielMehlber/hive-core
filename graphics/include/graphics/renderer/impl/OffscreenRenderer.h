@@ -1,12 +1,13 @@
 #ifndef OFFSCREENRENDERER_H
 #define OFFSCREENRENDERER_H
 
+#include "graphics/Graphics.h"
 #include "graphics/renderer/IRenderer.h"
 #include "vsg/all.h"
 
 namespace graphics {
 
-class OffscreenRenderer : public IRenderer {
+class GRAPHICS_API OffscreenRenderer : public IRenderer {
 private:
   bool m_use_depth_buffer;
   bool m_msaa;
