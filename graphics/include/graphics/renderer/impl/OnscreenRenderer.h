@@ -26,6 +26,11 @@ public:
   scene::SharedScene GetScene() const override;
 
   void Resize(int width, int height) override;
+  std::tuple<int, int> GetCurrentSize() const override;
+
+  void SetCameraProjectionMatrix(
+      vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
+  void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
 };
 } // namespace graphics
 

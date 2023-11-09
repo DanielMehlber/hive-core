@@ -6,6 +6,7 @@ find_package(VSG REQUIRED)
 find_package(Vulkan REQUIRED)
 
 add_subdirectory(src)
+add_subdirectory(test)
 
 find_package(Doxygen REQUIRED dot)
 

@@ -1,0 +1,99 @@
+#include "common/test/TryAssertUntilTimeout.h"
+#include "graphics/renderer/impl/OffscreenRenderer.h"
+#include "graphics/service/RenderService.h"
+#include "messaging/MessagingFactory.h"
+#include "networking/NetworkingFactory.h"
+#include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
+#include <gtest/gtest.h>
+
+#define REGISTRY_OF(x) std::get<1>(x)
+#define WEB_SOCKET_OF(x) std::get<0>(x)
+#define NODE std::tuple<SharedWebSocketPeer, SharedServiceRegistry>
+
+using namespace services;
+using namespace networking;
+using namespace graphics;
+using namespace common::test;
+
+SharedWebSocketPeer setupPeer(size_t port, const SharedJobManager &job_manager,
+                              const SharedBroker &message_broker) {
+  props::SharedPropertyProvider property_provider =
+      std::make_shared<props::PropertyProvider>(message_broker);
+
+  property_provider->Set("net.ws.port", port);
+
+  return NetworkingFactory::CreateWebSocketPeer(job_manager, property_provider);
+}
+
+SharedServiceRequest GenerateRenderingRequest(int width, int height) {
+  auto request = std::make_shared<ServiceRequest>("render");
+  request->SetParameter("width", width);
+  request->SetParameter("height", height);
+  return request;
+}
+
+NODE setupNode(size_t port, const SharedJobManager &job_manager,
+               const SharedBroker &message_broker) {
+  // setup first peer
+  SharedWebSocketPeer web_socket_peer =
+      setupPeer(port, job_manager, message_broker);
+  SharedServiceRegistry registry =
+      std::make_shared<services::impl::WebSocketServiceRegistry>(
+          web_socket_peer, job_manager);
+
+  return {web_socket_peer, registry};
+}
+
+TEST(GraphicsTests, remote_render_service) {
+  SharedJobManager job_manager = std::make_shared<JobManager>();
+  messaging::SharedBroker message_broker =
+      messaging::MessagingFactory::CreateBroker(job_manager);
+  SharedRenderer renderer = std::make_shared<OffscreenRenderer>();
+
+  NODE node1 = setupNode(9005, job_manager, message_broker);
+  NODE node2 = setupNode(9006, job_manager, message_broker);
+
+  // first establish connection in order to broadcast the connection
+  auto connection_progress =
+      WEB_SOCKET_OF(node1)->EstablishConnectionTo("127.0.0.1:9006");
+
+  connection_progress.wait();
+  ASSERT_NO_THROW(connection_progress.get());
+
+  SharedServiceExecutor render_service =
+      std::static_pointer_cast<services::impl::LocalServiceExecutor>(
+          std::make_shared<RenderService>(renderer));
+
+  REGISTRY_OF(node1)->Register(render_service);
+  job_manager->InvokeCycleAndWait();
+
+  // wait until rendering job has been registered
+  TryAssertUntilTimeout(
+      [&node2, job_manager] {
+        job_manager->InvokeCycleAndWait();
+        return REGISTRY_OF(node2)->Find("render").get().has_value();
+      },
+      10s);
+
+  SharedServiceCaller caller = REGISTRY_OF(node2)->Find("render").get().value();
+  auto result_fut =
+      caller->Call(GenerateRenderingRequest(100, 100), job_manager);
+
+  auto start_point = std::chrono::high_resolution_clock::now();
+  job_manager->InvokeCycleAndWait();
+  auto end_point = std::chrono::high_resolution_clock::now();
+
+  auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+      end_point - start_point);
+
+  LOG_INFO("Remote rendering took " << elapsed_time.count() << "ms");
+
+  SharedServiceResponse response;
+  ASSERT_NO_THROW(response = result_fut.get());
+}
+
+int main(int argc, char **argv) {
+
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

@@ -26,6 +26,11 @@ public:
   virtual scene::SharedScene GetScene() const = 0;
 
   virtual void Resize(int width, int height) = 0;
+  virtual std::tuple<int, int> GetCurrentSize() const = 0;
+
+  virtual void
+  SetCameraProjectionMatrix(vsg::ref_ptr<vsg::ProjectionMatrix> matrix) = 0;
+  virtual void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) = 0;
 };
 
 typedef std::shared_ptr<IRenderer> SharedRenderer;

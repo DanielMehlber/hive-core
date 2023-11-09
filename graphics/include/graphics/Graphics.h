@@ -1,5 +1,5 @@
-#ifndef SERVICES_H
-#define SERVICES_H
+#ifndef GRAPHICS_H
+#define GRAPHICS_H
 
 #ifdef _WIN32
 // For Windows (MSVC compiler)
@@ -17,4 +17,4 @@
 #define GRAPHICS_API
 #endif
 
-#endif // SERVICES_H
+#endif // GRAPHICS_H

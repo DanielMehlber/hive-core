@@ -697,3 +697,17 @@ void OffscreenRenderer::SetupCommandGraph() {
   m_viewer->assignRecordAndSubmitTaskAndPresentation(commandGraphs);
   m_viewer->compile();
 }
+
+std::tuple<int, int> OffscreenRenderer::GetCurrentSize() const {
+  return std::make_tuple(m_size.width, m_size.height);
+}
+
+void OffscreenRenderer::SetCameraProjectionMatrix(
+    vsg::ref_ptr<vsg::ProjectionMatrix> matrix) {
+  m_camera->projectionMatrix = matrix;
+}
+
+void OffscreenRenderer::SetCameraViewMatrix(
+    vsg::ref_ptr<vsg::ViewMatrix> matrix) {
+  m_camera->viewMatrix = matrix;
+}

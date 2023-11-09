@@ -111,3 +111,18 @@ void OnscreenRenderer::SetScene(const scene::SharedScene &scene) {
 void OnscreenRenderer::Resize(int width, int height) {}
 
 scene::SharedScene OnscreenRenderer::GetScene() const { return m_scene; }
+
+std::tuple<int, int> OnscreenRenderer::GetCurrentSize() const {
+  return std::make_tuple(m_window->extent2D().width,
+                         m_window->extent2D().height);
+}
+
+void OnscreenRenderer::SetCameraProjectionMatrix(
+    vsg::ref_ptr<vsg::ProjectionMatrix> matrix) {
+  m_camera->projectionMatrix = matrix;
+}
+
+void OnscreenRenderer::SetCameraViewMatrix(
+    vsg::ref_ptr<vsg::ViewMatrix> matrix) {
+  m_camera->viewMatrix = matrix;
+}
