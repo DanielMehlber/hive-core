@@ -1,6 +1,7 @@
 #ifndef BOOSTPLUGINMANAGER_H
 #define BOOSTPLUGINMANAGER_H
 
+#include "common/subsystems/SubsystemManager.h"
 #include "plugins/IPluginManager.h"
 #include "resourcemgmt/manager/IResourceManager.h"
 #include <map>
@@ -24,15 +25,13 @@ protected:
   std::map<std::string, SharedPlugin> m_plugins;
   mutable std::mutex m_plugins_mutex;
 
-  /** Used to load files */
-  resourcemgmt::SharedResourceManager m_resource_manager;
+  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
 public:
   explicit BoostPluginManager(
       SharedPluginContext context,
-      resourcemgmt::SharedResourceManager resource_manager)
-      : m_context(std::move(context)),
-        m_resource_manager(std::move(resource_manager)){};
+      common::subsystems::SharedSubsystemManager subsystems)
+      : m_context(std::move(context)), m_subsystems(subsystems){};
   void InstallPlugin(const std::string &path) override;
   void InstallPlugin(SharedPlugin plugin) override;
   void UninstallPlugin(const std::string &name) override;

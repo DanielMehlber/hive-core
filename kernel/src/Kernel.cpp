@@ -13,17 +13,24 @@ using namespace services;
 using namespace plugins;
 
 Kernel::Kernel() {
-  //  m_job_manager = std::make_shared<JobManager>();
-  //  m_message_broker = MessagingFactory::CreateBroker(m_job_manager);
-  //  m_property_provider =
-  //  std::make_shared<PropertyProvider>(m_message_broker); m_resource_manager =
-  //  ResourceFactory::CreateResourceManager(); m_service_registry =
-  //      std::make_shared<services::impl::LocalOnlyServiceRegistry>();
-  //
-  //  auto plugin_context = std::make_shared<PluginContext>(
-  //      m_job_manager, m_property_provider, m_message_broker, m_renderer,
-  //      m_service_registry, m_networking_manager, m_resource_manager);
-  //
-  //  m_plugin_manager = std::make_shared<plugins::BoostPluginManager>(
-  //      plugin_context, m_resource_manager);
+  auto job_manager = std::make_shared<JobManager>();
+  m_subsystems->AddOrReplaceSubsystem(job_manager);
+
+  auto message_broker = MessagingFactory::CreateBroker(m_subsystems);
+  m_subsystems->AddOrReplaceSubsystem(message_broker);
+
+  auto property_provider = std::make_shared<PropertyProvider>(m_subsystems);
+  m_subsystems->AddOrReplaceSubsystem(property_provider);
+
+  auto resource_manager = ResourceFactory::CreateResourceManager();
+  m_subsystems->AddOrReplaceSubsystem(resource_manager);
+
+  auto service_registry =
+      std::make_shared<services::impl::LocalOnlyServiceRegistry>();
+  m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(service_registry);
+
+  auto plugin_context = std::make_shared<PluginContext>(m_subsystems);
+  auto plugin_manager = std::make_shared<plugins::BoostPluginManager>(
+      plugin_context, m_subsystems);
+  m_subsystems->AddOrReplaceSubsystem<IPluginManager>(plugin_manager);
 }

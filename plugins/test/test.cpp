@@ -16,9 +16,8 @@ TEST(PluginsTest, lifecycle_test) {
   subsystems->AddOrReplaceSubsystem(resource_manager);
 
   auto plugin_context = std::make_shared<plugins::PluginContext>(subsystems);
-
-  auto plugin_manager = std::make_shared<plugins::BoostPluginManager>(
-      plugin_context, resource_manager);
+  auto plugin_manager =
+      std::make_shared<plugins::BoostPluginManager>(plugin_context, subsystems);
 
   auto plugin = std::make_shared<TestPlugin>();
 

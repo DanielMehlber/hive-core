@@ -1,5 +1,4 @@
 #include "plugins/impl/BoostPluginManager.h"
-#include "logging/LogManager.h"
 #include <boost/dll/shared_library.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/json.hpp>
@@ -13,7 +12,7 @@ void BoostPluginManager::InstallPlugin(const std::string &path) {
   boost::dll::shared_library library(path);
 
   if (library.is_loaded()) {
-    LOG_ERR("Cannot install plugin at " << path << ": cannot load library");
+    LOG_ERR("Cannot install plugin at " << path << ": cannot load library")
     return;
   }
 
@@ -27,7 +26,7 @@ void BoostPluginManager::InstallPlugin(const std::string &path) {
     InstallPlugin(plugin);
   } else {
     LOG_ERR("Cannot load plugin: loaded library "
-            << path << " does not provide a createPlugin() function");
+            << path << " does not provide a createPlugin() function")
     return;
   }
 } // namespace boost::filesystem
@@ -41,7 +40,7 @@ void BoostPluginManager::InstallPlugin(SharedPlugin plugin) {
         if (plugin_manager.expired()) {
           LOG_ERR("Cannot install plugin "
                   << plugin->GetName()
-                  << " because Plugin Manager has already shut down");
+                  << " because Plugin Manager has already shut down")
           return JobContinuation::DISPOSE;
         }
 
@@ -51,13 +50,13 @@ void BoostPluginManager::InstallPlugin(SharedPlugin plugin) {
           LOG_ERR("Installation of plugin "
                   << plugin->GetName()
                   << " failed. Initialization threw exception: "
-                  << exception.what());
+                  << exception.what())
           return JobContinuation::DISPOSE;
         }
 
         std::unique_lock lock(plugin_manager.lock()->m_plugins_mutex);
         plugin_manager.lock()->m_plugins[plugin->GetName()] = plugin;
-        LOG_INFO("Installed plugin " << plugin->GetName());
+        LOG_INFO("Installed plugin " << plugin->GetName())
 
         return JobContinuation::DISPOSE;
       },
@@ -77,7 +76,7 @@ void BoostPluginManager::UninstallPlugin(const std::string &name) {
         bool plugin_manager_destroyed = plugin_manager.expired();
         if (plugin_manager_destroyed) {
           LOG_ERR("Cannot uninstall plugin "
-                  << name << " because Plugin Manager has already shut down");
+                  << name << " because Plugin Manager has already shut down")
           return JobContinuation::DISPOSE;
         }
 
@@ -85,7 +84,7 @@ void BoostPluginManager::UninstallPlugin(const std::string &name) {
 
         bool plugin_installed = plugin_manager.lock()->m_plugins.contains(name);
         if (!plugin_installed) {
-          LOG_WARN("Cannot uninstall non-existent Plugin " << name);
+          LOG_WARN("Cannot uninstall non-existent Plugin " << name)
           return JobContinuation::DISPOSE;
         }
 
@@ -96,12 +95,12 @@ void BoostPluginManager::UninstallPlugin(const std::string &name) {
         } catch (const std::exception &exception) {
           LOG_ERR("ShutDown of plugin "
                   << plugin->GetName()
-                  << " failed due to throws exception: " << exception.what());
+                  << " failed due to throws exception: " << exception.what())
           return JobContinuation::DISPOSE;
         }
 
         plugin_manager.lock()->m_plugins.erase(name);
-        LOG_INFO("Uninstalled plugin " << plugin->GetName());
+        LOG_INFO("Uninstalled plugin " << plugin->GetName())
 
         return JobContinuation::DISPOSE;
       },
@@ -148,7 +147,7 @@ listAllPluginsInDescriptor(const std::string &descriptor) {
       }
     }
   } else {
-    LOG_ERR("Plugin descriptor has invalid JSON format. No plugins found.");
+    LOG_ERR("Plugin descriptor has invalid JSON format. No plugins found.")
   }
 
   return list;
@@ -161,14 +160,14 @@ void BoostPluginManager::InstallPlugins(const std::string &path) {
       [_this = weak_from_this(), path](jobsystem::JobContext *context) {
         if (_this.expired()) {
           LOG_ERR("Cannot install plugins from "
-                  << path << " because plugin manager has shut down");
+                  << path << " because plugin manager has shut down")
           return JobContinuation::DISPOSE;
         }
 
         bool is_directory = fs::is_directory(path);
         if (!is_directory) {
           LOG_WARN("Cannot load Plugins from "
-                   << path << " because it is not a directory");
+                   << path << " because it is not a directory")
           return JobContinuation::DISPOSE;
         }
 
@@ -176,11 +175,15 @@ void BoostPluginManager::InstallPlugins(const std::string &path) {
         std::vector<std::string> plugin_paths;
         bool plugin_descriptor_exists = fs::exists(path);
         if (plugin_descriptor_exists) {
-          LOG_DEBUG("Plugin descriptor found at " << jsonFilePath);
+          LOG_DEBUG("Plugin descriptor found at " << jsonFilePath)
 
           // load descriptor content using loader
-          auto future_resource = _this.lock()->m_resource_manager->LoadResource(
-              "file://" + jsonFilePath);
+          auto resource_manager =
+              _this.lock()
+                  ->m_subsystems.lock()
+                  ->RequireSubsystem<resourcemgmt::IResourceManager>();
+          auto future_resource =
+              resource_manager->LoadResource("file://" + jsonFilePath);
           context->GetJobManager()->WaitForCompletion(future_resource);
 
           std::shared_ptr<std::vector<char>> content;
@@ -188,7 +191,7 @@ void BoostPluginManager::InstallPlugins(const std::string &path) {
             content = future_resource.get()->ExtractAsType<std::vector<char>>();
           } catch (const std::exception &exception) {
             LOG_ERR("Cannot load contents of plugin descriptor at "
-                    << jsonFilePath << ": " << exception.what());
+                    << jsonFilePath << ": " << exception.what())
             return JobContinuation::DISPOSE;
           }
 
@@ -197,18 +200,18 @@ void BoostPluginManager::InstallPlugins(const std::string &path) {
 
         } else {
           LOG_WARN("No Plugin descriptor found in '"
-                   << path << "': Attempting to load all libraries");
+                   << path << "': Attempting to load all libraries")
 
           plugin_paths = std::move(listAllSharedLibsInDirectory(path));
           if (plugin_paths.empty()) {
             LOG_WARN("No Plugins loaded: No shared libraries in directory "
-                     << path);
+                     << path)
             return JobContinuation::DISPOSE;
           }
 
           LOG_DEBUG("Found "
                     << plugin_paths.size()
-                    << " possible shared libs that can be loaded as Plugins");
+                    << " possible shared libs that can be loaded as Plugins")
         }
 
         for (const auto &plugin_path : plugin_paths) {
