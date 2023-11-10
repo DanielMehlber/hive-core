@@ -15,14 +15,18 @@ using namespace networking;
 using namespace graphics;
 using namespace common::test;
 
-SharedWebSocketPeer setupPeer(size_t port, const SharedJobManager &job_manager,
-                              const SharedBroker &message_broker) {
+SharedWebSocketPeer
+setupPeer(size_t port,
+          const common::subsystems::SharedSubsystemManager &subsystems) {
+
   props::SharedPropertyProvider property_provider =
-      std::make_shared<props::PropertyProvider>(message_broker);
+      std::make_shared<props::PropertyProvider>(subsystems);
 
   property_provider->Set("net.ws.port", port);
 
-  return NetworkingFactory::CreateWebSocketPeer(job_manager, property_provider);
+  subsystems->AddOrReplaceSubsystem(property_provider);
+
+  return NetworkingFactory::CreateWebSocketPeer(subsystems);
 }
 
 SharedServiceRequest GenerateRenderingRequest(int width, int height) {
@@ -32,26 +36,48 @@ SharedServiceRequest GenerateRenderingRequest(int width, int height) {
   return request;
 }
 
-NODE setupNode(size_t port, const SharedJobManager &job_manager,
-               const SharedBroker &message_broker) {
+NODE setupNode(size_t port,
+               const common::subsystems::SharedSubsystemManager &subsystems) {
   // setup first peer
-  SharedWebSocketPeer web_socket_peer =
-      setupPeer(port, job_manager, message_broker);
+  SharedWebSocketPeer web_socket_peer = setupPeer(port, subsystems);
+
+  subsystems->AddOrReplaceSubsystem(web_socket_peer);
+
   SharedServiceRegistry registry =
-      std::make_shared<services::impl::WebSocketServiceRegistry>(
-          web_socket_peer, job_manager);
+      std::make_shared<services::impl::WebSocketServiceRegistry>(subsystems);
+
+  subsystems->AddOrReplaceSubsystem(registry);
 
   return {web_socket_peer, registry};
 }
 
-TEST(GraphicsTests, remote_render_service) {
+common::subsystems::SharedSubsystemManager SetupSubsystems() {
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+
   SharedJobManager job_manager = std::make_shared<JobManager>();
+
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
   messaging::SharedBroker message_broker =
-      messaging::MessagingFactory::CreateBroker(job_manager);
+      messaging::MessagingFactory::CreateBroker(subsystems);
+
+  subsystems->AddOrReplaceSubsystem(message_broker);
+
+  return subsystems;
+}
+
+TEST(GraphicsTests, remote_render_service) {
+  auto subsystems_1 = SetupSubsystems();
+
+  auto job_manager = subsystems_1->RequireSubsystem<JobManager>();
+
+  auto subsystems_2 =
+      std::make_shared<common::subsystems::SubsystemManager>(*subsystems_1);
+
   SharedRenderer renderer = std::make_shared<OffscreenRenderer>();
 
-  NODE node1 = setupNode(9005, job_manager, message_broker);
-  NODE node2 = setupNode(9006, job_manager, message_broker);
+  NODE node1 = setupNode(9005, subsystems_1);
+  NODE node2 = setupNode(9006, subsystems_2);
 
   // first establish connection in order to broadcast the connection
   auto connection_progress =

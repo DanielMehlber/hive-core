@@ -63,7 +63,11 @@ void BoostPluginManager::InstallPlugin(SharedPlugin plugin) {
       },
       "install-plugin-{" + plugin->GetName() + "}", JobExecutionPhase::INIT);
 
-  GetContext()->GetJobManager()->KickJob(install_job);
+  GetContext()
+      ->GetKernelSubsystems()
+      ->GetSubsystem<jobsystem::JobManager>()
+      .value()
+      ->KickJob(install_job);
 }
 
 void BoostPluginManager::UninstallPlugin(const std::string &name) {
@@ -103,7 +107,11 @@ void BoostPluginManager::UninstallPlugin(const std::string &name) {
       },
       "uninstall-plugin-{" + name + "}", JobExecutionPhase::CLEAN_UP);
 
-  GetContext()->GetJobManager()->KickJob(install_job);
+  GetContext()
+      ->GetKernelSubsystems()
+      ->GetSubsystem<jobsystem::JobManager>()
+      .value()
+      ->KickJob(install_job);
 }
 
 std::vector<std::string> listAllSharedLibsInDirectory(const std::string &path) {
@@ -211,5 +219,9 @@ void BoostPluginManager::InstallPlugins(const std::string &path) {
       },
       "install-plugins-in-{" + path + "}", JobExecutionPhase::INIT);
 
-  GetContext()->GetJobManager()->KickJob(install_job);
+  GetContext()
+      ->GetKernelSubsystems()
+      ->GetSubsystem<jobsystem::JobManager>()
+      .value()
+      ->KickJob(install_job);
 }

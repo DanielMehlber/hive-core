@@ -26,12 +26,25 @@ public:
   }
 };
 
-TEST(PropertyTest, simple_prop_listener) {
+common::subsystems::SharedSubsystemManager SetupSubsystems() {
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   jobsystem::SharedJobManager job_manager =
       std::make_shared<jobsystem::JobManager>();
+
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
   messaging::SharedBroker broker =
-      messaging::MessagingFactory::CreateBroker(job_manager);
-  PropertyProvider provider(broker);
+      messaging::MessagingFactory::CreateBroker(subsystems);
+
+  subsystems->AddOrReplaceSubsystem(broker);
+  return subsystems;
+}
+
+TEST(PropertyTest, simple_prop_listener) {
+
+  auto subsystems = SetupSubsystems();
+  auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  PropertyProvider provider(subsystems);
 
   auto listener = std::make_shared<VerificationListener>();
   provider.RegisterListener("example.prop.value", listener);
@@ -44,11 +57,9 @@ TEST(PropertyTest, simple_prop_listener) {
 }
 
 TEST(PropertyTest, sub_prop_listener) {
-  jobsystem::SharedJobManager job_manager =
-      std::make_shared<jobsystem::JobManager>();
-  messaging::SharedBroker broker =
-      messaging::MessagingFactory::CreateBroker(job_manager);
-  PropertyProvider provider(broker);
+  auto subsystems = SetupSubsystems();
+  auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  PropertyProvider provider(subsystems);
 
   auto listener = std::make_shared<VerificationListener>();
   provider.RegisterListener("example.prop", listener);
@@ -62,11 +73,9 @@ TEST(PropertyTest, sub_prop_listener) {
 }
 
 TEST(PropertyTest, listener_destroyed) {
-  jobsystem::SharedJobManager job_manager =
-      std::make_shared<jobsystem::JobManager>();
-  messaging::SharedBroker broker =
-      messaging::MessagingFactory::CreateBroker(job_manager);
-  PropertyProvider provider(broker);
+  auto subsystems = SetupSubsystems();
+  auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  PropertyProvider provider(subsystems);
 
   // this just assures that there is no segfault happening when the listener is
   // deleted because it went out of scope.
@@ -80,11 +89,9 @@ TEST(PropertyTest, listener_destroyed) {
 }
 
 TEST(PropertyTest, listener_unregistered) {
-  jobsystem::SharedJobManager job_manager =
-      std::make_shared<jobsystem::JobManager>();
-  messaging::SharedBroker broker =
-      messaging::MessagingFactory::CreateBroker(job_manager);
-  PropertyProvider provider(broker);
+  auto subsystems = SetupSubsystems();
+  auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  PropertyProvider provider(subsystems);
 
   // this just assures that there is no segfault happening when the listener is
   // deleted because it went out of scope.

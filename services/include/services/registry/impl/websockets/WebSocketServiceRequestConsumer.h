@@ -18,8 +18,7 @@ namespace services::impl {
 class SERVICES_API WebSocketServiceRequestConsumer
     : public IWebSocketMessageConsumer {
 private:
-  /** Used to schedule calls */
-  jobsystem::SharedJobManager m_job_manager;
+  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
   typedef std::function<std::future<std::optional<SharedServiceCaller>>(
       const std::string &, bool)>
@@ -33,7 +32,7 @@ private:
 
 public:
   WebSocketServiceRequestConsumer(
-      jobsystem::SharedJobManager job_manager,
+      const common::subsystems::SharedSubsystemManager &subsystems,
       WebSocketServiceRequestConsumer::query_func_type query_func,
       const SharedWebSocketPeer &web_socket_peer);
 

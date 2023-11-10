@@ -2,6 +2,7 @@
 #define PROPERTYPROVIDER_H
 
 #include "PropertyChangeListener.h"
+#include "common/subsystems/SubsystemManager.h"
 #include "messaging/broker/IMessageBroker.h"
 #include "properties/Properties.h"
 #include <boost/property_tree/ptree.hpp>
@@ -20,13 +21,15 @@ namespace props {
 class PROPERTIES_API PropertyProvider
     : std::enable_shared_from_this<PropertyProvider> {
 protected:
-  messaging::SharedBroker m_message_broker;
+  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+
   boost::property_tree::ptree m_property_tree;
 
   void NotifyListenersAboutChange(const std::string &path) const;
 
 public:
-  explicit PropertyProvider(messaging::SharedBroker message_broker);
+  explicit PropertyProvider(
+      const common::subsystems::SharedSubsystemManager &subsystems);
   virtual ~PropertyProvider();
 
   /**

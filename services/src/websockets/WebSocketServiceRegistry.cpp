@@ -14,7 +14,7 @@ void broadcastServiceRegistration(
         if (sender.expired()) {
           LOG_WARN("cannot broadcast local service "
                    << stub->GetServiceName()
-                   << " because web-socket peer has been destroyed");
+                   << " because web-socket peer has been destroyed")
         } else {
           auto message = std::make_shared<WebSocketMessage>(
               MESSAGE_TYPE_WS_SERVICE_REGISTRATION);
@@ -29,11 +29,11 @@ void broadcastServiceRegistration(
             size_t receivers = progress.get();
             LOG_DEBUG("broadcast local service " << stub->GetServiceName()
                                                  << " to " << receivers
-                                                 << " other peers");
+                                                 << " other peers")
           } catch (std::exception &exception) {
             LOG_ERR("broadcasting local service "
                     << stub->GetServiceName()
-                    << " failed due to internal error: " << exception.what());
+                    << " failed due to internal error: " << exception.what())
           }
         }
 
@@ -44,6 +44,10 @@ void broadcastServiceRegistration(
 }
 
 void WebSocketServiceRegistry::Register(const SharedServiceExecutor &stub) {
+  auto job_manager =
+      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+  auto web_socket_peer =
+      m_subsystems.lock()->RequireSubsystem<IWebSocketPeer>();
 
   std::string name = stub->GetServiceName();
 
@@ -53,21 +57,20 @@ void WebSocketServiceRegistry::Register(const SharedServiceExecutor &stub) {
   }
 
   if (stub->IsLocal()) {
-    broadcastServiceRegistration(m_web_socket_peer, stub, m_job_manager);
+    broadcastServiceRegistration(web_socket_peer, stub, job_manager);
   }
 
   m_registered_callers.at(name)->AddExecutor(stub);
   LOG_DEBUG("new service '" << name
-                            << "' has been registered in web-socket registry");
+                            << "' has been registered in web-socket registry")
 }
 
 void WebSocketServiceRegistry::Unregister(const std::string &name) {
   std::unique_lock lock(m_registered_callers_mutex);
   if (m_registered_callers.contains(name)) {
     m_registered_callers.erase(name);
-    LOG_DEBUG(
-        "service '" << name
-                    << "' has been unregistered from web-socket registry");
+    LOG_DEBUG("service '" << name
+                          << "' has been unregistered from web-socket registry")
   }
 }
 
@@ -90,7 +93,7 @@ WebSocketServiceRegistry::Find(const std::string &name,
           LOG_WARN("service '"
                    << name
                    << "' is registered in web-socket registry, but not "
-                      "locally callable");
+                      "locally callable")
           promise.set_value({});
         }
       }
@@ -98,7 +101,7 @@ WebSocketServiceRegistry::Find(const std::string &name,
     } else {
       LOG_WARN("service '" << name
                            << "' was registered in web-socket registry, but is "
-                              "not usable anymore");
+                              "not usable anymore")
       promise.set_value({});
     }
   } else {
@@ -109,9 +112,14 @@ WebSocketServiceRegistry::Find(const std::string &name,
 }
 
 WebSocketServiceRegistry::WebSocketServiceRegistry(
-    const SharedWebSocketPeer &web_socket_peer,
-    const jobsystem::SharedJobManager &job_manager)
-    : m_web_socket_peer(web_socket_peer), m_job_manager(job_manager) {
+    const common::subsystems::SharedSubsystemManager &subsystems)
+    : m_subsystems(subsystems) {
+
+  auto job_manager =
+      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+  auto web_socket_peer =
+      m_subsystems.lock()->RequireSubsystem<IWebSocketPeer>();
+
   auto response_consumer = std::make_shared<WebSocketServiceResponseConsumer>();
   m_response_consumer = response_consumer;
   m_registration_consumer =
@@ -119,7 +127,8 @@ WebSocketServiceRegistry::WebSocketServiceRegistry(
           std::bind(&WebSocketServiceRegistry::Register, this, _1),
           response_consumer, web_socket_peer);
   m_request_consumer = std::make_shared<WebSocketServiceRequestConsumer>(
-      job_manager, std::bind(&WebSocketServiceRegistry::Find, this, _1, _2),
+      m_subsystems.lock(),
+      std::bind(&WebSocketServiceRegistry::Find, this, _1, _2),
       web_socket_peer);
 
   web_socket_peer->AddConsumer(m_registration_consumer);

@@ -18,8 +18,7 @@ protected:
   mutable std::mutex m_registered_callers_mutex;
   std::map<std::string, SharedServiceCaller> m_registered_callers;
 
-  std::weak_ptr<IWebSocketPeer> m_web_socket_peer;
-  jobsystem::SharedJobManager m_job_manager;
+  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
   SharedWebSocketMessageConsumer m_registration_consumer;
   SharedWebSocketMessageConsumer m_response_consumer;
@@ -27,8 +26,7 @@ protected:
 
 public:
   explicit WebSocketServiceRegistry(
-      const SharedWebSocketPeer &web_socket_peer,
-      const jobsystem::SharedJobManager &job_manager);
+      const common::subsystems::SharedSubsystemManager &subsystems);
 
   void Register(const SharedServiceExecutor &stub) override;
 

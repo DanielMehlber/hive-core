@@ -1,6 +1,7 @@
 #ifndef JOBBASEDMESSAGEBROKER_H
 #define JOBBASEDMESSAGEBROKER_H
 
+#include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/manager/JobManager.h"
 #include "messaging/Messaging.h"
 #include "messaging/broker/IMessageBroker.h"
@@ -26,7 +27,8 @@ private:
       m_topic_subscribers;
   mutable std::mutex m_topic_subscribers_mutex;
 
-  std::shared_ptr<JobManager> m_job_manager;
+  /** Contains required subsystems */
+  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
   /**
    * @brief Goes through all subscribers of all topics and checks if they are
@@ -35,7 +37,8 @@ private:
   void CleanUpSubscribers();
 
 public:
-  explicit JobBasedMessageBroker(std::shared_ptr<JobManager> job_manager);
+  explicit JobBasedMessageBroker(
+      const common::subsystems::SharedSubsystemManager &subsystems);
   ~JobBasedMessageBroker() override;
 
   void PublishMessage(SharedMessage event) override;

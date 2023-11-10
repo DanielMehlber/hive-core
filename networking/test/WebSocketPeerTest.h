@@ -6,7 +6,6 @@
 #include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
 #include "networking/websockets/WebSocketConnectionInfo.h"
-#include "properties/PropertyFactory.h"
 
 using namespace networking;
 using namespace networking::websockets;
@@ -16,13 +15,21 @@ using namespace messaging;
 using namespace std::chrono_literals;
 using namespace common::test;
 
-SharedWebSocketPeer SetupWebSocketPeer(SharedJobManager job_manager, int port) {
-  SharedBroker message_broker = MessagingFactory::CreateBroker(job_manager);
+SharedWebSocketPeer
+SetupWebSocketPeer(const common::subsystems::SharedSubsystemManager &subsystems,
+                   int port) {
+  SharedBroker message_broker = MessagingFactory::CreateBroker(subsystems);
+  subsystems->AddOrReplaceSubsystem(message_broker);
+
   SharedPropertyProvider property_provider =
-      PropertyFactory::CreatePropertyProvider(message_broker);
+      std::make_shared<props::PropertyProvider>(subsystems);
   property_provider->Set<size_t>("net.ws.port", port);
+  subsystems->AddOrReplaceSubsystem<props::PropertyProvider>(property_provider);
+
   SharedWebSocketPeer server =
-      NetworkingFactory::CreateWebSocketPeer(job_manager, property_provider);
+      NetworkingFactory::CreateWebSocketPeer(subsystems);
+
+  subsystems->AddOrReplaceSubsystem(server);
 
   return server;
 }
@@ -41,7 +48,8 @@ public:
 };
 
 void SendMessageAndWait(SharedWebSocketMessage message,
-                        SharedWebSocketPeer peer, std::string uri) {
+                        const SharedWebSocketPeer &peer,
+                        const std::string &uri) {
   std::future<void> sending_result = peer->Send(uri, message);
   sending_result.wait();
   ASSERT_NO_THROW(sending_result.get());
@@ -49,8 +57,11 @@ void SendMessageAndWait(SharedWebSocketMessage message,
 
 TEST(WebSockets, websockets_connection_establishment) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
-  SharedWebSocketPeer peer1 = SetupWebSocketPeer(job_manager, 9003);
-  SharedWebSocketPeer peer2 = SetupWebSocketPeer(job_manager, 9004);
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
+  SharedWebSocketPeer peer1 = SetupWebSocketPeer(subsystems, 9003);
+  SharedWebSocketPeer peer2 = SetupWebSocketPeer(subsystems, 9004);
 
   auto result = peer1->EstablishConnectionTo("ws://127.0.0.1:9004");
   result.wait();
@@ -60,11 +71,16 @@ TEST(WebSockets, websockets_connection_establishment) {
 
 TEST(WebSockets, websockets_connection_closing) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
-  SharedWebSocketPeer peer1 = SetupWebSocketPeer(job_manager, 9003);
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
+  SharedWebSocketPeer peer1 = SetupWebSocketPeer(subsystems, 9003);
   SharedWebSocketMessage message =
       std::make_shared<WebSocketMessage>("test-type");
   {
-    SharedWebSocketPeer peer2 = SetupWebSocketPeer(job_manager, 9004);
+    auto subsystems_copy =
+        std::make_shared<common::subsystems::SubsystemManager>(*subsystems);
+    SharedWebSocketPeer peer2 = SetupWebSocketPeer(subsystems_copy, 9004);
     auto result = peer1->EstablishConnectionTo("ws://127.0.0.1:9004");
     result.wait();
 
@@ -77,8 +93,12 @@ TEST(WebSockets, websockets_connection_closing) {
 
 TEST(WebSockets, websockets_message_sending_1_to_1) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
-  SharedWebSocketPeer peer1 = SetupWebSocketPeer(job_manager, 9003);
-  SharedWebSocketPeer peer2 = SetupWebSocketPeer(job_manager, 9004);
+
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
+  SharedWebSocketPeer peer1 = SetupWebSocketPeer(subsystems, 9003);
+  SharedWebSocketPeer peer2 = SetupWebSocketPeer(subsystems, 9004);
 
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
@@ -120,8 +140,12 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
 
 TEST(WebSockets, websockets_message_receiving_multiple) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
-  SharedWebSocketPeer peer1 = SetupWebSocketPeer(job_manager, 9003);
-  SharedWebSocketPeer peer2 = SetupWebSocketPeer(job_manager, 9004);
+
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
+  SharedWebSocketPeer peer1 = SetupWebSocketPeer(subsystems, 9003);
+  SharedWebSocketPeer peer2 = SetupWebSocketPeer(subsystems, 9004);
 
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
@@ -149,7 +173,11 @@ TEST(WebSockets, websockets_message_receiving_multiple) {
 
 TEST(WebSockets, websockets_message_sending_1_to_n) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
-  SharedWebSocketPeer peer1 = SetupWebSocketPeer(job_manager, 9003);
+
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
+  SharedWebSocketPeer peer1 = SetupWebSocketPeer(subsystems, 9003);
 
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
@@ -158,7 +186,7 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
 
   std::vector<SharedWebSocketPeer> peers;
   for (size_t i = 9005; i < 9010; i++) {
-    SharedWebSocketPeer peer = SetupWebSocketPeer(job_manager, i);
+    SharedWebSocketPeer peer = SetupWebSocketPeer(subsystems, i);
 
     auto result = peer->EstablishConnectionTo("ws://127.0.0.1:9003");
     result.wait();
@@ -183,14 +211,18 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
 
 TEST(WebSockets, websockets_message_broadcast) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
-  SharedWebSocketPeer peer1 = SetupWebSocketPeer(job_manager, 9003);
+
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
+  SharedWebSocketPeer peer1 = SetupWebSocketPeer(subsystems, 9003);
 
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
 
   std::vector<SharedWebSocketPeer> peers;
   for (size_t i = 9005; i < 9010; i++) {
-    SharedWebSocketPeer peer = SetupWebSocketPeer(job_manager, i);
+    SharedWebSocketPeer peer = SetupWebSocketPeer(subsystems, i);
 
     auto result = peer->EstablishConnectionTo("ws://127.0.0.1:9003");
     result.wait();

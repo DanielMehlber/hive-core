@@ -1,5 +1,3 @@
-#include <utility>
-
 #include "messaging/broker/impl/JobBasedMessageBroker.h"
 
 using namespace messaging;
@@ -7,8 +5,8 @@ using namespace messaging::impl;
 using namespace std::chrono_literals;
 
 JobBasedMessageBroker::JobBasedMessageBroker(
-    std::shared_ptr<JobManager> job_manager)
-    : m_job_manager{job_manager} {
+    const common::subsystems::SharedSubsystemManager &subsystems)
+    : m_subsystems(subsystems) {
 
   SharedJob clean_up_job = std::make_shared<TimerJob>(
       [&](JobContext *) {
@@ -16,11 +14,16 @@ JobBasedMessageBroker::JobBasedMessageBroker(
         return JobContinuation::REQUEUE;
       },
       "messaging-subscriber-clean-up", 5s, JobExecutionPhase::INIT);
-  m_job_manager->KickJob(clean_up_job);
+
+  auto job_manager = m_subsystems.lock()->RequireSubsystem<JobManager>();
+  job_manager->KickJob(clean_up_job);
 }
 
 JobBasedMessageBroker::~JobBasedMessageBroker() {
-  m_job_manager->DetachJob("messaging-subscriber-clean-up");
+  if (!m_subsystems.expired()) {
+    auto job_manager = m_subsystems.lock()->RequireSubsystem<JobManager>();
+    job_manager->DetachJob("messaging-subscriber-clean-up");
+  }
   RemoveAllSubscribers();
 }
 
@@ -53,13 +56,14 @@ void JobBasedMessageBroker::PublishMessage(SharedMessage event) {
               }
               return JobContinuation::DISPOSE;
             });
-        m_job_manager->KickJob(message_job);
+        auto job_manager = m_subsystems.lock()->RequireSubsystem<JobManager>();
+        job_manager->KickJob(message_job);
       }
     }
 
     LOG_DEBUG("message of topic '" << topic_name << "' published to "
                                    << subscribers_of_topic.size()
-                                   << " subscribers");
+                                   << " subscribers")
   }
 }
 
@@ -67,7 +71,7 @@ bool messaging::impl::JobBasedMessageBroker::HasSubscriber(
     const std::string &subscriber_id, const std::string &topic) const {
   if (m_topic_subscribers.contains(topic)) {
     const auto &subscriber_list = m_topic_subscribers.at(topic);
-    for (auto subscriber : subscriber_list) {
+    for (const auto &subscriber : subscriber_list) {
       if (!subscriber.expired() &&
           subscriber.lock()->GetId() == subscriber_id) {
         return true;

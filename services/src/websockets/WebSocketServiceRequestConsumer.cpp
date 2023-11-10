@@ -1,22 +1,27 @@
 #include "services/registry/impl/websockets/WebSocketServiceRequestConsumer.h"
-#include "common/exceptions/ExceptionsBase.h"
-#include "jobsystem/manager/JobManager.h"
-#include "logging/LogManager.h"
 #include "services/registry/impl/websockets/WebSocketServiceMessagesConverter.h"
 
 using namespace services::impl;
 
 WebSocketServiceRequestConsumer::WebSocketServiceRequestConsumer(
-    jobsystem::SharedJobManager job_manager,
+    const common::subsystems::SharedSubsystemManager &subsystems,
     WebSocketServiceRequestConsumer::query_func_type query_func,
     const SharedWebSocketPeer &web_socket_peer)
-    : m_job_manager(std::move(job_manager)),
-      m_service_query_func(std::move(query_func)),
+    : m_subsystems(subsystems), m_service_query_func(std::move(query_func)),
       m_web_socket_peer(web_socket_peer) {}
 
 void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
     SharedWebSocketMessage received_message,
     WebSocketConnectionInfo connection_info) noexcept {
+
+  if (m_subsystems.expired()) {
+    LOG_ERR("Cannot process received message because subsystems have already "
+            "shut down")
+    return;
+  }
+
+  auto job_manager =
+      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
 
   auto opt_request =
       WebSocketServiceMessagesConverter::ToServiceRequest(received_message);
@@ -28,12 +33,15 @@ void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
 
   SharedServiceRequest request = opt_request.value();
   LOG_DEBUG("received service request for service "
-            << request->GetServiceName());
+            << request->GetServiceName())
 
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
       [_this = std::static_pointer_cast<WebSocketServiceRequestConsumer>(
            shared_from_this()),
        request, connection_info](jobsystem::JobContext *context) {
+        auto job_manager = _this->m_subsystems.lock()
+                               ->RequireSubsystem<jobsystem::JobManager>();
+
         auto fut_opt_service_caller =
             _this->m_service_query_func(request->GetServiceName(), true);
 
@@ -48,7 +56,7 @@ void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
 
             // call service locally
             std::future<SharedServiceResponse> fut_response =
-                service_caller->Call(request, _this->m_job_manager, true);
+                service_caller->Call(request, job_manager, true);
 
             context->GetJobManager()->WaitForCompletion(fut_response);
             response = fut_response.get();
@@ -56,7 +64,7 @@ void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
           } else {
             LOG_WARN("received service request for service '"
                      << request->GetServiceName()
-                     << "' that does not exist locally");
+                     << "' that does not exist locally")
             response = std::make_shared<ServiceResponse>(
                 request->GetTransactionId(), ServiceResponseStatus::GONE,
                 "service does not exist (anymore)");
@@ -67,7 +75,7 @@ void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
                   << " called from remote peer via web-socket: internal "
                      "error occurred "
                      "during local service execution: "
-                  << exception.what());
+                  << exception.what())
 
           response = std::make_shared<ServiceResponse>(
               request->GetTransactionId(),
@@ -81,7 +89,7 @@ void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
         if (_this->m_web_socket_peer.expired()) {
           LOG_ERR("cannot send service response for request "
                   << request->GetTransactionId()
-                  << " because web-socket peer has shut down");
+                  << " because web-socket peer has shut down")
         } else {
           auto sending_progress = _this->m_web_socket_peer.lock()->Send(
               connection_info.GetHostname(), response_message);
@@ -93,12 +101,12 @@ void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
             LOG_ERR("error while sending response for service request "
                     << request->GetTransactionId() << " for service "
                     << request->GetServiceName()
-                    << " due to sending error: " << exception.what());
+                    << " due to sending error: " << exception.what())
           }
         }
 
         return JobContinuation::DISPOSE;
       });
 
-  m_job_manager->KickJob(job);
+  job_manager->KickJob(job);
 }

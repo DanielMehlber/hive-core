@@ -40,6 +40,8 @@ public:
   virtual void InstallPlugins(const std::string &path) = 0;
 };
 
+typedef std::shared_ptr<IPluginManager> SharedPluginManager;
+
 } // namespace plugins
 
 #endif // IPLUGINMANAGER_H

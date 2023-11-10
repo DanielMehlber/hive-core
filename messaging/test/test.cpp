@@ -2,9 +2,17 @@
 #include <gtest/gtest.h>
 #include <jobsystem/manager/JobManager.h>
 
-TEST(Messaging, receive_message) {
+common::subsystems::SharedSubsystemManager SetupSubsystems() {
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   auto job_manager = std::make_shared<jobsystem::JobManager>();
-  auto broker = messaging::MessagingFactory::CreateBroker(job_manager);
+  subsystems->AddOrReplaceSubsystem<jobsystem::JobManager>(job_manager);
+  return subsystems;
+}
+
+TEST(Messaging, receive_message) {
+  auto subsystems = SetupSubsystems();
+
+  auto broker = messaging::MessagingFactory::CreateBroker(subsystems);
 
   bool message_received_a = false;
   bool message_received_b = false;
@@ -24,6 +32,7 @@ TEST(Messaging, receive_message) {
   auto msg = std::make_shared<messaging::Message>("test-event");
   broker->PublishMessage(msg);
 
+  auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
   job_manager->InvokeCycleAndWait();
   ASSERT_TRUE(message_received_a);
   ASSERT_TRUE(message_received_b);
@@ -31,8 +40,8 @@ TEST(Messaging, receive_message) {
 }
 
 TEST(Messaging, subscriber_unsubscribe) {
-  auto job_manager = std::make_shared<jobsystem::JobManager>();
-  auto broker = messaging::MessagingFactory::CreateBroker(job_manager);
+  auto subsystems = SetupSubsystems();
+  auto broker = messaging::MessagingFactory::CreateBroker(subsystems);
 
   std::atomic_int message_received_counter_a = 0;
   std::atomic_int message_received_counter_b = 0;
@@ -48,6 +57,7 @@ TEST(Messaging, subscriber_unsubscribe) {
   auto msg = messaging::MessagingFactory::CreateMessage("test-event");
   broker->PublishMessage(msg);
 
+  auto job_manager = subsystems->RequireSubsystem<JobManager>();
   job_manager->InvokeCycleAndWait();
   ASSERT_EQ(message_received_counter_a, 1);
   ASSERT_EQ(message_received_counter_b, 1);
@@ -60,8 +70,10 @@ TEST(Messaging, subscriber_unsubscribe) {
 }
 
 TEST(Messaging, subscriber_destroyed) {
-  auto job_manager = std::make_shared<jobsystem::JobManager>();
-  auto broker = messaging::MessagingFactory::CreateBroker(job_manager);
+  auto subsystems = SetupSubsystems();
+  auto broker = messaging::MessagingFactory::CreateBroker(subsystems);
+
+  auto job_manager = subsystems->RequireSubsystem<JobManager>();
 
   std::atomic_int message_received_counter_a = 0;
   std::atomic_int message_received_counter_b = 0;

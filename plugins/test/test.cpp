@@ -11,8 +11,11 @@ TEST(PluginsTest, lifecycle_test) {
   auto resource_manager =
       resourcemgmt::ResourceFactory::CreateResourceManager();
 
-  auto plugin_context = std::make_shared<plugins::PluginContext>(
-      job_manager, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  subsystems->AddOrReplaceSubsystem(job_manager);
+  subsystems->AddOrReplaceSubsystem(resource_manager);
+
+  auto plugin_context = std::make_shared<plugins::PluginContext>(subsystems);
 
   auto plugin_manager = std::make_shared<plugins::BoostPluginManager>(
       plugin_context, resource_manager);

@@ -6,11 +6,16 @@
 using namespace props;
 
 TEST(PropertyTest, prop_get_set) {
+  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   jobsystem::SharedJobManager job_manager =
       std::make_shared<jobsystem::JobManager>();
+  subsystems->AddOrReplaceSubsystem(job_manager);
+
   messaging::SharedBroker broker =
-      messaging::MessagingFactory::CreateBroker(job_manager);
-  PropertyProvider provider(broker);
+      messaging::MessagingFactory::CreateBroker(subsystems);
+  subsystems->AddOrReplaceSubsystem(broker);
+
+  PropertyProvider provider(subsystems);
 
   ASSERT_FALSE(provider.Get<std::string>("example.test.value").has_value());
   provider.Set<std::string>("example.test.value", "test");

@@ -1,13 +1,13 @@
 #include "properties/PropertyProvider.h"
 #include "messaging/MessagingFactory.h"
 #include <sstream>
-#include <utility>
 #include <vector>
 
 using namespace props;
 
-PropertyProvider::PropertyProvider(messaging::SharedBroker message_broker)
-    : m_message_broker{std::move(message_broker)} {}
+PropertyProvider::PropertyProvider(
+    const common::subsystems::SharedSubsystemManager &subsystems)
+    : m_subsystems(subsystems) {}
 
 PropertyProvider::~PropertyProvider() = default;
 
@@ -30,7 +30,7 @@ std::vector<std::string> getSubpaths(const std::string &path, char delimeter) {
       }
       std::string subpath = path.substr(0, index);
       subpaths.push_back(subpath);
-    };
+    }
 
     subpaths.push_back(path);
   }
@@ -49,7 +49,9 @@ void PropertyProvider::RegisterListener(
   std::shared_ptr<messaging::IMessageSubscriber> subscriber =
       std::static_pointer_cast<messaging::IMessageSubscriber>(listener);
 
-  m_message_broker->AddSubscriber(subscriber, buildTopicName(path));
+  auto message_broker =
+      m_subsystems.lock()->RequireSubsystem<messaging::IMessageBroker>();
+  message_broker->AddSubscriber(subscriber, buildTopicName(path));
 }
 
 void PropertyProvider::UnregisterListener(
@@ -57,7 +59,9 @@ void PropertyProvider::UnregisterListener(
   std::shared_ptr<messaging::IMessageSubscriber> subscriber =
       std::static_pointer_cast<messaging::IMessageSubscriber>(listener);
 
-  m_message_broker->RemoveSubscriber(subscriber);
+  auto message_broker =
+      m_subsystems.lock()->RequireSubsystem<messaging::IMessageBroker>();
+  message_broker->RemoveSubscriber(subscriber);
 }
 
 void PropertyProvider::NotifyListenersAboutChange(
@@ -69,6 +73,9 @@ void PropertyProvider::NotifyListenersAboutChange(
         messaging::MessagingFactory::CreateMessage(buildTopicName(subpath));
 
     message->SetPayload("property-key", path);
-    m_message_broker->PublishMessage(message);
+
+    auto message_broker =
+        m_subsystems.lock()->RequireSubsystem<messaging::IMessageBroker>();
+    message_broker->PublishMessage(message);
   }
 }

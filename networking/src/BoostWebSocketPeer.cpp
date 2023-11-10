@@ -14,9 +14,12 @@ namespace asio = boost::asio;           // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 using namespace std::chrono_literals;
 
-BoostWebSocketPeer::BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
-                                       props::SharedPropertyProvider properties)
-    : m_job_manager{std::move(job_manager)}, m_property_provider{properties} {
+BoostWebSocketPeer::BoostWebSocketPeer(
+    const common::subsystems::SharedSubsystemManager &subsystems)
+    : m_subsystems(subsystems) {
+
+  auto properties =
+      m_subsystems.lock()->RequireSubsystem<props::PropertyProvider>();
 
   bool init_server_at_startup =
       properties->GetOrElse("net.ws.server.auto-init", true);
@@ -73,7 +76,7 @@ void BoostWebSocketPeer::SetupCleanUpJob() {
         size_t difference = size_before - _this->m_connections.size();
         if (difference > 0) {
           LOG_INFO("cleaned up " << difference
-                                 << " unusable or dead connections");
+                                 << " unusable or dead connections")
         }
 
         return REQUEUE;
@@ -82,7 +85,9 @@ void BoostWebSocketPeer::SetupCleanUpJob() {
           std::to_string(m_local_endpoint->port()),
       5s, CLEAN_UP);
 
-  m_job_manager->KickJob(clean_up_job);
+  auto job_manager =
+      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+  job_manager->KickJob(clean_up_job);
 }
 
 BoostWebSocketPeer::~BoostWebSocketPeer() {
@@ -103,7 +108,7 @@ BoostWebSocketPeer::~BoostWebSocketPeer() {
     execution.join();
   }
 
-  LOG_DEBUG("local web-socket peer has been shut down");
+  LOG_DEBUG("local web-socket peer has been shut down")
 }
 
 void BoostWebSocketPeer::AddConsumer(
@@ -115,10 +120,10 @@ void BoostWebSocketPeer::AddConsumer(
     std::unique_lock consumers_lock(m_consumers_mutex);
     m_consumers[consumer_message_type].push_back(consumer);
     LOG_DEBUG("added web-socket message consumer for message type '"
-              << consumer_message_type << "'");
+              << consumer_message_type << "'")
   } else {
     LOG_WARN("given web-socket message consumer has expired and cannot be "
-             "added to the web-socket peer");
+             "added to the web-socket peer")
   }
 }
 
@@ -136,7 +141,7 @@ BoostWebSocketPeer::GetConsumersOfType(const std::string &type_name) noexcept {
     consumers_lock.lock();
 
     // collect all remaining consumers in the list
-    for (auto consumer : consumer_list) {
+    for (const auto &consumer : consumer_list) {
       if (!consumer.expired()) {
         ret_consumer_list.push_back(consumer.lock());
       }
@@ -151,7 +156,7 @@ void BoostWebSocketPeer::CleanUpConsumersOf(const std::string &type) noexcept {
     std::unique_lock consumers_lock(m_consumers_mutex);
     auto &consumer_list = m_consumers[type];
     consumer_list.remove_if(
-        [](const std::weak_ptr<IWebSocketMessageConsumer> con) {
+        [](const std::weak_ptr<IWebSocketMessageConsumer> &con) {
           return con.expired();
         });
   }
@@ -159,6 +164,16 @@ void BoostWebSocketPeer::CleanUpConsumersOf(const std::string &type) noexcept {
 
 void BoostWebSocketPeer::ProcessReceivedMessage(
     std::string data, SharedBoostWebSocketConnection over_connection) {
+
+  if (m_subsystems.expired()) {
+    LOG_ERR("Received message but subsystems have shut down. Cannot process "
+            "message.");
+    return;
+  }
+
+  auto job_manager =
+      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+
   std::unique_lock running_lock(m_running_mutex);
   if (!m_running) {
     return;
@@ -171,7 +186,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   } catch (const MessagePayloadInvalidException &ex) {
     LOG_WARN("message received from host "
              << over_connection->GetRemoteHostAddress()
-             << " contained invalid payload");
+             << " contained invalid payload")
     return;
   }
 
@@ -180,7 +195,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   for (auto consumer : consumer_list) {
     auto job = std::make_shared<WebSocketMessageConsumerJob>(
         consumer, message, over_connection->GetConnectionInfo());
-    m_job_manager->KickJob(job);
+    job_manager->KickJob(job);
   }
 }
 
@@ -235,8 +250,10 @@ networking::websockets::BoostWebSocketPeer::GetConnection(
 
 void BoostWebSocketPeer::InitAndStartConnectionListener() {
   if (!m_connection_listener) {
+    auto property_provider =
+        m_subsystems.lock()->RequireSubsystem<props::PropertyProvider>();
     m_connection_listener = std::make_shared<BoostWebSocketConnectionListener>(
-        m_execution_context, m_property_provider, m_local_endpoint,
+        m_execution_context, property_provider, m_local_endpoint,
         std::bind(&BoostWebSocketPeer::AddConnection, this,
                   std::placeholders::_1, std::placeholders::_2));
     m_connection_listener->Init();
@@ -246,9 +263,11 @@ void BoostWebSocketPeer::InitAndStartConnectionListener() {
 
 void BoostWebSocketPeer::InitConnectionEstablisher() {
   if (!m_connection_establisher) {
+    auto property_provider =
+        m_subsystems.lock()->RequireSubsystem<props::PropertyProvider>();
     m_connection_establisher =
         std::make_shared<BoostWebSocketConnectionEstablisher>(
-            m_execution_context, m_property_provider,
+            m_execution_context, property_provider,
             std::bind(&BoostWebSocketPeer::AddConnection, this,
                       std::placeholders::_1, std::placeholders::_2));
   }
@@ -260,7 +279,7 @@ std::future<void> BoostWebSocketPeer::Send(const std::string &uri,
   if (opt_connection.has_value()) {
     return opt_connection.value()->Send(message);
   } else {
-    THROW_EXCEPTION(NoSuchPeerException, "peer " << uri << " does not exist");
+    THROW_EXCEPTION(NoSuchPeerException, "peer " << uri << " does not exist")
   }
 }
 
@@ -345,7 +364,9 @@ BoostWebSocketPeer::Broadcast(const SharedWebSocketMessage &message) {
         return JobContinuation::DISPOSE;
       });
 
-  m_job_manager->KickJob(job);
+  auto job_manager =
+      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+  job_manager->KickJob(job);
   return future;
 }
 

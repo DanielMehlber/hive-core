@@ -4,6 +4,7 @@
 #include "BoostWebSocketConnection.h"
 #include "BoostWebSocketConnectionEstablisher.h"
 #include "BoostWebSocketConnectionListener.h"
+#include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/Networking.h"
@@ -33,16 +34,7 @@ private:
   bool m_running{false};
   mutable std::mutex m_running_mutex;
 
-  /**
-   * @brief The job system is required to react to received messages
-   */
-  jobsystem::SharedJobManager m_job_manager;
-
-  /**
-   * @brief Provides property values and configuration that is required for the
-   * setup of the server and socket connections
-   */
-  props::SharedPropertyProvider m_property_provider;
+  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
   /**
    * @brief maps message type names to their consumers
@@ -107,8 +99,8 @@ private:
   void SetupCleanUpJob();
 
 public:
-  BoostWebSocketPeer(jobsystem::SharedJobManager job_manager,
-                     props::SharedPropertyProvider properties);
+  BoostWebSocketPeer(
+      const common::subsystems::SharedSubsystemManager &subsystems);
   virtual ~BoostWebSocketPeer();
 
   void AddConsumer(std::weak_ptr<IWebSocketMessageConsumer> consumer) override;

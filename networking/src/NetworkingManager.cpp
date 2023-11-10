@@ -5,14 +5,16 @@
 using namespace networking;
 using namespace networking::websockets;
 
-NetworkingManager::NetworkingManager(props::SharedPropertyProvider properties,
-                                     jobsystem::SharedJobManager job_manager)
-    : m_job_manager{std::move(job_manager)},
-      m_property_provider{std::move(properties)} {
+NetworkingManager::NetworkingManager(
+    const common::subsystems::SharedSubsystemManager &subsystems)
+    : m_subsystems(subsystems) {
+
+  auto property_provider =
+      m_subsystems.lock()->RequireSubsystem<props::PropertyProvider>();
 
   // configuration section
   bool auto_init_websocket_server =
-      m_property_provider->GetOrElse<bool>("net.ws.autoInit", true);
+      property_provider->GetOrElse<bool>("net.ws.autoInit", true);
 
   if (auto_init_websocket_server) {
     InitWebSocketServer();
@@ -21,7 +23,13 @@ NetworkingManager::NetworkingManager(props::SharedPropertyProvider properties,
 
 void NetworkingManager::InitWebSocketServer() {
   if (!m_web_socket_server) {
-    m_web_socket_server = NetworkingFactory::CreateWebSocketPeer(
-        m_job_manager, m_property_provider);
+    auto property_provider =
+        m_subsystems.lock()->RequireSubsystem<props::PropertyProvider>();
+    auto job_manager =
+        m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+    m_web_socket_server =
+        NetworkingFactory::CreateWebSocketPeer(m_subsystems.lock());
+
+    m_subsystems.lock()->AddOrReplaceSubsystem(m_web_socket_server);
   }
 }
