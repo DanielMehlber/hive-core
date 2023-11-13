@@ -18,12 +18,13 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
                        m_managing_instance);
     JobContinuation continuation = job->Execute(&context);
     job->SetState(JobState::EXECUTION_FINISHED);
+
     if (continuation == JobContinuation::REQUEUE) {
       m_managing_instance->KickJobForNextCycle(job);
     }
   };
 
-  m_job_channel->push(runner);
+  m_job_channel->push(std::move(runner));
 }
 
 void FiberExecutionImpl::WaitForCompletion(
@@ -88,27 +89,18 @@ void FiberExecutionImpl::ExecuteWorker() {
   /*
    * Work sharing = a scheduler takes fibers from other threads when it has no
    * work in its queue. Each scheduler is managing a thread, so this allows the
-   * usage and collaboration of mutliple threads for execution.
+   * usage and collaboration of multiple threads for execution.
    *
-   * From this call on, the thread is a fiber iteself.
+   * From this call on, the thread is a fiber itself.
    */
   boost::fibers::use_scheduling_algorithm<boost::fibers::algo::shared_work>();
 
-  /*
-   * Remember: This is no longer a thread: It is a fiber. This is also not a
-   * normal mutex or a normal condition variable: This is a fiber-mutex and and
-   * fiber-condition-variable.
-   *
-   * This means that the main-fiber is paused until the termination signal is
-   * sent, not the current thread. Under the hood, it schedules other fibers as
-   * long as this condition variable is blocking the main-fiber.
-   *
-   * When the termination flag and condition triggers, this thread will complete
-   * and is therefore joinable.
-   */
   std::function<void()> job;
   while (boost::fibers::channel_op_status::closed != m_job_channel->pop(job)) {
     auto fiber = boost::fibers::fiber(job);
     fiber.detach();
+
+    // avoid keeping some lambdas hostage (caused SEGFAULTS in some scenarios)
+    job = nullptr;
   }
 }

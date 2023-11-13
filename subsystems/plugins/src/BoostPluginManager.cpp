@@ -1,4 +1,5 @@
 #include "plugins/impl/BoostPluginManager.h"
+#include <boost/dll/import.hpp>
 #include <boost/dll/shared_library.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
@@ -12,46 +13,24 @@ void BoostPluginManager::InstallPlugin(const std::string &path) {
 
   auto absolute_path = fs::canonical(path).generic_string();
 
-  boost::dll::fs::error_code error_code;
-  boost::dll::shared_library library(absolute_path, error_code);
+  boost::shared_ptr<IPlugin> plugin;
+  plugin = boost::dll::import_symbol<IPlugin>(absolute_path, "plugin");
 
-  if (!library.is_loaded()) {
-    LOG_ERR("Cannot install plugin at " << absolute_path << ": "
-                                        << error_code.what())
-    return;
-  }
-
-  if (!library.has("create")) {
-    LOG_ERR("Cannot load library at "
-            << absolute_path << ": create symbol is missing in shared library")
-    return;
-  }
-
-  typedef IPlugin *(plugin_create_t)();
-  boost::function<plugin_create_t> creator = library.get<IPlugin *()>("create");
-
-  if (creator /* creation function is defined */) {
-    auto plugin = std::shared_ptr<IPlugin>(creator());
-
-    std::unique_lock lock(m_plugins_mutex);
-    m_plugin_shared_libs[plugin->GetName()] = library;
-    lock.unlock();
-
-    // Initialize and use the plugin
+  if (plugin) {
     InstallPlugin(plugin);
   } else {
     LOG_ERR("Cannot load plugin: loaded library "
-            << absolute_path << " does not provide a createPlugin() function")
+            << absolute_path << " does not provide a plugin symbol");
     return;
   }
 } // namespace boost::filesystem
 
 SharedPluginContext BoostPluginManager::GetContext() { return m_context; }
 
-void BoostPluginManager::InstallPlugin(std::shared_ptr<IPlugin> plugin) {
+void BoostPluginManager::InstallPlugin(boost::shared_ptr<IPlugin> plugin) {
   auto install_job = jobsystem::JobSystemFactory::CreateJob(
       [plugin_manager = weak_from_this(),
-       plugin](jobsystem::JobContext *context) {
+       plugin = std::move(plugin)](jobsystem::JobContext *context) {
         if (plugin_manager.expired()) {
           LOG_ERR("Cannot install plugin "
                   << plugin->GetName()
@@ -69,12 +48,14 @@ void BoostPluginManager::InstallPlugin(std::shared_ptr<IPlugin> plugin) {
           return JobContinuation::DISPOSE;
         }
 
+        auto name = plugin->GetName();
+
         // add plugin to managed plugins
         std::unique_lock lock(plugin_manager.lock()->m_plugins_mutex);
-        plugin_manager.lock()->m_plugins[plugin->GetName()] = plugin;
+        plugin_manager.lock()->m_plugins[name] = std::move(plugin);
         lock.unlock();
-        
-        LOG_INFO("Installed plugin " << plugin->GetName())
+
+        LOG_INFO("Installed plugin " << name)
         return JobContinuation::DISPOSE;
       },
       "install-plugin-{" + plugin->GetName() + "}", JobExecutionPhase::INIT);
@@ -105,7 +86,7 @@ void BoostPluginManager::UninstallPlugin(const std::string &name) {
           return JobContinuation::DISPOSE;
         }
 
-        auto plugin = plugin_manager.lock()->m_plugins.at(name);
+        auto plugin = std::move(plugin_manager.lock()->m_plugins.at(name));
 
         try {
           plugin->ShutDown(plugin_manager.lock()->GetContext());
@@ -119,13 +100,6 @@ void BoostPluginManager::UninstallPlugin(const std::string &name) {
         // remove plugin from managed plugins
         plugin_manager.lock()->m_plugins.erase(name);
         plugin.reset();
-
-        // unload library (if associated library is stored)
-        if (plugin_manager.lock()->m_plugin_shared_libs.contains(name)) {
-          auto library = plugin_manager.lock()->m_plugin_shared_libs.at(name);
-          plugin_manager.lock()->m_plugin_shared_libs.erase(name);
-          library.unload();
-        }
 
         LOG_INFO("Uninstalled plugin " << name)
 

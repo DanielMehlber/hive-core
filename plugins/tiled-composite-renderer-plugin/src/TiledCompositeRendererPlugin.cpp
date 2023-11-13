@@ -7,15 +7,18 @@ using namespace std::chrono_literals;
 void TiledCompositeRendererPlugin::Init(plugins::SharedPluginContext context) {
   LOG_INFO("Setting up tiled composition renderer")
 
+  std::weak_ptr<common::subsystems::SubsystemManager> subsystems =
+      context->GetKernelSubsystems();
+
+  auto func = [subsystems](jobsystem::JobContext *job_context) {
+    auto plugin_manager =
+        subsystems.lock()->RequireSubsystem<plugins::IPluginManager>();
+    plugin_manager->UninstallPlugin("tiled-composite-renderer");
+    return JobContinuation::DISPOSE;
+  };
+
   auto job = std::make_shared<jobsystem::job::TimerJob>(
-      [subsystems =
-           context->GetKernelSubsystems()](jobsystem::JobContext *job_context) {
-        auto plugin_manager =
-            subsystems->RequireSubsystem<plugins::IPluginManager>();
-        plugin_manager->UninstallPlugin("tiled-composite-renderer");
-        return JobContinuation::DISPOSE;
-      },
-      2s);
+      std::move(func), "uninstall-self", 2s, CLEAN_UP);
 
   context->GetKernelSubsystems()
       ->RequireSubsystem<jobsystem::JobManager>()
@@ -34,13 +37,5 @@ TiledCompositeRendererPlugin::~TiledCompositeRendererPlugin() {
   LOG_INFO("Destroyed");
 }
 
-extern "C" {
-// boost::shared_ptr<TiledCompositeRendererPlugin> create() {
-//   return boost::shared_ptr<TiledCompositeRendererPlugin>(
-//       new TiledCompositeRendererPlugin());
-// }
-
-TiledCompositeRendererPlugin *create() {
-  return new TiledCompositeRendererPlugin();
-}
-}
+extern "C" BOOST_SYMBOL_EXPORT TiledCompositeRendererPlugin plugin;
+TiledCompositeRendererPlugin plugin;

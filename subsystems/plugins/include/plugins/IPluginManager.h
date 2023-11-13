@@ -19,7 +19,7 @@ public:
    * @note Already installed plugins will be re-installed.
    * @param plugin plugin to install
    */
-  virtual void InstallPlugin(std::shared_ptr<IPlugin> plugin) = 0;
+  virtual void InstallPlugin(boost::shared_ptr<IPlugin> plugin) = 0;
 
   /**
    * Shutdown and uninstall plugin.

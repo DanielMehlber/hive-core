@@ -23,8 +23,7 @@ protected:
   SharedPluginContext m_context;
 
   /** List of all currently installed plugins */
-  std::map<std::string, std::shared_ptr<IPlugin>> m_plugins;
-  std::map<std::string, boost::dll::shared_library> m_plugin_shared_libs;
+  std::map<std::string, boost::shared_ptr<IPlugin>> m_plugins;
   mutable std::mutex m_plugins_mutex;
 
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
@@ -35,7 +34,7 @@ public:
       common::subsystems::SharedSubsystemManager subsystems)
       : m_context(std::move(context)), m_subsystems(subsystems){};
   void InstallPlugin(const std::string &path) override;
-  void InstallPlugin(std::shared_ptr<IPlugin> plugin) override;
+  void InstallPlugin(boost::shared_ptr<IPlugin> plugin) override;
   void UninstallPlugin(const std::string &name) override;
   SharedPluginContext GetContext() override;
   void InstallPlugins(const std::string &path) override;

@@ -19,7 +19,7 @@ TEST(PluginsTest, lifecycle_test) {
   auto plugin_manager =
       std::make_shared<plugins::BoostPluginManager>(plugin_context, subsystems);
 
-  auto plugin = std::shared_ptr<TestPlugin>(new TestPlugin());
+  auto plugin = boost::shared_ptr<TestPlugin>(new TestPlugin());
 
   plugin_manager->InstallPlugin(plugin);
   plugin_manager->UninstallPlugin(plugin->GetName());
