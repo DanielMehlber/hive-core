@@ -12,17 +12,24 @@
 #include "scene/SceneManager.h"
 #include "services/registry/IServiceRegistry.h"
 
+using namespace std::chrono_literals;
+
 namespace kernel {
 
 /**
  * Encapsulates all components belonging to the kernel and allows easy setup.
  */
-class Kernel {
+class Kernel : public std::enable_shared_from_this<Kernel> {
 protected:
   std::shared_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
 public:
-  Kernel();
+  Kernel(common::subsystems::SharedSubsystemManager subsystems =
+             std::make_shared<common::subsystems::SubsystemManager>());
+
+  void EnableRenderingJob();
+
+  // vvv getters and setters vvv
 
   jobsystem::SharedJobManager GetJobManager() const;
 
