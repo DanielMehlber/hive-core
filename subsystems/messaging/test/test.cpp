@@ -1,10 +1,10 @@
 #include "messaging/MessagingFactory.h"
 #include <gtest/gtest.h>
-#include <jobsystem/manager/JobManager.h>
 
 common::subsystems::SharedSubsystemManager SetupSubsystems() {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   auto job_manager = std::make_shared<jobsystem::JobManager>();
+  job_manager->StartExecution();
   subsystems->AddOrReplaceSubsystem<jobsystem::JobManager>(job_manager);
   return subsystems;
 }

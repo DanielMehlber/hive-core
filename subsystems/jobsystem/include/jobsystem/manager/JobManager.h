@@ -31,7 +31,8 @@ namespace jobsystem {
  * holds all job instances that must be executed in the current or following
  * execution cycles.
  */
-class JOBSYSTEM_API JobManager {
+class JOBSYSTEM_API JobManager
+    : public std::enable_shared_from_this<JobManager> {
 private:
   /**
    * @brief All jobs for the initialization phase of the cycle are collected
@@ -121,6 +122,17 @@ public:
   ~JobManager();
 
   /**
+   * @brief Starts the job system execution cycle.
+   * @note This must be called after the job system has been initialized.
+   */
+  void StartExecution();
+
+  /**
+   * @brief Stops the job system execution cycle.
+   */
+  void StopExecution();
+
+  /**
    * @brief Logs runtime information and statistics.
    */
   void PrintStatusLog();
@@ -162,7 +174,7 @@ public:
    * @note On single-threaded implementations, this cannot be called from inside
    * a job because it would deadlock the worker thread.
    */
-  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
+  void WaitForCompletion(std::shared_ptr<IJobWaitable> counter);
 
   /**
    * @brief Execution of the calling party will wait (or will be deferred,

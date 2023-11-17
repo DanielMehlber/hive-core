@@ -7,7 +7,8 @@ using namespace jobsystem;
 using namespace std::chrono_literals;
 
 TEST(JobSystem, allPhases) {
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
 
   std::vector<short> vec;
   SharedJob jobA = JobSystemFactory::CreateJob(
@@ -29,18 +30,19 @@ TEST(JobSystem, allPhases) {
       },
       JobExecutionPhase::CLEAN_UP);
 
-  manager.KickJob(jobA);
-  manager.KickJob(jobC);
-  manager.KickJob(jobB);
+  manager->KickJob(jobA);
+  manager->KickJob(jobC);
+  manager->KickJob(jobB);
 
-  manager.InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
   ASSERT_EQ(0, vec.at(0));
   ASSERT_EQ(1, vec.at(1));
   ASSERT_EQ(2, vec.at(2));
 }
 
 TEST(JobSystem, multiple_jobs_per_phase) {
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
 
   int job_count = 5;
   std::atomic_int counter = 0;
@@ -49,15 +51,16 @@ TEST(JobSystem, multiple_jobs_per_phase) {
       counter++;
       return JobContinuation::REQUEUE;
     });
-    manager.KickJob(job);
+    manager->KickJob(job);
   }
 
-  manager.InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
   ASSERT_EQ(job_count, counter);
 }
 
 TEST(JobSystem, auto_requeue) {
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
   int executions = 0;
 
   auto job = JobSystemFactory::CreateJob([&](JobContext *) {
@@ -65,15 +68,17 @@ TEST(JobSystem, auto_requeue) {
     return JobContinuation::REQUEUE;
   });
 
-  manager.KickJob(job);
-  manager.InvokeCycleAndWait();
-  manager.InvokeCycleAndWait();
+  manager->KickJob(job);
+  manager->InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
 
   ASSERT_EQ(executions, 2);
 }
 
 TEST(JobSystem, timer_job) {
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
+
   size_t job_executed = 0;
   auto timer_job = JobSystemFactory::CreateJob<TimerJob>(
       [&](JobContext *) {
@@ -82,24 +87,26 @@ TEST(JobSystem, timer_job) {
       },
       1s, CLEAN_UP);
 
-  manager.KickJob(timer_job);
-  manager.InvokeCycleAndWait();
+  manager->KickJob(timer_job);
+  manager->InvokeCycleAndWait();
   ASSERT_EQ(0, job_executed);
 
   std::this_thread::sleep_for(1s);
-  manager.InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
   ASSERT_EQ(1, job_executed);
 
-  manager.InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
   ASSERT_EQ(1, job_executed);
 
   std::this_thread::sleep_for(1s);
-  manager.InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
   ASSERT_EQ(2, job_executed);
 }
 
 TEST(JobSystem, jobs_kicking_jobs) {
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
+
   bool jobACompleted = false;
   bool jobBCompleted = false;
   bool jobCCompleted = false;
@@ -132,22 +139,24 @@ TEST(JobSystem, jobs_kicking_jobs) {
     return JobContinuation::DISPOSE;
   });
 
-  manager.KickJob(jobA);
-  manager.InvokeCycleAndWait();
+  manager->KickJob(jobA);
+  manager->InvokeCycleAndWait();
 
   ASSERT_TRUE(jobACompleted);
   ASSERT_TRUE(jobBCompleted);
   ASSERT_TRUE(jobCCompleted);
   ASSERT_FALSE(jobDCompleted);
 
-  manager.InvokeCycleAndWait();
-  
+  manager->InvokeCycleAndWait();
+
   ASSERT_TRUE(jobDCompleted);
 }
 
 // Checks that no jobs are getting lost (due to data races)
 TEST(JobSystem, job_bulk) {
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
+
   SharedJobCounter absolute_counter = JobSystemFactory::CreateCounter();
 
   for (int i = 0; i < 20; i++) {
@@ -157,15 +166,15 @@ TEST(JobSystem, job_bulk) {
             SharedJob job = JobSystemFactory::CreateJob(
                 [](JobContext *) { return JobContinuation::DISPOSE; });
             job->AddCounter(absolute_counter);
-            manager.KickJob(job);
+            manager->KickJob(job);
           }
           return JobContinuation::DISPOSE;
         });
     job->AddCounter(absolute_counter);
-    manager.KickJob(job);
+    manager->KickJob(job);
   }
 
-  manager.InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
   if (!absolute_counter->IsFinished()) {
     throw "";
   }
@@ -177,7 +186,8 @@ TEST(JobSystem, wait_for_job_inside_job) {
 // doing so is the only surefire way to deadlock the entire execution
 #ifndef JOB_SYSTEM_SINGLE_THREAD
 
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
 
   std::vector<short> order;
 
@@ -189,14 +199,14 @@ TEST(JobSystem, wait_for_job_inside_job) {
     });
     otherJob->AddCounter(counter);
 
-    manager.KickJob(otherJob);
-    manager.WaitForCompletion(counter);
+    manager->KickJob(otherJob);
+    manager->WaitForCompletion(counter);
     order.push_back(2);
     return JobContinuation::DISPOSE;
   });
 
-  manager.KickJob(job);
-  manager.InvokeCycleAndWait();
+  manager->KickJob(job);
+  manager->InvokeCycleAndWait();
 
   ASSERT_EQ(1, order.at(0));
   ASSERT_EQ(2, order.at(1));
@@ -206,20 +216,21 @@ TEST(JobSystem, wait_for_job_inside_job) {
 
 TEST(JobSystem, detach_jobs) {
   std::atomic<short> execution_counter = 0;
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
 
   SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
     execution_counter++;
     return JobContinuation::REQUEUE;
   });
 
-  manager.KickJob(job);
-  manager.InvokeCycleAndWait();
-  manager.InvokeCycleAndWait();
+  manager->KickJob(job);
+  manager->InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
   ASSERT_EQ(2, execution_counter);
 
-  manager.DetachJob(job->GetId());
-  manager.InvokeCycleAndWait();
+  manager->DetachJob(job->GetId());
+  manager->InvokeCycleAndWait();
   ASSERT_EQ(2, execution_counter);
 }
 
@@ -228,7 +239,8 @@ TEST(JobSystem, detach_jobs_mid_execution) {
 // threaded implementation
 #ifndef JOB_SYSTEM_SINGLE_THREAD
   std::atomic<short> execution_counter = 0;
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
 
   SharedJobCounter detach_job_counter = JobSystemFactory::CreateCounter();
   SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
@@ -243,10 +255,10 @@ TEST(JobSystem, detach_jobs_mid_execution) {
   });
   detach_job->AddCounter(detach_job_counter);
 
-  manager.KickJob(job);
-  manager.KickJob(detach_job);
-  manager.InvokeCycleAndWait();
-  manager.InvokeCycleAndWait();
+  manager->KickJob(job);
+  manager->KickJob(detach_job);
+  manager->InvokeCycleAndWait();
+  manager->InvokeCycleAndWait();
 
   ASSERT_EQ(1, execution_counter);
 #endif
@@ -254,7 +266,8 @@ TEST(JobSystem, detach_jobs_mid_execution) {
 
 TEST(JobSystem, wait_for_future_completion) {
   std::vector<short> order;
-  JobManager manager;
+  auto manager = std::make_shared<JobManager>();
+  manager->StartExecution();
 
   SharedJob job = JobSystemFactory::CreateJob([&order](JobContext *context) {
     std::future<void> future = std::async(std::launch::async, [&order] {
@@ -268,8 +281,8 @@ TEST(JobSystem, wait_for_future_completion) {
     return JobContinuation::DISPOSE;
   });
 
-  manager.KickJob(job);
-  manager.InvokeCycleAndWait();
+  manager->KickJob(job);
+  manager->InvokeCycleAndWait();
 
   ASSERT_EQ(order.at(0), 0);
   ASSERT_EQ(order.at(1), 1);

@@ -10,12 +10,16 @@ namespace graphics {
 class RenderService : public services::impl::LocalServiceExecutor {
 private:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  std::shared_ptr<graphics::IRenderer> m_renderer;
 
 public:
-  explicit RenderService(common::subsystems::SharedSubsystemManager subsystems);
+  RenderService(const common::subsystems::SharedSubsystemManager &subsystems,
+                std::shared_ptr<graphics::IRenderer> renderer = nullptr);
 
   std::future<services::SharedServiceResponse>
-  Render(services::SharedServiceRequest request);
+  Render(const services::SharedServiceRequest &request);
+
+  std::optional<graphics::SharedRenderer> GetRenderer() const;
 };
 
 } // namespace graphics

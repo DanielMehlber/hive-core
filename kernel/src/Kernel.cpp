@@ -1,4 +1,5 @@
 #include "kernel/Kernel.h"
+#include "graphics/service/RenderService.h"
 #include "messaging/MessagingFactory.h"
 #include "plugins/impl/BoostPluginManager.h"
 #include "resourcemgmt/ResourceFactory.h"
@@ -18,6 +19,7 @@ Kernel::Kernel(common::subsystems::SharedSubsystemManager subsystems)
 
   auto job_manager = std::make_shared<JobManager>();
   m_subsystems->AddOrReplaceSubsystem(job_manager);
+  job_manager->StartExecution();
 
   auto message_broker = MessagingFactory::CreateBroker(m_subsystems);
   m_subsystems->AddOrReplaceSubsystem(message_broker);
@@ -76,4 +78,17 @@ void Kernel::EnableRenderingJob() {
       "enable-rendering-job", INIT);
 
   job_manager->KickJob(enable_rendering_job_job);
+}
+
+void Kernel::EnableRenderingService(graphics::SharedRenderer serivce_renderer) {
+  graphics::SharedRenderer renderer;
+  if (serivce_renderer) {
+    renderer = serivce_renderer;
+  } else {
+    renderer = m_subsystems->RequireSubsystem<graphics::IRenderer>();
+  }
+  auto render_service =
+      std::make_shared<graphics::RenderService>(m_subsystems, renderer);
+  auto service_registry = m_subsystems->RequireSubsystem<IServiceRegistry>();
+  service_registry->Register(render_service);
 }

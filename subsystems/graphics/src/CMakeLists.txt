@@ -2,6 +2,7 @@ add_library(graphics
         OffscreenRenderer.cpp
         OnscreenRenderer.cpp
         RenderService.cpp
+        RenderSerivceRequest.cpp
 )
 
 target_include_directories(graphics PUBLIC ../include ${Boost_INCLUDE_DIRS} ${jobsystem_INCLUDE_DIRS} ${messaging_INCLUDE_DIRS} ${common_INCLUDE_DIRS} ${websocketpp_INCLUDE_DIRS} ${logging_INCLUDE_DIRS})

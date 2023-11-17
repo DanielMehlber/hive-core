@@ -8,6 +8,8 @@
 
 TEST(PluginsTest, lifecycle_test) {
   auto job_manager = std::make_shared<jobsystem::JobManager>();
+  job_manager->StartExecution();
+  
   auto resource_manager =
       resourcemgmt::ResourceFactory::CreateResourceManager();
 

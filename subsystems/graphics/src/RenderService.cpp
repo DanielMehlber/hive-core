@@ -1,7 +1,8 @@
 #include "graphics/service/RenderService.h"
-#include <boost/archive/iterators/base64_from_binary.hpp>
+#include "graphics/service/RenderServiceRequest.h"
+#include "graphics/service/encoders/IRenderResultEncoder.h"
+#include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
 #include <boost/archive/iterators/transform_width.hpp>
-#include <boost/serialization/split_free.hpp>
 
 using namespace graphics;
 using namespace std::placeholders;
@@ -9,89 +10,36 @@ using namespace std::placeholders;
 DECLARE_EXCEPTION(MatrixConversionException);
 DECLARE_EXCEPTION(VectorConversionException);
 
-vsg::mat4 to4x4Matrix(const std::string &serialized_matrix) {
-  // split components
-  std::istringstream iss(serialized_matrix);
-  std::vector<std::string> components;
-  std::string token;
-  while (std::getline(iss, token, ' ')) {
-    components.push_back(token);
-  }
-
-  if (components.size() != 16) {
-    THROW_EXCEPTION(MatrixConversionException,
-                    "string provides " << components.size()
-                                       << " components, but 16 required")
-  }
-
-  vsg::mat4 matrix;
-  for (int i = 0; i < 16; i++) {
-    matrix.data()[i] = std::stof(components.at(i));
-  }
-
-  return matrix;
-}
-
-vsg::dvec3 toVec3(const std::string &serialized_vector) {
-  // split components
-  std::istringstream iss(serialized_vector);
-  std::vector<std::string> components;
-  std::string token;
-  while (std::getline(iss, token, ' ')) {
-    components.push_back(token);
-  }
-
-  if (components.size() != 3) {
-    THROW_EXCEPTION(VectorConversionException,
-                    "string provides " << components.size()
-                                       << " components, but 3 required")
-  }
-
-  vsg::dvec3 vec;
-
-  for (int i = 0; i < 16; i++) {
-    vec.data()[i] = std::stof(components.at(i));
-  }
-
-  return vec;
-}
-
-std::string imageBytesToString(const std::vector<unsigned char> &buffer) {
-  using namespace boost::archive::iterators;
-
-  typedef base64_from_binary< // Binary-to-base64 encoding
-      transform_width<std::vector<unsigned char>::const_iterator, 6, 8>>
-      base64_encoder;
-
-  // Encode the input data to base64.
-  return std::string(base64_encoder(buffer.begin()),
-                     base64_encoder(buffer.end()));
-}
-
 RenderService::RenderService(
-    common::subsystems::SharedSubsystemManager subsystems)
+    const common::subsystems::SharedSubsystemManager &subsystems,
+    std::shared_ptr<graphics::IRenderer> renderer)
     : services::impl::LocalServiceExecutor(
           "render", std::bind(&RenderService::Render, this, _1)),
-      m_subsystems(subsystems) {}
+      m_subsystems(subsystems), m_renderer(std::move(renderer)) {
+
+  // register render-result encoder if none
+  if (!m_subsystems.lock()->ProvidesSubsystem<IRenderResultEncoder>()) {
+    m_subsystems.lock()->AddOrReplaceSubsystem<IRenderResultEncoder>(
+        std::make_shared<Base64RenderResultEncoder>());
+  }
+}
 
 std::future<services::SharedServiceResponse>
-RenderService::Render(services::SharedServiceRequest request) {
+RenderService::Render(const services::SharedServiceRequest &raw_request) {
 
   std::promise<SharedServiceResponse> promise;
   std::future<SharedServiceResponse> future = promise.get_future();
 
-  auto opt_width = request->GetParameter("width");
-  auto opt_height = request->GetParameter("height");
-  auto opt_projection_type = request->GetParameter("projection-type");
-  auto opt_camera_pos = request->GetParameter("camera-pos");
-  auto opt_camera_direction = request->GetParameter("camera-direction");
-  auto opt_camera_up = request->GetParameter("camera-up");
+  RenderServiceRequest request(raw_request);
+
+  auto extend = request.GetExtend().value();
+  auto opt_projection_type = request.GetProjectionType();
+  auto opt_camera = request.GetCameraData();
 
   auto response =
-      std::make_shared<ServiceResponse>(request->GetTransactionId());
+      std::make_shared<ServiceResponse>(raw_request->GetTransactionId());
 
-  auto opt_rendering_subsystem =
-      m_subsystems.lock()->GetSubsystem<graphics::IRenderer>();
+  auto opt_rendering_subsystem = GetRenderer();
   bool rendering_subsystem_available = opt_rendering_subsystem.has_value();
   if (!rendering_subsystem_available) {
     LOG_ERR("Cannot perform rendering service because there is no renderer "
@@ -105,30 +53,24 @@ RenderService::Render(services::SharedServiceRequest request) {
 
   auto rendering_subsystem = opt_rendering_subsystem.value();
 
-  // extract parameters
-  int width, height;
-  vsg::mat4 projection, view;
   try {
-    width = std::stoi(opt_width.value());
-    height = std::stoi(opt_height.value());
 
     // apply settings to renderer's main camera
     if (opt_projection_type.has_value()) {
       auto projection_matrix_type = opt_projection_type.value();
 
       // check which projection (perspective, orthographic) is requested
-      if (projection_matrix_type == "perspective") {
+      if (projection_matrix_type == ProjectionType::PERSPECTIVE) {
         // required values for perspective projection setting
-        auto near_plane =
-            std::stof(request->GetParameter("perspective-near-plane").value());
-        auto far_plane =
-            std::stof(request->GetParameter("perspective-far-plane").value());
-        auto fov = std::stof(request->GetParameter("perspective-fov").value());
-        auto ratio = static_cast<double>(width) / static_cast<double>(height);
-        auto matrix =
-            vsg::Perspective::create(fov, ratio, near_plane, far_plane);
+
+        auto perspective = request.GetPerspectiveProjection().value();
+        auto ratio = static_cast<double>(extend.width) /
+                     static_cast<double>(extend.height);
+        auto matrix = vsg::Perspective::create(perspective.fov, ratio,
+                                               perspective.near_plane,
+                                               perspective.far_plane);
         rendering_subsystem->SetCameraProjectionMatrix(matrix);
-      } else if (projection_matrix_type == "orthographic") {
+      } else if (projection_matrix_type == ProjectionType::ORTHOGRAPHIC) {
         // TODO: Support orthographic projection
         LOG_WARN("Orthographic projection in Render-Service is not yet "
                  "implemented")
@@ -136,7 +78,7 @@ RenderService::Render(services::SharedServiceRequest request) {
     }
   } catch (const std::exception &exception) {
     LOG_ERR("Cannot execute rendering process due to invalid parameters: "
-            << exception.what());
+            << exception.what())
 
     response->SetStatus(ServiceResponseStatus::PARAMETER_ERROR);
     response->SetStatusMessage(exception.what());
@@ -147,19 +89,19 @@ RenderService::Render(services::SharedServiceRequest request) {
   // check if renderer must be resized
   const auto [current_width, current_height] =
       rendering_subsystem->GetCurrentSize();
-  bool size_changed = current_height != height || current_width != width;
+  bool size_changed =
+      current_height != extend.height || current_width != extend.width;
   if (size_changed) {
-    rendering_subsystem->Resize(width, height);
+    rendering_subsystem->Resize(extend.width, extend.height);
   }
 
   // check if camera must be moved
-  bool camera_view_set = opt_camera_direction.has_value() ||
-                         opt_camera_pos.has_value() ||
-                         opt_camera_up.has_value();
+  bool camera_view_set = opt_camera.has_value();
   if (camera_view_set) {
-    vsg::dvec3 eye = toVec3(opt_camera_pos.value_or("0.0 0.0 0.0"));
-    vsg::dvec3 direction = toVec3(opt_camera_direction.value_or("1.0 0.0 0.0"));
-    vsg::dvec3 up = toVec3(opt_camera_up.value_or("0.0 0.0 1.0"));
+    auto camera_info = opt_camera.value();
+    vsg::dvec3 eye = camera_info.camera_position;
+    vsg::dvec3 direction = camera_info.camera_direction;
+    vsg::dvec3 up = camera_info.camera_up;
 
     auto look_at = vsg::LookAt::create(eye, direction, up);
     rendering_subsystem->SetCameraViewMatrix(look_at);
@@ -181,19 +123,30 @@ RenderService::Render(services::SharedServiceRequest request) {
   auto result = opt_result.value();
 
   // attach color render result to response
-  std::string rendered_color_image_base_64 =
-      imageBytesToString(result->ExtractColorData());
-  response->SetResult("color", std::move(rendered_color_image_base_64));
+  auto encoder = m_subsystems.lock()->RequireSubsystem<IRenderResultEncoder>();
+  response->SetResult("encoding", encoder->GetName());
+
+  auto color_data = result->ExtractColorData();
+  auto encoded_color = encoder->Encode(color_data);
+  response->SetResult("color", std::move(encoded_color));
 
   // check if depth buffer is requested as well and attach it accordingly
-  bool depth_requested =
-      std::stoi(request->GetParameter("include-depth-buffer").value_or("1"));
+  bool depth_requested = std::stoi(
+      raw_request->GetParameter("include-depth-buffer").value_or("0"));
   if (depth_requested) {
-    std::string rendered_depth_image_base_64 =
-        imageBytesToString(result->ExtractDepthData());
-    response->SetResult("depth", std::move(rendered_depth_image_base_64));
+    auto depth_data = result->ExtractDepthData();
+    auto encoded_depth = encoder->Encode(depth_data);
+    response->SetResult("depth", std::move(encoded_depth));
   }
 
   promise.set_value(response);
   return future;
+}
+
+std::optional<graphics::SharedRenderer> RenderService::GetRenderer() const {
+  if (m_renderer) {
+    return m_renderer;
+  } else {
+    return m_subsystems.lock()->GetSubsystem<graphics::IRenderer>();
+  }
 }

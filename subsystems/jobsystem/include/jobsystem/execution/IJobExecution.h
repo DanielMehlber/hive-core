@@ -51,7 +51,7 @@ public:
    * @brief Starts processing scheduled jobs and invoke the execution
    * @param manager managing instance that started the execution
    */
-  void Start(JobManager *manager);
+  void Start(std::weak_ptr<JobManager> manager);
 
   /**
    * @brief Stops processing scheduled jobs and pauses the execution
@@ -88,16 +88,16 @@ IJobExecution<Impl>::WaitForCompletion(const std::future<FutureType> &fut) {
 }
 
 template <typename Impl>
-inline void IJobExecution<Impl>::Start(JobManager *manager) {
+inline void IJobExecution<Impl>::Start(std::weak_ptr<JobManager> manager) {
   // CRTP pattern: avoid runtime cost of v-tables in hot path
   // Your implementation of IJobExecution must implement this function
-  static_cast<Impl *>(this)->Start(manager);
+  static_cast<Impl *>(this)->StartExecution(manager);
 }
 
 template <typename Impl> inline void IJobExecution<Impl>::Stop() {
   // CRTP pattern: avoid runtime cost of v-tables in hot path
   // Your implementation of IJobExecution must implement this function
-  static_cast<Impl *>(this)->Stop();
+  static_cast<Impl *>(this)->StopExecution();
 }
 
 template <typename Impl>

@@ -27,7 +27,20 @@ public:
   Kernel(common::subsystems::SharedSubsystemManager subsystems =
              std::make_shared<common::subsystems::SubsystemManager>());
 
+  /**
+   * @brief Places a timed rendering job in the job system and causes the
+   * current renderer subsystem to render automatically.
+   * @note Uses renderer registered in SubsystemsManager
+   */
   void EnableRenderingJob();
+
+  /**
+   * @brief Registers rendering service in current service registry subsystem.
+   * @param service_renderer renderer to use in service. If nullptr, the current
+   * rendering subsystem will be used.
+   */
+  void
+  EnableRenderingService(graphics::SharedRenderer service_renderer = nullptr);
 
   // vvv getters and setters vvv
 

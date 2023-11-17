@@ -57,6 +57,8 @@ void SendMessageAndWait(SharedWebSocketMessage message,
 
 TEST(WebSockets, websockets_connection_establishment) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
+  job_manager->StartExecution();
+
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(job_manager);
 
@@ -71,6 +73,8 @@ TEST(WebSockets, websockets_connection_establishment) {
 
 TEST(WebSockets, websockets_connection_closing) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
+  job_manager->StartExecution();
+
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(job_manager);
 
@@ -93,6 +97,7 @@ TEST(WebSockets, websockets_connection_closing) {
 
 TEST(WebSockets, websockets_message_sending_1_to_1) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
+  job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(job_manager);
@@ -140,6 +145,7 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
 
 TEST(WebSockets, websockets_message_receiving_multiple) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
+  job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(job_manager);
@@ -173,6 +179,7 @@ TEST(WebSockets, websockets_message_receiving_multiple) {
 
 TEST(WebSockets, websockets_message_sending_1_to_n) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
+  job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(job_manager);
@@ -211,6 +218,7 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
 
 TEST(WebSockets, websockets_message_broadcast) {
   SharedJobManager job_manager = std::make_shared<JobManager>();
+  job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(job_manager);

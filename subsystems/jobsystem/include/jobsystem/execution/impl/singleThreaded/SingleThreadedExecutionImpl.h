@@ -32,14 +32,14 @@ private:
 
   JobExecutionState m_current_state{STOPPED};
 
-  void ExecuteJobs(JobManager *manager);
+  void ExecuteJobs(const std::weak_ptr<JobManager> &manager);
 
 public:
   SingleThreadedExecutionImpl();
   virtual ~SingleThreadedExecutionImpl();
   void Schedule(const std::shared_ptr<Job> &job);
-  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
-  void Start(JobManager *manager);
+  void WaitForCompletion(const std::shared_ptr<IJobWaitable> &waitable);
+  void Start(const std::weak_ptr<JobManager> &manager);
   void Stop();
   JobExecutionState GetState();
 

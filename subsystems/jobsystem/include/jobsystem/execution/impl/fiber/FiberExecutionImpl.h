@@ -41,7 +41,7 @@ private:
    * @note This is set when starting the execution and cleared when the
    * execution has stopped.
    */
-  JobManager *m_managing_instance;
+  std::weak_ptr<JobManager> m_managing_instance;
 
   void Init();
   void ShutDown();
@@ -87,7 +87,7 @@ public:
    * @brief Starts processing scheduled jobs and invoke the execution
    * @param manager managing instance that started the execution
    */
-  void Start(JobManager *manager);
+  void Start(std::weak_ptr<JobManager> manager);
 
   /**
    * @brief Stops processing scheduled jobs and pauses the execution

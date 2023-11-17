@@ -17,7 +17,8 @@ TEST(ServiceTests, adding_service) {
       std::make_shared<AddingServiceExecutor>();
   jobsystem::SharedJobManager job_manager =
       std::make_shared<jobsystem::JobManager>();
-
+  
+  job_manager->StartExecution();
   registry->Register(adding_service);
 
   SharedServiceCaller service_caller = registry->Find("add").get().value();

@@ -43,7 +43,14 @@ public:
    */
   template <typename subsystem_t>
   std::shared_ptr<subsystem_t> RequireSubsystem() const;
+
+  template <typename subsystem_t> bool ProvidesSubsystem() const;
 };
+
+template <typename subsystem_t>
+bool SubsystemManager::ProvidesSubsystem() const {
+  return m_subsystems.contains(typeid(subsystem_t));
+}
 
 template <typename subsystem_t>
 std::shared_ptr<subsystem_t> SubsystemManager::RequireSubsystem() const {

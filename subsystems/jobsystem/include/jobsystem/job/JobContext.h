@@ -3,6 +3,8 @@
 
 #include "jobsystem/JobSystem.h"
 #include <chrono>
+#include <memory>
+#include <utility>
 
 namespace jobsystem {
 
@@ -16,10 +18,10 @@ class JobManager;
 class JOBSYSTEM_API JobContext {
 protected:
   size_t m_cycle_number;
-  JobManager *m_job_manager;
+  std::weak_ptr<JobManager> m_job_manager;
 
 public:
-  JobContext(size_t frame_number, JobManager *manager)
+  JobContext(size_t frame_number, const std::shared_ptr<JobManager> &manager)
       : m_cycle_number{frame_number}, m_job_manager{manager} {}
 
   /**
@@ -32,15 +34,15 @@ public:
    * @brief Get the managing instance of the current job execution
    * @return managing instance of the current job execution
    */
-  JobManager *GetJobManager() noexcept;
+  std::shared_ptr<JobManager> GetJobManager() noexcept;
 };
 
 inline size_t jobsystem::JobContext::GetCycleNumber() const noexcept {
   return m_cycle_number;
 }
 
-inline JobManager *JobContext::GetJobManager() noexcept {
-  return m_job_manager;
+inline std::shared_ptr<JobManager> JobContext::GetJobManager() noexcept {
+  return m_job_manager.lock();
 }
 
 } // namespace jobsystem

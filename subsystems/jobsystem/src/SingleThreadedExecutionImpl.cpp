@@ -1,6 +1,5 @@
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 #include "jobsystem/manager/JobManager.h"
-#include "logging/LogManager.h"
 
 using namespace jobsystem::execution::impl;
 using namespace jobsystem::job;
@@ -19,7 +18,8 @@ void SingleThreadedExecutionImpl::Schedule(const std::shared_ptr<Job> &job) {
   m_execution_queue_condition.notify_one();
 }
 
-void SingleThreadedExecutionImpl::ExecuteJobs(JobManager *manager) {
+void SingleThreadedExecutionImpl::ExecuteJobs(
+    const std::weak_ptr<JobManager> &manager) {
   while (!m_termination_flag) {
     std::unique_lock queue_lock(m_execution_queue_mutex);
     if (!m_execution_queue.empty()) {
@@ -28,14 +28,14 @@ void SingleThreadedExecutionImpl::ExecuteJobs(JobManager *manager) {
       queue_lock.unlock();
 
       // generate job context
-      JobContext context(manager->GetTotalCyclesCount(), manager);
+      JobContext context(manager.lock()->GetTotalCyclesCount(), manager.lock());
 
       // run job
       JobContinuation continuation = job->Execute(&context);
       job->SetState(JobState::EXECUTION_FINISHED);
 
       if (continuation == REQUEUE) {
-        manager->KickJobForNextCycle(job);
+        manager.lock()->KickJobForNextCycle(job);
       }
 
     } else {
@@ -47,7 +47,8 @@ void SingleThreadedExecutionImpl::ExecuteJobs(JobManager *manager) {
   }
 }
 
-void SingleThreadedExecutionImpl::Start(JobManager *manager) {
+void SingleThreadedExecutionImpl::Start(
+    const std::weak_ptr<JobManager> &manager) {
   if (m_current_state == JobExecutionState::STOPPED) {
     m_termination_flag = false;
     m_worker_thread = std::make_unique<std::thread>(
@@ -69,12 +70,12 @@ void SingleThreadedExecutionImpl::Stop() {
 
 using namespace std::chrono_literals;
 void SingleThreadedExecutionImpl::WaitForCompletion(
-    std::shared_ptr<IJobWaitable> waitable) {
+    const std::shared_ptr<IJobWaitable> &waitable) {
 
   if (m_worker_thread->get_id() == std::this_thread::get_id()) {
     LOG_ERR("cannot wait for other jobs during job execution using the "
             "SingleThreadedExecutionImpl because it would block the only "
-            "execution thread");
+            "execution thread")
     return;
   }
 

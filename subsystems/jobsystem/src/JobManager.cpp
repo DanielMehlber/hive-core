@@ -23,8 +23,6 @@ JobManager::JobManager() {
      << " as implementation";
 
   LOG_INFO(ss.str())
-
-  m_execution.Start(this);
 }
 
 JobManager::~JobManager() { m_execution.Stop(); }
@@ -110,7 +108,7 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
     queue.pop();
 
     // if job is not ready yet, queue it for next cycle
-    JobContext context(m_total_cycle_count, this);
+    JobContext context(m_total_cycle_count, shared_from_this());
     if (!job->IsReadyForExecution(context)) {
       KickJobForNextCycle(job);
       continue;
@@ -232,3 +230,6 @@ void JobManager::DetachJob(const std::string &job_id) {
   m_continuation_requeue_blacklist.insert(job_id);
   lock.unlock();
 }
+
+void JobManager::StartExecution() { m_execution.Start(weak_from_this()); }
+void JobManager::StopExecution() { m_execution.Stop(); }

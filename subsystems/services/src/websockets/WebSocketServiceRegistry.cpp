@@ -1,5 +1,7 @@
 #include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
 #include "services/caller/impl/RoundRobinServiceCaller.h"
+#include "services/messages/ServiceRegisteredNotification.h"
+#include "services/messages/ServiceUnegisteredNotification.h"
 
 using namespace services;
 using namespace services::impl;
@@ -63,6 +65,16 @@ void WebSocketServiceRegistry::Register(const SharedServiceExecutor &stub) {
   m_registered_callers.at(name)->AddExecutor(stub);
   LOG_DEBUG("new service '" << name
                             << "' has been registered in web-socket registry")
+
+  // send notification that new service has been registered
+  if (m_subsystems.lock()->ProvidesSubsystem<messaging::IMessageBroker>()) {
+    auto broker =
+        m_subsystems.lock()->RequireSubsystem<messaging::IMessageBroker>();
+
+    ServiceRegisteredNotification message;
+    message.SetServiceName(name);
+    broker->PublishMessage(message.GetMessage());
+  }
 }
 
 void WebSocketServiceRegistry::Unregister(const std::string &name) {
@@ -71,6 +83,16 @@ void WebSocketServiceRegistry::Unregister(const std::string &name) {
     m_registered_callers.erase(name);
     LOG_DEBUG("service '" << name
                           << "' has been unregistered from web-socket registry")
+  }
+
+  // send notification that new service has been registered
+  if (m_subsystems.lock()->ProvidesSubsystem<messaging::IMessageBroker>()) {
+    auto broker =
+        m_subsystems.lock()->RequireSubsystem<messaging::IMessageBroker>();
+
+    ServiceUnregisteredNotification message;
+    message.SetServiceName(name);
+    broker->PublishMessage(message.GetMessage());
   }
 }
 

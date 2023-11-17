@@ -23,6 +23,7 @@ using namespace common::test;
 common::subsystems::SharedSubsystemManager SetupSubsystems() {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   SharedJobManager job_manager = std::make_shared<JobManager>();
+  job_manager->StartExecution();
   subsystems->AddOrReplaceSubsystem(job_manager);
 
   messaging::SharedBroker message_broker =

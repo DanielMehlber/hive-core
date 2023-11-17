@@ -44,6 +44,8 @@ TEST(PropertyTest, simple_prop_listener) {
 
   auto subsystems = SetupSubsystems();
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  job_manager->StartExecution();
+
   PropertyProvider provider(subsystems);
 
   auto listener = std::make_shared<VerificationListener>();
@@ -59,6 +61,8 @@ TEST(PropertyTest, simple_prop_listener) {
 TEST(PropertyTest, sub_prop_listener) {
   auto subsystems = SetupSubsystems();
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  job_manager->StartExecution();
+
   PropertyProvider provider(subsystems);
 
   auto listener = std::make_shared<VerificationListener>();
@@ -75,6 +79,8 @@ TEST(PropertyTest, sub_prop_listener) {
 TEST(PropertyTest, listener_destroyed) {
   auto subsystems = SetupSubsystems();
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  job_manager->StartExecution();
+
   PropertyProvider provider(subsystems);
 
   // this just assures that there is no segfault happening when the listener is
@@ -91,6 +97,8 @@ TEST(PropertyTest, listener_destroyed) {
 TEST(PropertyTest, listener_unregistered) {
   auto subsystems = SetupSubsystems();
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  job_manager->StartExecution();
+  
   PropertyProvider provider(subsystems);
 
   // this just assures that there is no segfault happening when the listener is

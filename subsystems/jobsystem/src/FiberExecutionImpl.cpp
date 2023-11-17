@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
 #include "jobsystem/manager/JobManager.h"
 
@@ -8,19 +10,23 @@ using namespace std::chrono_literals;
 FiberExecutionImpl::FiberExecutionImpl() { Init(); }
 FiberExecutionImpl::~FiberExecutionImpl() { ShutDown(); }
 
-void FiberExecutionImpl::Init() {}
+void FiberExecutionImpl::Init() {
+  m_job_channel =
+      std::make_unique<boost::fibers::buffered_channel<std::function<void()>>>(
+          1024);
+}
 
 void FiberExecutionImpl::ShutDown() { Stop(); }
 
 void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
   auto runner = [this, job]() {
-    JobContext context(m_managing_instance->GetTotalCyclesCount(),
-                       m_managing_instance);
+    JobContext context(m_managing_instance.lock()->GetTotalCyclesCount(),
+                       m_managing_instance.lock());
     JobContinuation continuation = job->Execute(&context);
     job->SetState(JobState::EXECUTION_FINISHED);
 
     if (continuation == JobContinuation::REQUEUE) {
-      m_managing_instance->KickJobForNextCycle(job);
+      m_managing_instance.lock()->KickJobForNextCycle(job);
     }
   };
 
@@ -45,15 +51,11 @@ void FiberExecutionImpl::WaitForCompletion(
   }
 }
 
-void FiberExecutionImpl::Start(JobManager *manager) {
+void FiberExecutionImpl::Start(std::weak_ptr<JobManager> manager) {
 
   if (m_current_state != JobExecutionState::STOPPED) {
     return;
   }
-
-  m_job_channel =
-      std::make_unique<boost::fibers::buffered_channel<std::function<void()>>>(
-          1024);
 
   // Spawn worker threads: They will add themselves to the workforce
   for (int i = 0; i < m_worker_thread_count; i++) {
@@ -63,7 +65,7 @@ void FiberExecutionImpl::Start(JobManager *manager) {
   }
 
   m_current_state = JobExecutionState::RUNNING;
-  m_managing_instance = manager;
+  m_managing_instance = std::move(manager);
 }
 
 void FiberExecutionImpl::Stop() {
@@ -81,7 +83,7 @@ void FiberExecutionImpl::Stop() {
   m_worker_threads.clear();
 
   m_current_state = JobExecutionState::STOPPED;
-  m_managing_instance = nullptr;
+  m_managing_instance.reset();
 }
 
 void FiberExecutionImpl::ExecuteWorker() {

@@ -36,11 +36,17 @@ int main(int argc, const char **argv) {
     auto renderer = std::make_shared<graphics::OnscreenRenderer>();
     kernel.SetRenderer(renderer);
     kernel.EnableRenderingJob();
+
+    auto offscreen_renderer = std::make_shared<graphics::OffscreenRenderer>();
+    kernel.EnableRenderingService(offscreen_renderer);
   } else if (renderer_type == "offscreen") {
     auto renderer = std::make_shared<graphics::OffscreenRenderer>();
     kernel.SetRenderer(renderer);
     kernel.EnableRenderingJob();
+    kernel.EnableRenderingService();
   }
+
+  kernel.GetRenderer()->Resize(100, 100);
 
   if (!plugin_path.empty()) {
     kernel.GetPluginManager()->InstallPlugins(plugin_path);
