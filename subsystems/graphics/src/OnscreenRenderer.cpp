@@ -63,6 +63,7 @@ OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene) {
   }
 
   m_viewer->addWindow(m_window);
+  m_device = m_window->getDevice();
 
   m_scene = std::move(scene);
 

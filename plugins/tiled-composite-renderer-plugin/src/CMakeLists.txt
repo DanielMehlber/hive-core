@@ -1,6 +1,7 @@
 add_library(tiled-composite-renderer-plugin SHARED
         TiledCompositeRendererPlugin.cpp
         TiledCompositeRenderer.cpp
+        VulkanOperations.cpp
 )
 
 target_include_directories(tiled-composite-renderer-plugin PUBLIC ../include)

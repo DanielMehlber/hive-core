@@ -2,6 +2,8 @@
 #include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
+#include "graphics/service/encoders/impl/CharEscapeRenderResultEncoder.h"
+#include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
 #include <boost/archive/iterators/transform_width.hpp>
 
 using namespace graphics;
@@ -20,7 +22,7 @@ RenderService::RenderService(
   // register render-result encoder if none
   if (!m_subsystems.lock()->ProvidesSubsystem<IRenderResultEncoder>()) {
     m_subsystems.lock()->AddOrReplaceSubsystem<IRenderResultEncoder>(
-        std::make_shared<Base64RenderResultEncoder>());
+        std::make_shared<PlainRenderResultEncoder>());
   }
 }
 

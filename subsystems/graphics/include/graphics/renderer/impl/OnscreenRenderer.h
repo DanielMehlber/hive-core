@@ -11,6 +11,7 @@ protected:
   vsg::ref_ptr<vsg::Window> m_window;
   vsg::ref_ptr<vsg::Viewer> m_viewer;
   vsg::ref_ptr<vsg::Camera> m_camera;
+  vsg::ref_ptr<vsg::Device> m_device;
 
   void SetupCamera();
 
@@ -31,7 +32,14 @@ public:
   void SetCameraProjectionMatrix(
       vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
   void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
+
+  vsg::ref_ptr<vsg::Device> GetVulkanDevice() const override;
 };
+
+inline vsg::ref_ptr<vsg::Device> OnscreenRenderer::GetVulkanDevice() const {
+  return m_device;
+}
+
 } // namespace graphics
 
 #endif // ONSCREENRENDERER_H

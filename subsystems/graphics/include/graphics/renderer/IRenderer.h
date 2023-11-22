@@ -31,6 +31,8 @@ public:
   virtual void
   SetCameraProjectionMatrix(vsg::ref_ptr<vsg::ProjectionMatrix> matrix) = 0;
   virtual void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) = 0;
+
+  virtual vsg::ref_ptr<vsg::Device> GetVulkanDevice() const = 0;
 };
 
 typedef std::shared_ptr<IRenderer> SharedRenderer;

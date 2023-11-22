@@ -383,7 +383,7 @@ void OffscreenRenderer::SetupInstanceAndDevice() {
       m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
   m_queueFamily = queueFamily;
   if (!physicalDevice || queueFamily < 0) {
-    LOG_ERR("Cannot create physical device in Vulkan");
+    LOG_ERR("Cannot create physical device in Vulkan")
     return;
   }
 
@@ -487,7 +487,7 @@ void OffscreenRenderer::Resize(int width, int height) {
   height = std::max(height, 1);
 
   LOG_INFO("offscreen renderer canvas was resized to " << width << "x"
-                                                       << height);
+                                                       << height)
 
   m_size.width = width;
   m_size.height = height;

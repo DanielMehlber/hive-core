@@ -94,6 +94,9 @@ bool TiledCompositeRenderer::Render() {
   int segment_width = std::get<0>(GetCurrentSize()) / service_count;
   int segment_height = std::get<1>(GetCurrentSize());
 
+  std::vector<vsg::ref_ptr<vsg::Image>> images;
+  images.resize(service_count);
+
   auto counter = std::make_shared<jobsystem::job::JobCounter>();
   for (int i = 0; i < service_count; i++) {
 
@@ -107,8 +110,9 @@ bool TiledCompositeRenderer::Render() {
     auto rendering_service_request = request.GetRequest();
 
     auto job = std::make_shared<jobsystem::job::Job>(
-        [rendering_service_request, subsystems = m_subsystems,
-         service_caller](jobsystem::JobContext *context) {
+        [_this = weak_from_this(), rendering_service_request,
+         subsystems = m_subsystems, service_caller, segment_height,
+         segment_width, i, &images](jobsystem::JobContext *context) {
           auto fut_response = service_caller->Call(rendering_service_request,
                                                    context->GetJobManager());
 
@@ -128,7 +132,12 @@ bool TiledCompositeRenderer::Render() {
               auto color_buffer =
                   std::move(decoder->Decode(color_buffer_encoded));
 
-              // todo do something with render buffer
+              // TODO: read format from image instead assuming it
+              auto color_image = _this.lock()->LoadBufferIntoImage(
+                  color_buffer, VK_FORMAT_R8G8B8A8_UNORM, segment_width,
+                  segment_height);
+
+              images[i] = color_image;
             } else {
               LOG_ERR("Cannot decode image from remote render result because "
                       "decoder for "
@@ -150,4 +159,64 @@ bool TiledCompositeRenderer::Render() {
 #endif
 
   return true;
+}
+
+vsg::ref_ptr<vsg::Image> TiledCompositeRenderer::LoadBufferIntoImage(
+    const std::vector<unsigned char> &buffer, VkFormat format, uint32_t width,
+    uint32_t height) const {
+
+  VkBuffer staging_buffer;
+  VkDeviceMemory staging_buffer_memory;
+  VkDeviceSize imageSize = buffer.size();
+
+  auto vsg_device = GetVulkanDevice();
+  VkDevice device = vsg_device->vk();
+
+  VkPhysicalDevice physicalDevice = vsg_device->getPhysicalDevice()->vk();
+  uint32_t queueFamily = vsg_device->getQueues()[0]->queueFamilyIndex();
+
+  auto vsg_queue = vsg_device->getQueue(queueFamily);
+  VkQueue queue = vsg_queue->vk();
+
+  auto vsg_command_pool = vsg::CommandPool::create(vsg_device, queueFamily);
+  VkCommandPool pool = vsg_command_pool->vk();
+
+  utils::createBuffer(device, physicalDevice, imageSize,
+                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                      staging_buffer, staging_buffer_memory);
+
+  void *data;
+  vkMapMemory(device, staging_buffer_memory, 0, imageSize, 0, &data);
+  memcpy(data, buffer.data(), static_cast<size_t>(imageSize));
+  vkUnmapMemory(device, staging_buffer_memory);
+
+  VkImage textureImage;
+  VkDeviceMemory textureImageMemory;
+
+  //  utils::createImage(textureImage, textureImageMemory, width, height,
+  //  format,
+  //                     device, physicalDevice);
+
+  utils::transitionImageLayout(textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device,
+                               pool, queue);
+
+  utils::copyBufferToImage(staging_buffer, textureImage, pool, device, queue,
+                           width, height);
+
+  vkDestroyBuffer(device, staging_buffer, nullptr);
+  vkFreeMemory(device, staging_buffer_memory, nullptr);
+
+  // TODO: attach device memory somehow to avoid memory leak
+  auto vsg_image = vsg::Image::create(textureImage, vsg_device);
+  vsg_image->extent = {width, height};
+  vsg_image->format = format;
+
+  return vsg_image;
+}
+
+vsg::ref_ptr<vsg::Device> TiledCompositeRenderer::GetVulkanDevice() const {
+  return m_output_renderer->GetVulkanDevice();
 }

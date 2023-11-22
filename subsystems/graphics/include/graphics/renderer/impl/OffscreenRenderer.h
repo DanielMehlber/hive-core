@@ -68,7 +68,13 @@ public:
   void SetCameraProjectionMatrix(
       vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
   void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
+
+  vsg::ref_ptr<vsg::Device> GetVulkanDevice() const override;
 };
+
+inline vsg::ref_ptr<vsg::Device> OffscreenRenderer::GetVulkanDevice() const {
+  return m_device;
+}
 
 } // namespace graphics
 

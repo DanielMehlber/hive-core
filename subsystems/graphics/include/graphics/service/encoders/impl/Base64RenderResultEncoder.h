@@ -7,7 +7,7 @@
 namespace graphics {
 class Base64RenderResultEncoder : public IRenderResultEncoder {
 public:
-  std::string GetName() { return "base-64"; }
+  std::string GetName() override { return "base-64"; }
   std::string Encode(const std::vector<unsigned char> &buffer) override;
   std::vector<unsigned char> Decode(const std::string &str) override;
 };
