@@ -1,7 +1,8 @@
 [requires]
 gtest/1.14.0
 boost/1.83.0
-vsg/1.0.9
+# Version on conan centre is missing shader compiler
+# vsg/1.0.9
 
 [generators]
 CMakeDeps

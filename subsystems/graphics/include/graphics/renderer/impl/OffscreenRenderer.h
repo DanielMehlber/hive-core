@@ -43,11 +43,29 @@ private:
 
   void SetupCamera();
   void SetupRenderGraph();
-  void SetupInstanceAndDevice();
+  void SetupInstanceAndDevice(const RendererInfo &pre_init_info = {});
   void SetupCommandGraph();
 
 public:
-  OffscreenRenderer(
+  /**
+   * Constructs an offscreen renderer that writes images to buffers instead of
+   * displaying them on a screen.
+   * @param scene optional scene to directly set in the renderer
+   * @param use_depth_buffer if true, captures depth buffer as well. This can
+   * increase performance cost.
+   * @param msaa if true, uses multi-sampled anti aliasing
+   * @param m_imageFormat specifies vulkan image format of color image copied to
+   * buffer
+   * @param m_depthFormat specifies vulkan image format of depth image copied to
+   * buffer
+   * @param m_sample_count sample count for multisampling
+   * @param m_size initial size of image to render (can be changed later)
+   * @param pre_init_info if the device and instance are already set-up, they
+   * can be passed using the renderer info. This renderer will then use the
+   * provided ones and does not create its own.
+   */
+  explicit OffscreenRenderer(
+      RendererInfo pre_init_info = {},
       scene::SharedScene scene = std::make_shared<scene::SceneManager>(),
       bool use_depth_buffer = true, bool msaa = false,
       VkFormat m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM,
@@ -69,11 +87,11 @@ public:
       vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
   void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
 
-  vsg::ref_ptr<vsg::Device> GetVulkanDevice() const override;
+  RendererInfo GetInfo() const override;
 };
 
-inline vsg::ref_ptr<vsg::Device> OffscreenRenderer::GetVulkanDevice() const {
-  return m_device;
+inline RendererInfo OffscreenRenderer::GetInfo() const {
+  return {m_device, m_instance};
 }
 
 } // namespace graphics

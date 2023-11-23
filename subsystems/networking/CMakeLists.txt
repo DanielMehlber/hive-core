@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(networking)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS filesystem system json)
 
 add_subdirectory(src)
 add_subdirectory(test)

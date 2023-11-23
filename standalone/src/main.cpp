@@ -11,6 +11,7 @@ int main(int argc, const char **argv) {
 
   std::string renderer_type;
   std::string plugin_path;
+  bool enable_rendering_service;
 
   po::options_description options("Allowed options");
   options.add_options()("help", "Shows this help message")(
@@ -19,7 +20,9 @@ int main(int argc, const char **argv) {
       "Type of renderer to use at startup (offscreen, onscreen, none are "
       "provided by default)")(
       "plugins,p", po::value<std::string>(&plugin_path)->default_value(""),
-      "Path to directory that contains plugins");
+      "Path to directory that contains plugins")(
+      "render-svc,rs",
+      po::value<bool>(&enable_rendering_service)->default_value(false));
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, options), vm);
@@ -37,20 +40,26 @@ int main(int argc, const char **argv) {
     kernel.SetRenderer(renderer);
     kernel.EnableRenderingJob();
 
-    auto offscreen_renderer = std::make_shared<graphics::OffscreenRenderer>();
-    kernel.EnableRenderingService(offscreen_renderer);
+    if (enable_rendering_service) {
+      auto offscreen_renderer =
+          std::make_shared<graphics::OffscreenRenderer>(renderer->GetInfo());
+      kernel.EnableRenderingService(offscreen_renderer);
+    }
   } else if (renderer_type == "offscreen") {
     auto renderer = std::make_shared<graphics::OffscreenRenderer>();
     kernel.SetRenderer(renderer);
     kernel.EnableRenderingJob();
-    kernel.EnableRenderingService();
-  }
 
-  kernel.GetRenderer()->Resize(100, 100);
+    if (enable_rendering_service) {
+      kernel.EnableRenderingService();
+    }
+  }
 
   if (!plugin_path.empty()) {
     kernel.GetPluginManager()->InstallPlugins(plugin_path);
   }
+
+  kernel.GetRenderer()->Resize(100, 100);
 
   while (true) {
     kernel.GetJobManager()->InvokeCycleAndWait();

@@ -16,6 +16,14 @@ struct CameraInfo {
   vsg::dvec3 up;
 };
 
+struct Tile {
+  int x;
+  int y;
+  int width;
+  int height;
+  int image_index;
+};
+
 class TiledCompositeRenderer
     : public graphics::IRenderer,
       public std::enable_shared_from_this<TiledCompositeRenderer> {
@@ -25,13 +33,17 @@ private:
   CameraInfo m_camera_info;
   vsg::ref_ptr<vsg::Camera> m_camera;
 
+  size_t m_current_service_count;
+  std::vector<vsg::ref_ptr<vsg::Data>> m_image_buffers;
+  std::vector<Tile> m_tile_infos;
+  mutable std::mutex m_image_buffers_mutex;
+
 #ifndef NDEBUG
   std::shared_ptr<std::atomic<int>> m_frames_per_second;
 #endif
 
-  vsg::ref_ptr<vsg::Image>
-  LoadBufferIntoImage(const std::vector<unsigned char> &buffer, VkFormat format,
-                      uint32_t width, uint32_t height) const;
+  void UpdateTilingInfo(int tile_count);
+  void UpdateSceneTiling();
 
 public:
   TiledCompositeRenderer(
@@ -42,6 +54,8 @@ public:
    * Render current scene from current view
    */
   bool Render() override;
+
+  void SetServiceCount(int services);
 
   /**
    * @return Last RenderResult (if one exists)
@@ -58,7 +72,11 @@ public:
       vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
   void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
 
-  vsg::ref_ptr<vsg::Device> GetVulkanDevice() const override;
+  graphics::RendererInfo GetInfo() const override;
 };
+
+inline graphics::RendererInfo TiledCompositeRenderer::GetInfo() const {
+  return m_output_renderer->GetInfo();
+}
 
 #endif // TILEDCOMPOSITERENDERER_H

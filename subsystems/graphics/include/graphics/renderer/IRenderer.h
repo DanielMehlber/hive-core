@@ -7,6 +7,11 @@
 
 namespace graphics {
 
+struct RendererInfo {
+  vsg::ref_ptr<vsg::Device> device;
+  vsg::ref_ptr<vsg::Instance> instance;
+};
+
 /**
  * Generic interface for some renderer
  */
@@ -32,7 +37,7 @@ public:
   SetCameraProjectionMatrix(vsg::ref_ptr<vsg::ProjectionMatrix> matrix) = 0;
   virtual void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) = 0;
 
-  virtual vsg::ref_ptr<vsg::Device> GetVulkanDevice() const = 0;
+  virtual RendererInfo GetInfo() const = 0;
 };
 
 typedef std::shared_ptr<IRenderer> SharedRenderer;

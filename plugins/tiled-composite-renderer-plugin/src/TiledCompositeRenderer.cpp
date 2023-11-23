@@ -69,6 +69,13 @@ void TiledCompositeRenderer::SetCameraViewMatrix(
 }
 
 bool TiledCompositeRenderer::Render() {
+  if (m_current_service_count < 1) {
+    LOG_ERR("No render service available")
+    return true;
+  }
+
+  std::unique_lock lock(m_image_buffers_mutex);
+
   auto job_system =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
 
@@ -85,24 +92,15 @@ bool TiledCompositeRenderer::Render() {
   }
 
   auto service_caller = opt_caller->get();
-  auto service_count = service_caller->GetCallableCount();
-  if (service_count < 1) {
-    LOG_ERR("No render service available")
-    return true;
-  }
-
-  int segment_width = std::get<0>(GetCurrentSize()) / service_count;
-  int segment_height = std::get<1>(GetCurrentSize());
-
-  std::vector<vsg::ref_ptr<vsg::Image>> images;
-  images.resize(service_count);
 
   auto counter = std::make_shared<jobsystem::job::JobCounter>();
-  for (int i = 0; i < service_count; i++) {
+  for (int i = 0; i < m_current_service_count; i++) {
+
+    Tile current_tile = m_tile_infos[i];
 
     // build render service request
     graphics::RenderServiceRequest request;
-    request.SetExtend({segment_width, segment_height});
+    request.SetExtend({current_tile.width, current_tile.height});
     request.SetCameraData(graphics::CameraData{
         m_camera_info.up, m_camera_info.position, m_camera_info.direction});
     request.SetPerspectiveProjection(graphics::Perspective{0.01, 2000, 30});
@@ -111,8 +109,8 @@ bool TiledCompositeRenderer::Render() {
 
     auto job = std::make_shared<jobsystem::job::Job>(
         [_this = weak_from_this(), rendering_service_request,
-         subsystems = m_subsystems, service_caller, segment_height,
-         segment_width, i, &images](jobsystem::JobContext *context) {
+         subsystems = m_subsystems, service_caller,
+         i](jobsystem::JobContext *context) {
           auto fut_response = service_caller->Call(rendering_service_request,
                                                    context->GetJobManager());
 
@@ -133,11 +131,11 @@ bool TiledCompositeRenderer::Render() {
                   std::move(decoder->Decode(color_buffer_encoded));
 
               // TODO: read format from image instead assuming it
-              auto color_image = _this.lock()->LoadBufferIntoImage(
-                  color_buffer, VK_FORMAT_R8G8B8A8_UNORM, segment_width,
-                  segment_height);
+              auto image_buffer = _this.lock()->m_image_buffers[i];
+              image_buffer->properties.format = VK_FORMAT_R8G8B8A8_UNORM;
+              std::memcpy(image_buffer->dataPointer(), color_buffer.data(),
+                          color_buffer.size());
 
-              images[i] = color_image;
             } else {
               LOG_ERR("Cannot decode image from remote render result because "
                       "decoder for "
@@ -154,6 +152,8 @@ bool TiledCompositeRenderer::Render() {
 
   job_system->WaitForCompletion(counter);
 
+  m_output_renderer->Render();
+
 #ifndef NDEBUG
   m_frames_per_second->operator++();
 #endif
@@ -161,62 +161,68 @@ bool TiledCompositeRenderer::Render() {
   return true;
 }
 
-vsg::ref_ptr<vsg::Image> TiledCompositeRenderer::LoadBufferIntoImage(
-    const std::vector<unsigned char> &buffer, VkFormat format, uint32_t width,
-    uint32_t height) const {
-
-  VkBuffer staging_buffer;
-  VkDeviceMemory staging_buffer_memory;
-  VkDeviceSize imageSize = buffer.size();
-
-  auto vsg_device = GetVulkanDevice();
-  VkDevice device = vsg_device->vk();
-
-  VkPhysicalDevice physicalDevice = vsg_device->getPhysicalDevice()->vk();
-  uint32_t queueFamily = vsg_device->getQueues()[0]->queueFamilyIndex();
-
-  auto vsg_queue = vsg_device->getQueue(queueFamily);
-  VkQueue queue = vsg_queue->vk();
-
-  auto vsg_command_pool = vsg::CommandPool::create(vsg_device, queueFamily);
-  VkCommandPool pool = vsg_command_pool->vk();
-
-  utils::createBuffer(device, physicalDevice, imageSize,
-                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                      staging_buffer, staging_buffer_memory);
-
-  void *data;
-  vkMapMemory(device, staging_buffer_memory, 0, imageSize, 0, &data);
-  memcpy(data, buffer.data(), static_cast<size_t>(imageSize));
-  vkUnmapMemory(device, staging_buffer_memory);
-
-  VkImage textureImage;
-  VkDeviceMemory textureImageMemory;
-
-  //  utils::createImage(textureImage, textureImageMemory, width, height,
-  //  format,
-  //                     device, physicalDevice);
-
-  utils::transitionImageLayout(textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, device,
-                               pool, queue);
-
-  utils::copyBufferToImage(staging_buffer, textureImage, pool, device, queue,
-                           width, height);
-
-  vkDestroyBuffer(device, staging_buffer, nullptr);
-  vkFreeMemory(device, staging_buffer_memory, nullptr);
-
-  // TODO: attach device memory somehow to avoid memory leak
-  auto vsg_image = vsg::Image::create(textureImage, vsg_device);
-  vsg_image->extent = {width, height};
-  vsg_image->format = format;
-
-  return vsg_image;
+void TiledCompositeRenderer::SetServiceCount(int services) {
+  UpdateTilingInfo(services);
+  UpdateSceneTiling();
 }
 
-vsg::ref_ptr<vsg::Device> TiledCompositeRenderer::GetVulkanDevice() const {
-  return m_output_renderer->GetVulkanDevice();
+void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
+  std::unique_lock lock(m_image_buffers_mutex);
+  m_current_service_count = tile_count;
+
+  auto extend = GetCurrentSize();
+  auto width = std::get<0>(extend);
+  auto height = std::get<1>(extend);
+
+  m_image_buffers.clear();
+  m_image_buffers.resize(tile_count);
+
+  m_tile_infos.clear();
+  m_tile_infos.resize(tile_count);
+
+  int tile_width = width / static_cast<int>(m_current_service_count);
+  int tile_height = height;
+
+  for (int i = 0; i < m_current_service_count; i++) {
+    vsg::ref_ptr<vsg::Data> image_buffer;
+    image_buffer = vsg::vec4Array2D::create(tile_width, tile_height);
+    image_buffer->properties.dataVariance = vsg::DYNAMIC_DATA;
+    m_image_buffers[i] = image_buffer;
+
+    Tile tile{i * tile_width, i * tile_height, tile_width, tile_height, i};
+    m_tile_infos[i] = tile;
+  }
+}
+
+void TiledCompositeRenderer::UpdateSceneTiling() {
+  auto scene = std::make_shared<scene::SceneManager>();
+  auto root = scene->GetRoot();
+
+  float width, height;
+  std::tie(width, height) = GetCurrentSize();
+
+  vsg::Builder builder;
+  for (const auto &tile_info : m_tile_infos) {
+    vsg::GeometryInfo geomInfo;
+
+    float x = static_cast<float>(tile_info.x) / width;
+    float y = static_cast<float>(tile_info.y) / height;
+    float dx = static_cast<float>(tile_info.width) / width;
+    float dy = static_cast<float>(tile_info.height) / height;
+
+    geomInfo.position = {x, y, 0};
+    geomInfo.dx = {dx, 0, 0};
+    geomInfo.dy = {0, dy, 0};
+    geomInfo.dz = {0, 0, 0};
+
+    vsg::StateInfo stateInfo;
+    stateInfo.two_sided = true;
+    stateInfo.image = m_image_buffers[tile_info.image_index];
+
+    auto quad = builder.createQuad(geomInfo, stateInfo);
+
+    root->addChild(quad);
+  }
+
+  m_output_renderer->SetScene(scene);
 }

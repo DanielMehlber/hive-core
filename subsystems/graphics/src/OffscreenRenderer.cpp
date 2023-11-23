@@ -362,40 +362,56 @@ createDepthCapture(const vsg::ref_ptr<vsg::Device> &device,
   return {commands, destinationBuffer};
 }
 
-void OffscreenRenderer::SetupInstanceAndDevice() {
-  uint32_t vulkanVersion = VK_API_VERSION_1_2;
+void OffscreenRenderer::SetupInstanceAndDevice(
+    const RendererInfo &pre_init_info) {
+  if (pre_init_info.instance && pre_init_info.device) {
+    m_instance = pre_init_info.instance;
+    m_device = pre_init_info.device;
+    
+    auto [physicalDevice, queueFamily] =
+        m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
+    m_queueFamily = queueFamily;
+    if (!physicalDevice || queueFamily < 0) {
+      LOG_ERR("Cannot create physical device in Vulkan")
+      return;
+    }
+  } else {
+    uint32_t vulkanVersion = VK_API_VERSION_1_2;
 
-  vsg::Names instanceExtensions;
-  vsg::Names requestedLayers;
+    vsg::Names instanceExtensions;
+    vsg::Names requestedLayers;
 #ifndef NBEGUB
-  instanceExtensions.push_back(
-      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-  instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-  // requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
-  // requestedLayers.push_back("VK_LAYER_LUNARG_api_dump");
+    instanceExtensions.push_back(
+        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    // requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
+    // requestedLayers.push_back("VK_LAYER_LUNARG_api_dump");
 #endif
 
-  vsg::Names validatedNames = vsg::validateInstancelayerNames(requestedLayers);
+    vsg::Names validatedNames =
+        vsg::validateInstancelayerNames(requestedLayers);
 
-  m_instance =
-      vsg::Instance::create(instanceExtensions, validatedNames, vulkanVersion);
-  auto [physicalDevice, queueFamily] =
-      m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
-  m_queueFamily = queueFamily;
-  if (!physicalDevice || queueFamily < 0) {
-    LOG_ERR("Cannot create physical device in Vulkan")
-    return;
+    m_instance = vsg::Instance::create(instanceExtensions, validatedNames,
+                                       vulkanVersion);
+    auto [physicalDevice, queueFamily] =
+        m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
+    m_queueFamily = queueFamily;
+    if (!physicalDevice || queueFamily < 0) {
+      LOG_ERR("Cannot create physical device in Vulkan")
+      return;
+    }
+
+    vsg::Names deviceExtensions;
+    vsg::QueueSettings queueSettings{vsg::QueueSetting{queueFamily, {1.0}}};
+
+    auto deviceFeatures = vsg::DeviceFeatures::create();
+    deviceFeatures->get().samplerAnisotropy = VK_TRUE;
+    deviceFeatures->get().geometryShader = true;
+
+    m_device =
+        vsg::Device::create(physicalDevice, queueSettings, validatedNames,
+                            deviceExtensions, deviceFeatures);
   }
-
-  vsg::Names deviceExtensions;
-  vsg::QueueSettings queueSettings{vsg::QueueSetting{queueFamily, {1.0}}};
-
-  auto deviceFeatures = vsg::DeviceFeatures::create();
-  deviceFeatures->get().samplerAnisotropy = VK_TRUE;
-  deviceFeatures->get().geometryShader = true;
-
-  m_device = vsg::Device::create(physicalDevice, queueSettings, validatedNames,
-                                 deviceExtensions, deviceFeatures);
 }
 
 void OffscreenRenderer::SetupCamera() {
@@ -438,7 +454,8 @@ void OffscreenRenderer::SetupCamera() {
                                  vsg::ViewportState::create(m_size));
 }
 
-OffscreenRenderer::OffscreenRenderer(scene::SharedScene scene,
+OffscreenRenderer::OffscreenRenderer(RendererInfo pre_init_info,
+                                     scene::SharedScene scene,
                                      bool use_depth_buffer, bool msaa,
                                      VkFormat imageFormat, VkFormat depthFormat,
                                      VkSampleCountFlagBits sample_count,
@@ -450,7 +467,7 @@ OffscreenRenderer::OffscreenRenderer(scene::SharedScene scene,
   if (m_msaa)
     m_sample_count = VK_SAMPLE_COUNT_8_BIT;
 
-  SetupInstanceAndDevice();
+  SetupInstanceAndDevice(pre_init_info);
   SetupCamera();
   SetupRenderGraph();
 

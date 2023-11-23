@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(scene)
 
 find_package(Boost REQUIRED)
-find_package(VSG REQUIRED)
-find_package(Vulkan REQUIRED)
+find_package(vsg REQUIRED)
 
 add_subdirectory(src)
 

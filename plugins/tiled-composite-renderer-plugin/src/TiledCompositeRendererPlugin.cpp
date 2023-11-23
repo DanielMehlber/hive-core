@@ -13,6 +13,8 @@ void TiledCompositeRendererPlugin::Init(plugins::SharedPluginContext context) {
   subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(tiled_renderer);
 
   LOG_DEBUG("Replaced old renderer with new tiled renderer")
+
+  tiled_renderer->SetServiceCount(1);
 }
 
 void TiledCompositeRendererPlugin::ShutDown(

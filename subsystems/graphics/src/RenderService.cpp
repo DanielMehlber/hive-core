@@ -28,6 +28,7 @@ RenderService::RenderService(
 
 std::future<services::SharedServiceResponse>
 RenderService::Render(const services::SharedServiceRequest &raw_request) {
+  std::unique_lock lock(m_service_mutex);
 
   std::promise<SharedServiceResponse> promise;
   std::future<SharedServiceResponse> future = promise.get_future();
