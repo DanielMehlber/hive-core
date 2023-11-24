@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(services)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS log)
 
 add_subdirectory(src)
 add_subdirectory(test)
 
-find_package(Doxygen REQUIRED dot)
+find_package(Doxygen QUIET)
 
 if (GENERATE_DOCS)
     if (DOXYGEN_FOUND)

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 project(kernel)
 
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS log system fiber context REQUIRED)
 
 add_subdirectory(src)
 
-find_package(Doxygen REQUIRED dot)
+find_package(Doxygen QUIET)
 
 if (GENERATE_DOCS)
     if (DOXYGEN_FOUND)

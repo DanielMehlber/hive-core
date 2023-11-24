@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(jobsystem)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system context fiber)
 
-find_package(Doxygen REQUIRED dot)
+find_package(Doxygen QUIET)
 
 if(GENERATE_DOCS)
     if(DOXYGEN_FOUND)

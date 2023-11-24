@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(networking)
 
-find_package(Boost REQUIRED COMPONENTS filesystem system json)
+find_package(Boost REQUIRED COMPONENTS json log)
 
 add_subdirectory(src)
 add_subdirectory(test)
 
-find_package(Doxygen REQUIRED dot)
+find_package(Doxygen QUIET)
 
 if (GENERATE_DOCS)
     if (DOXYGEN_FOUND)
