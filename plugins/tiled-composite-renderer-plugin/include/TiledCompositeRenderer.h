@@ -11,9 +11,9 @@
  */
 
 struct CameraInfo {
-  vsg::dvec3 position;
-  vsg::dvec3 direction;
-  vsg::dvec3 up;
+  vsg::dvec3 position{0, -2, 0};
+  vsg::dvec3 direction{0, 1, 0};
+  vsg::dvec3 up{0, 0, 1};
 };
 
 struct Tile {
@@ -30,7 +30,7 @@ class TiledCompositeRenderer
 private:
   graphics::SharedRenderer m_output_renderer;
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
-  CameraInfo m_camera_info;
+  std::shared_ptr<CameraInfo> m_camera_info = std::make_shared<CameraInfo>();
   vsg::ref_ptr<vsg::Camera> m_camera;
 
   size_t m_current_service_count;

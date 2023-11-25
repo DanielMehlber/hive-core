@@ -40,7 +40,16 @@ int main(int argc, const char **argv) {
   vsg::StateInfo info;
   info.lighting = false;
   info.two_sided = true;
-  scene->GetRoot()->addChild(builder.createSphere({}, info));
+
+  vsg::GeometryInfo sphere1_geom_info;
+  sphere1_geom_info.color = {0, 1.0, 0, 1.0};
+  sphere1_geom_info.position = {0, 0, -0.5};
+
+  vsg::GeometryInfo sphere2_geom_info;
+  sphere2_geom_info.color = {1.0, 0, 1.0, 1.0};
+
+  scene->GetRoot()->addChild(builder.createSphere(sphere1_geom_info, info));
+  scene->GetRoot()->addChild(builder.createSphere(sphere2_geom_info, info));
 
   if (renderer_type == "onscreen") {
     auto renderer = std::make_shared<graphics::OnscreenRenderer>();
@@ -51,7 +60,7 @@ int main(int argc, const char **argv) {
       auto offscreen_renderer = std::make_shared<graphics::OffscreenRenderer>(
           renderer->GetInfo(), scene);
 
-      offscreen_renderer->Resize(100, 100);
+      offscreen_renderer->Resize(500, 500);
       kernel.EnableRenderingService(offscreen_renderer);
     }
   } else if (renderer_type == "offscreen") {

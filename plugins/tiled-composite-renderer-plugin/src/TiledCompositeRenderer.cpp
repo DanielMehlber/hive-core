@@ -10,7 +10,15 @@ TiledCompositeRenderer::TiledCompositeRenderer(
     const common::subsystems::SharedSubsystemManager &subsystems,
     graphics::SharedRenderer output_renderer)
     : m_subsystems(subsystems), m_output_renderer(std::move(output_renderer)) {
-  m_camera = vsg::Camera::create();
+
+  auto projection_matrix =
+      vsg::Orthographic::create(-0.5, 0.5, -0.5, 0.5, 0.1, 10);
+  auto view_matrix = vsg::LookAt::create(
+      vsg::dvec3{0, 0, 1}, vsg::dvec3{0, 0, -1}, vsg::dvec3{0, 1, 0});
+  m_camera = vsg::Camera::create(projection_matrix, view_matrix);
+
+  m_output_renderer->SetCameraProjectionMatrix(projection_matrix);
+  m_output_renderer->SetCameraViewMatrix(view_matrix);
 
 #ifndef NDEBUG
   m_frames_per_second = std::make_shared<std::atomic<int>>(0);
@@ -33,6 +41,27 @@ TiledCompositeRenderer::TiledCompositeRenderer(
   auto job_system =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
   job_system->KickJob(job);
+
+  auto camera_move_job = std::make_shared<TimerJob>(
+      [camera_info = std::weak_ptr<CameraInfo>(m_camera_info)](
+          jobsystem::JobContext *context) {
+        if (camera_info.expired()) {
+          return JobContinuation::DISPOSE;
+        }
+        auto time = std::chrono::high_resolution_clock::now();
+        auto duration_in_seconds =
+            std::chrono::duration<double>(time.time_since_epoch());
+        auto x = duration_in_seconds.count();
+
+        double pos = sin(x);
+
+        camera_info.lock()->position.y = 2.5 + pos;
+
+        return JobContinuation::REQUEUE;
+      },
+      "test-camera-mover", 1s / 20, MAIN);
+
+  job_system->KickJob(camera_move_job);
 
 #endif
 }
@@ -102,7 +131,7 @@ bool TiledCompositeRenderer::Render() {
     graphics::RenderServiceRequest request;
     request.SetExtend({current_tile.width, current_tile.height});
     request.SetCameraData(graphics::CameraData{
-        m_camera_info.up, m_camera_info.position, m_camera_info.direction});
+        m_camera_info->up, m_camera_info->position, m_camera_info->direction});
     request.SetPerspectiveProjection(graphics::Perspective{0.01, 2000, 30});
 
     auto rendering_service_request = request.GetRequest();
@@ -135,6 +164,7 @@ bool TiledCompositeRenderer::Render() {
               image_buffer->properties.format = VK_FORMAT_R8G8B8A8_UNORM;
               std::memcpy(image_buffer->dataPointer(), color_buffer.data(),
                           color_buffer.size());
+              image_buffer->dirty();
 
             } else {
               LOG_ERR("Cannot decode image from remote render result because "
@@ -225,10 +255,9 @@ void TiledCompositeRenderer::UpdateSceneTiling() {
 
     auto quad = builder.createQuad(geomInfo, stateInfo);
 
-    root->addChild(builder.createSphere({}, {}));
-
     root->addChild(quad);
   }
 
   m_output_renderer->SetScene(scene);
 }
+m_image_buffers

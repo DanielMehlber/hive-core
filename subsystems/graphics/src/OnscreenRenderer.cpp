@@ -40,8 +40,8 @@ void OnscreenRenderer::SetupCamera() {
 
 OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene) {
   auto windowTraits = vsg::WindowTraits::create();
-  windowTraits->width = 100;
-  windowTraits->height = 100;
+  windowTraits->width = 200;
+  windowTraits->height = 200;
 
 #ifndef NDEBUG
   windowTraits->debugLayer = true;
