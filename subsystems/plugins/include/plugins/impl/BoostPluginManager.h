@@ -37,7 +37,7 @@ public:
   void InstallPlugin(boost::shared_ptr<IPlugin> plugin) override;
   void UninstallPlugin(const std::string &name) override;
   SharedPluginContext GetContext() override;
-  void InstallPlugins(const std::string &path) override;
+  void InstallPlugins(const std::string &input_path_str) override;
 };
 
 } // namespace plugins

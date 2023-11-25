@@ -1,6 +1,8 @@
 #include "common/test/TryAssertUntilTimeout.h"
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "graphics/service/RenderService.h"
+#include "graphics/service/RenderServiceRequest.h"
+#include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
@@ -121,7 +123,48 @@ TEST(GraphicsTests, remote_render_service) {
   }
 }
 
-TEST(GraphicsTest, render_service_multiple) {}
+TEST(GraphicsTest, offscreen_rendering_sphere) {
+
+  auto subsystems = SetupSubsystems();
+
+  vsg::Builder builder;
+  auto scene = std::make_shared<scene::SceneManager>();
+  scene->GetRoot()->addChild(builder.createSphere());
+
+  graphics::RendererInfo info;
+  SharedRenderer renderer = std::make_shared<OffscreenRenderer>(info, scene);
+  subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(renderer);
+
+  SharedServiceExecutor render_service =
+      std::static_pointer_cast<services::impl::LocalServiceExecutor>(
+          std::make_shared<RenderService>(subsystems));
+
+  auto job_system = subsystems->RequireSubsystem<JobManager>();
+
+  RenderServiceRequest request_generator;
+  request_generator.SetExtend({10, 10});
+  auto response =
+      render_service->Call(request_generator.GetRequest(), job_system);
+
+  job_system->InvokeCycleAndWait();
+  job_system->WaitForCompletion(response);
+
+  auto decoder = subsystems->RequireSubsystem<graphics::IRenderResultEncoder>();
+  auto encoded_color_buffer = response.get()->GetResult("color").value();
+  auto color_buffer = decoder->Decode(encoded_color_buffer);
+
+  // check that image is not completely transparent
+  // format goes like this: r,g,b,a and we want a (every 4th element) with an
+  // offset of 4
+  int count{0};
+  for (int i = 3; i < color_buffer.size(); i += 4) {
+    if (color_buffer.at(i) != 0) {
+      count++;
+    }
+  }
+
+  ASSERT_FALSE(count == 0);
+}
 
 int main(int argc, char **argv) {
 

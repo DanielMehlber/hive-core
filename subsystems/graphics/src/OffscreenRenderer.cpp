@@ -367,7 +367,7 @@ void OffscreenRenderer::SetupInstanceAndDevice(
   if (pre_init_info.instance && pre_init_info.device) {
     m_instance = pre_init_info.instance;
     m_device = pre_init_info.device;
-    
+
     auto [physicalDevice, queueFamily] =
         m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
     m_queueFamily = queueFamily;
@@ -384,7 +384,7 @@ void OffscreenRenderer::SetupInstanceAndDevice(
     instanceExtensions.push_back(
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-    // requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
+    requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
     // requestedLayers.push_back("VK_LAYER_LUNARG_api_dump");
 #endif
 
@@ -477,6 +477,11 @@ OffscreenRenderer::OffscreenRenderer(RendererInfo pre_init_info,
 
 void OffscreenRenderer::SetScene(const scene::SharedScene &scene) {
   m_scene = scene;
+
+  // TODO: check if there is a more efficient method than a complete setup
+  SetupRenderGraph();
+  m_viewer = vsg::Viewer::create();
+  SetupCommandGraph();
 }
 
 scene::SharedScene OffscreenRenderer::GetScene() const { return m_scene; }
@@ -684,24 +689,10 @@ void OffscreenRenderer::SetupRenderGraph() {
 }
 
 void OffscreenRenderer::SetupCommandGraph() {
-  bool useExecuteCommands = true;
   auto view = vsg::View::create(m_camera, m_scene->GetRoot());
 
   vsg::CommandGraphs commandGraphs;
-  if (useExecuteCommands) {
-    auto secondaryCommandGraph =
-        vsg::SecondaryCommandGraph::create(m_device, m_queueFamily);
-    secondaryCommandGraph->addChild(view);
-    secondaryCommandGraph->framebuffer = m_framebuffer;
-    commandGraphs.emplace_back(secondaryCommandGraph);
-
-    auto executeCommands = vsg::ExecuteCommands::create();
-    executeCommands->connect(secondaryCommandGraph);
-
-    m_render_graph->contents = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
-    m_render_graph->addChild(executeCommands);
-  } else
-    m_render_graph->addChild(view);
+  m_render_graph->addChild(view);
 
   m_command_graph = vsg::CommandGraph::create(m_device, m_queueFamily);
   m_command_graph->addChild(m_render_graph);

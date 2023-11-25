@@ -36,7 +36,7 @@ private:
   size_t m_current_service_count;
   std::vector<vsg::ref_ptr<vsg::Data>> m_image_buffers;
   std::vector<Tile> m_tile_infos;
-  mutable std::mutex m_image_buffers_mutex;
+  mutable std::mutex m_image_buffers_and_tiling_mutex;
 
 #ifndef NDEBUG
   std::shared_ptr<std::atomic<int>> m_frames_per_second;

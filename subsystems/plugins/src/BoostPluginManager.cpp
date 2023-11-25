@@ -158,28 +158,38 @@ listAllPluginsInDescriptor(const std::string &descriptor) {
   return list;
 }
 
-void BoostPluginManager::InstallPlugins(const std::string &path) {
+void BoostPluginManager::InstallPlugins(const std::string &input_path_str) {
 
   // spawn job to load plugins in directory
   auto install_job = jobsystem::JobSystemFactory::CreateJob(
-      [_this = weak_from_this(), path](jobsystem::JobContext *context) {
+      [_this = weak_from_this(),
+       input_path_str](jobsystem::JobContext *context) {
         if (_this.expired()) {
           LOG_ERR("Cannot install plugins from "
-                  << path << " because plugin manager has shut down")
+                  << input_path_str << " because plugin manager has shut down")
           return JobContinuation::DISPOSE;
         }
+
+        fs::path input_path(input_path_str);
 
         std::string absolute_path;
         boost::system::error_code path_error;
-        absolute_path = fs::canonical(path, path_error).generic_string();
+        if (!input_path.is_absolute()) {
+          absolute_path =
+              fs::canonical(input_path_str, path_error).generic_string();
+        } else {
+          absolute_path = input_path.generic_string();
+        }
 
         if (path_error.failed()) {
           LOG_ERR("Cannot install plugins from "
-                  << path << " because it is not a valid path")
+                  << input_path_str
+                  << " because it is not a valid input_path_str: "
+                  << path_error.what())
           return JobContinuation::DISPOSE;
         }
 
-        bool is_directory = fs::is_directory(path);
+        bool is_directory = fs::is_directory(input_path_str);
         if (!is_directory) {
           LOG_WARN("Cannot load Plugins from "
                    << absolute_path << " because it is not a directory")
@@ -217,7 +227,8 @@ void BoostPluginManager::InstallPlugins(const std::string &path) {
           LOG_WARN("No Plugin descriptor found in '"
                    << absolute_path << "': Attempting to load all libraries")
 
-          plugin_paths = std::move(listAllSharedLibsInDirectory(path));
+          plugin_paths =
+              std::move(listAllSharedLibsInDirectory(input_path_str));
           if (plugin_paths.empty()) {
             LOG_WARN("No Plugins loaded: No shared libraries in directory "
                      << absolute_path)
@@ -238,7 +249,7 @@ void BoostPluginManager::InstallPlugins(const std::string &path) {
 
         return JobContinuation::DISPOSE;
       },
-      "install-plugins-in-{" + path + "}", JobExecutionPhase::INIT);
+      "install-plugins-in-{" + input_path_str + "}", JobExecutionPhase::INIT);
 
   GetContext()
       ->GetKernelSubsystems()

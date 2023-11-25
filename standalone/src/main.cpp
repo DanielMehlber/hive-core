@@ -35,20 +35,31 @@ int main(int argc, const char **argv) {
 
   kernel::Kernel kernel;
 
+  vsg::Builder builder;
+  auto scene = std::make_shared<scene::SceneManager>();
+  vsg::StateInfo info;
+  info.lighting = false;
+  info.two_sided = true;
+  scene->GetRoot()->addChild(builder.createSphere({}, info));
+
   if (renderer_type == "onscreen") {
     auto renderer = std::make_shared<graphics::OnscreenRenderer>();
     kernel.SetRenderer(renderer);
     kernel.EnableRenderingJob();
 
     if (enable_rendering_service) {
-      auto offscreen_renderer =
-          std::make_shared<graphics::OffscreenRenderer>(renderer->GetInfo());
+      auto offscreen_renderer = std::make_shared<graphics::OffscreenRenderer>(
+          renderer->GetInfo(), scene);
+
+      offscreen_renderer->Resize(100, 100);
       kernel.EnableRenderingService(offscreen_renderer);
     }
   } else if (renderer_type == "offscreen") {
     auto renderer = std::make_shared<graphics::OffscreenRenderer>();
     kernel.SetRenderer(renderer);
     kernel.EnableRenderingJob();
+
+    renderer->Resize(500, 500);
 
     if (enable_rendering_service) {
       kernel.EnableRenderingService();
@@ -58,8 +69,6 @@ int main(int argc, const char **argv) {
   if (!plugin_path.empty()) {
     kernel.GetPluginManager()->InstallPlugins(plugin_path);
   }
-
-  kernel.GetRenderer()->Resize(100, 100);
 
   while (true) {
     kernel.GetJobManager()->InvokeCycleAndWait();

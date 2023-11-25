@@ -12,8 +12,8 @@ void OnscreenRenderer::SetupCamera() {
 
   // set up the camera
   auto centre = vsg::dvec3{0.0, 0.0, 0.0};
-  auto lookAt = vsg::LookAt::create(centre + vsg::dvec3(0.0, -1000, 0.0),
-                                    centre, vsg::dvec3(0.0, 0.0, 1.0));
+  auto lookAt = vsg::LookAt::create(centre + vsg::dvec3(0.0, -10, 0.0), centre,
+                                    vsg::dvec3(0.0, 0.0, 1.0));
 
   vsg::ref_ptr<vsg::ProjectionMatrix> perspective;
   auto ellipsoidModel =
@@ -40,6 +40,8 @@ void OnscreenRenderer::SetupCamera() {
 
 OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene) {
   auto windowTraits = vsg::WindowTraits::create();
+  windowTraits->width = 100;
+  windowTraits->height = 100;
 
 #ifndef NDEBUG
   windowTraits->debugLayer = true;
@@ -62,6 +64,7 @@ OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene) {
     return;
   }
 
+  m_window->clearColor().float32[0] = 1.0;
   m_viewer->addWindow(m_window);
 
   m_scene = std::move(scene);

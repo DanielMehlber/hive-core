@@ -74,7 +74,7 @@ bool TiledCompositeRenderer::Render() {
     return true;
   }
 
-  std::unique_lock lock(m_image_buffers_mutex);
+  std::unique_lock lock(m_image_buffers_and_tiling_mutex);
 
   auto job_system =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
@@ -167,7 +167,7 @@ void TiledCompositeRenderer::SetServiceCount(int services) {
 }
 
 void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
-  std::unique_lock lock(m_image_buffers_mutex);
+  std::unique_lock lock(m_image_buffers_and_tiling_mutex);
   m_current_service_count = tile_count;
 
   auto extend = GetCurrentSize();
@@ -180,17 +180,21 @@ void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
   m_tile_infos.clear();
   m_tile_infos.resize(tile_count);
 
-  int tile_width = width / static_cast<int>(m_current_service_count);
-  int tile_height = height;
+  if (tile_count > 0) {
 
-  for (int i = 0; i < m_current_service_count; i++) {
-    vsg::ref_ptr<vsg::Data> image_buffer;
-    image_buffer = vsg::vec4Array2D::create(tile_width, tile_height);
-    image_buffer->properties.dataVariance = vsg::DYNAMIC_DATA;
-    m_image_buffers[i] = image_buffer;
+    int tile_width = width / static_cast<int>(m_current_service_count);
+    int tile_height = height;
 
-    Tile tile{i * tile_width, i * tile_height, tile_width, tile_height, i};
-    m_tile_infos[i] = tile;
+    for (int i = 0; i < m_current_service_count; i++) {
+      vsg::ref_ptr<vsg::Data> image_buffer;
+      image_buffer = vsg::vec4Array2D::create(tile_width, tile_height);
+      image_buffer->properties.dataVariance = vsg::DYNAMIC_DATA;
+      image_buffer->properties.format = VK_FORMAT_R8G8B8A8_UNORM;
+      m_image_buffers[i] = image_buffer;
+
+      Tile tile{i * tile_width, i * tile_height, tile_width, tile_height, i};
+      m_tile_infos[i] = tile;
+    }
   }
 }
 
@@ -220,6 +224,8 @@ void TiledCompositeRenderer::UpdateSceneTiling() {
     stateInfo.image = m_image_buffers[tile_info.image_index];
 
     auto quad = builder.createQuad(geomInfo, stateInfo);
+
+    root->addChild(builder.createSphere({}, {}));
 
     root->addChild(quad);
   }
