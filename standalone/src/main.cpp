@@ -38,7 +38,7 @@ int main(int argc, const char **argv) {
   vsg::Builder builder;
   auto scene = std::make_shared<scene::SceneManager>();
   vsg::StateInfo info;
-  info.lighting = false;
+  info.lighting = true;
   info.two_sided = true;
 
   vsg::GeometryInfo sphere1_geom_info;
@@ -48,8 +48,14 @@ int main(int argc, const char **argv) {
   vsg::GeometryInfo sphere2_geom_info;
   sphere2_geom_info.color = {1.0, 0, 1.0, 1.0};
 
+  auto light = vsg::PointLight::create();
+  light->color = {1, 1, 1};
+  light->intensity = 20;
+  light->position = {3, 3, 3};
+
   scene->GetRoot()->addChild(builder.createSphere(sphere1_geom_info, info));
   scene->GetRoot()->addChild(builder.createSphere(sphere2_geom_info, info));
+  scene->GetRoot()->addChild(light);
 
   if (renderer_type == "onscreen") {
     auto renderer = std::make_shared<graphics::OnscreenRenderer>();
