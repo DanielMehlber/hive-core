@@ -2,4 +2,4 @@
 
 using namespace scene;
 
-SceneManager::SceneManager() { m_scene = vsg::Group::create(); }
+SceneManager::SceneManager() { m_scene = vsg::StateGroup::create(); }

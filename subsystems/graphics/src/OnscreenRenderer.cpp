@@ -38,26 +38,23 @@ void OnscreenRenderer::SetupCamera() {
   m_viewer->addEventHandler(vsg::Trackball::create(m_camera, ellipsoidModel));
 }
 
-OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene) {
+void OnscreenRenderer::SetupCommandGraph() {
+  auto commandGraph =
+      vsg::createCommandGraphForView(m_window, m_camera, m_scene->GetRoot());
+  m_viewer->assignRecordAndSubmitTaskAndPresentation({commandGraph});
+  m_viewer->compile();
+}
+
+OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene)
+    : m_scene(std::move(scene)) {
   auto windowTraits = vsg::WindowTraits::create();
-  windowTraits->width = 200;
-  windowTraits->height = 200;
+  windowTraits->width = 1000;
+  windowTraits->height = 1000;
 
 #ifndef NDEBUG
   windowTraits->debugLayer = true;
 #endif
 
-  vsg::DescriptorSetLayoutBindings descriptorBindings{
-      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1,
-       VK_SHADER_STAGE_FRAGMENT_BIT,
-       nullptr} // { binding, descriptorType, descriptorCount, stageFlags,
-                // pImmutableSamplers}
-  };
-
-  auto descriptorSetLayout =
-      vsg::DescriptorSetLayout::create(descriptorBindings);
-
-  m_viewer = vsg::Viewer::create();
   m_window = vsg::Window::create(windowTraits);
   if (!m_window) {
     LOG_ERR("Cannot create window for Onscreen Renderer");
@@ -65,19 +62,15 @@ OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene) {
   }
 
   m_window->clearColor().float32[0] = 1.0;
+
+  m_viewer = vsg::Viewer::create();
   m_viewer->addWindow(m_window);
-
-  m_scene = std::move(scene);
-
-  SetupCamera();
 
   // add close handler to respond to the close window button and pressing escape
   m_viewer->addEventHandler(vsg::CloseHandler::create(m_viewer));
 
-  auto commandGraph =
-      vsg::createCommandGraphForView(m_window, m_camera, m_scene->GetRoot());
-  m_viewer->assignRecordAndSubmitTaskAndPresentation({commandGraph});
-  m_viewer->compile();
+  SetupCamera();
+  SetupCommandGraph();
 
   m_viewer->start_point() = vsg::clock::now();
 }
@@ -101,14 +94,7 @@ std::optional<SharedRenderResult> OnscreenRenderer::GetResult() {
 
 void OnscreenRenderer::SetScene(const scene::SharedScene &scene) {
   this->m_scene = scene;
-
-  auto commandGraph =
-      vsg::createCommandGraphForView(m_window, m_camera, m_scene->GetRoot());
-  m_viewer->assignRecordAndSubmitTaskAndPresentation({commandGraph});
-
-  // compile all the Vulkan objects and transfer data required to render the
-  // scene
-  m_viewer->compile();
+  SetupCommandGraph();
 }
 
 void OnscreenRenderer::Resize(int width, int height) {}

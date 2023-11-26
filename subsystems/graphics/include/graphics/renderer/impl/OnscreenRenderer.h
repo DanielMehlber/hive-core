@@ -13,6 +13,7 @@ protected:
   vsg::ref_ptr<vsg::Camera> m_camera;
 
   void SetupCamera();
+  void SetupCommandGraph();
 
 public:
   explicit OnscreenRenderer(

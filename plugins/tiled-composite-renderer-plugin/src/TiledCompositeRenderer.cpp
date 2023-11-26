@@ -217,7 +217,8 @@ void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
 
     for (int i = 0; i < m_current_service_count; i++) {
       vsg::ref_ptr<vsg::Data> image_buffer;
-      image_buffer = vsg::vec4Array2D::create(tile_width, tile_height);
+      image_buffer =
+          vsg::Array2D<vsg::t_vec4<char>>::create(tile_width, tile_height);
       image_buffer->properties.dataVariance = vsg::DYNAMIC_DATA;
       image_buffer->properties.format = VK_FORMAT_R8G8B8A8_UNORM;
       m_image_buffers[i] = image_buffer;
@@ -260,4 +261,3 @@ void TiledCompositeRenderer::UpdateSceneTiling() {
 
   m_output_renderer->SetScene(scene);
 }
-m_image_buffers

@@ -11,16 +11,16 @@ namespace scene {
  */
 class SCENE_API SceneManager {
 protected:
-  vsg::ref_ptr<vsg::Group> m_scene;
+  vsg::ref_ptr<vsg::StateGroup> m_scene;
 
 public:
   SceneManager();
   virtual ~SceneManager() = default;
 
-  vsg::ref_ptr<vsg::Group> GetRoot() const noexcept;
+  vsg::ref_ptr<vsg::StateGroup> GetRoot() const noexcept;
 };
 
-inline vsg::ref_ptr<vsg::Group> SceneManager::GetRoot() const noexcept {
+inline vsg::ref_ptr<vsg::StateGroup> SceneManager::GetRoot() const noexcept {
   return m_scene;
 }
 
