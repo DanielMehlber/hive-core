@@ -16,7 +16,10 @@ private:
   vsg::ref_ptr<vsg::Viewer> m_viewer;
   vsg::ref_ptr<vsg::Instance> m_instance;
   vsg::ref_ptr<vsg::Device> m_device;
+
   vsg::ref_ptr<vsg::Camera> m_camera;
+  vsg::ref_ptr<vsg::ProjectionMatrix> m_current_projection_matrix;
+  vsg::ref_ptr<vsg::ViewMatrix> m_current_view_matrix;
 
   vsg::ref_ptr<vsg::Commands> m_depth_buffer_capture;
   vsg::ref_ptr<vsg::Commands> m_color_buffer_capture;

@@ -11,8 +11,7 @@ TiledCompositeRenderer::TiledCompositeRenderer(
     graphics::SharedRenderer output_renderer)
     : m_subsystems(subsystems), m_output_renderer(std::move(output_renderer)) {
 
-  auto projection_matrix =
-      vsg::Orthographic::create(-0.5, 0.5, -0.5, 0.5, 0.1, 10);
+  auto projection_matrix = vsg::Orthographic::create(0, 1, 0, 1, 0.1, 10);
   auto view_matrix = vsg::LookAt::create(
       vsg::dvec3{0, 0, 1}, vsg::dvec3{0, 0, -1}, vsg::dvec3{0, 1, 0});
   m_camera = vsg::Camera::create(projection_matrix, view_matrix);
@@ -53,9 +52,13 @@ TiledCompositeRenderer::TiledCompositeRenderer(
             std::chrono::duration<double>(time.time_since_epoch());
         auto x = duration_in_seconds.count();
 
-        double pos = sin(x);
+        double y_pos = sin(x);
+        double x_pos = cos(x);
 
-        camera_info.lock()->position.y = 2.5 + pos;
+        double distance = 10;
+        camera_info.lock()->position.y = distance * y_pos;
+        camera_info.lock()->position.x = distance * x_pos;
+        camera_info.lock()->position.z = 0;
 
         return JobContinuation::REQUEUE;
       },
@@ -192,12 +195,12 @@ bool TiledCompositeRenderer::Render() {
 }
 
 void TiledCompositeRenderer::SetServiceCount(int services) {
+  std::unique_lock lock(m_image_buffers_and_tiling_mutex);
   UpdateTilingInfo(services);
   UpdateSceneTiling();
 }
 
 void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
-  std::unique_lock lock(m_image_buffers_and_tiling_mutex);
   m_current_service_count = tile_count;
 
   auto extend = GetCurrentSize();
@@ -223,7 +226,7 @@ void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
       image_buffer->properties.format = VK_FORMAT_R8G8B8A8_UNORM;
       m_image_buffers[i] = image_buffer;
 
-      Tile tile{i * tile_width, i * tile_height, tile_width, tile_height, i};
+      Tile tile{i * tile_width, 0, tile_width, tile_height, i};
       m_tile_infos[i] = tile;
     }
   }
@@ -237,15 +240,16 @@ void TiledCompositeRenderer::UpdateSceneTiling() {
   std::tie(width, height) = GetCurrentSize();
 
   vsg::Builder builder;
+  float i = 0;
   for (const auto &tile_info : m_tile_infos) {
     vsg::GeometryInfo geomInfo;
-
+    i++;
     float x = static_cast<float>(tile_info.x) / width;
     float y = static_cast<float>(tile_info.y) / height;
     float dx = static_cast<float>(tile_info.width) / width;
     float dy = static_cast<float>(tile_info.height) / height;
 
-    geomInfo.position = {x, y, 0};
+    geomInfo.position = {x + dx / 2, y + dy / 2, 0};
     geomInfo.dx = {dx, 0, 0};
     geomInfo.dy = {0, dy, 0};
     geomInfo.dz = {0, 0, 0};

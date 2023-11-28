@@ -4,6 +4,7 @@ add_library(graphics
         RenderService.cpp
         RenderServiceRequest.cpp
         CharEscapeRenderResultEncoder.cpp
+        ../include/graphics/renderer/impl/stb_image_write.h
 )
 
 target_include_directories(graphics PUBLIC ../include ${Boost_INCLUDE_DIRS})

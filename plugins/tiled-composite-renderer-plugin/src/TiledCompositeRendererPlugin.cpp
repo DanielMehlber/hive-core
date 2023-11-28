@@ -14,7 +14,23 @@ void TiledCompositeRendererPlugin::Init(plugins::SharedPluginContext context) {
 
   LOG_DEBUG("Replaced old renderer with new tiled renderer")
 
-  tiled_renderer->SetServiceCount(1);
+  auto tiling_job = std::make_shared<TimerJob>(
+      [tiled_renderer](jobsystem::JobContext *context) {
+        static int i{2};
+        i++;
+        if (i > 3) {
+          return JobContinuation::DISPOSE;
+        } else {
+          tiled_renderer->SetServiceCount(i);
+          return JobContinuation::REQUEUE;
+        }
+      },
+      5s);
+
+  auto job_system = subsystems->RequireSubsystem<jobsystem::JobManager>();
+  job_system->KickJob(tiling_job);
+
+  tiled_renderer->SetServiceCount(2);
 }
 
 void TiledCompositeRendererPlugin::ShutDown(

@@ -1,6 +1,9 @@
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "logging/LogManager.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "graphics/renderer/impl/stb_image_write.h"
+
 using namespace graphics;
 
 vsg::ref_ptr<vsg::ImageView>
@@ -384,7 +387,7 @@ void OffscreenRenderer::SetupInstanceAndDevice(
     instanceExtensions.push_back(
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-    requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
+    // requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
     // requestedLayers.push_back("VK_LAYER_LUNARG_api_dump");
 #endif
 
@@ -416,42 +419,31 @@ void OffscreenRenderer::SetupInstanceAndDevice(
 
 void OffscreenRenderer::SetupCamera() {
 
-  bool above = true;
+  if (!m_current_view_matrix) {
+    // set up the camera
+    m_current_view_matrix =
+        vsg::LookAt::create(vsg::dvec3(0.0, 5, 0.0), vsg::dvec3(0, 0, 0),
+                            vsg::dvec3(0.0, 0.0, 1.0));
+  }
 
-  // compute the bounds of the scene graph to help position camera
-  vsg::ComputeBounds computeBounds;
-  m_scene->GetRoot()->accept(computeBounds);
-  vsg::dvec3 centre =
-      (computeBounds.bounds.min + computeBounds.bounds.max) * 0.5;
-  double radius =
-      vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.6;
-  double nearFarRatio = 0.001;
-
-  // set up the camera
-  auto lookAt =
-      (above)
-          ? vsg::LookAt::create(centre + vsg::dvec3(0.0, 0.0, radius * 1.5),
-                                centre, vsg::dvec3(0.0, 1.0, 0.0))
-          : vsg::LookAt::create(centre + vsg::dvec3(0.0, -radius * 1.5, 0.0),
-                                centre, vsg::dvec3(0.0, 0.0, 1.0));
-
-  vsg::ref_ptr<vsg::ProjectionMatrix> perspective;
-  if (auto ellipsoidModel =
-          m_scene->GetRoot()->getRefObject<vsg::EllipsoidModel>(
-              "EllipsoidModel")) {
-    perspective = vsg::EllipsoidPerspective::create(
-        lookAt, ellipsoidModel, 30.0,
-        static_cast<double>(m_size.width) / static_cast<double>(m_size.height),
-        nearFarRatio, 0.0);
-  } else {
-    perspective = vsg::Perspective::create(
+  if (!m_current_projection_matrix) {
+    m_current_projection_matrix = vsg::Perspective::create(
         30.0,
         static_cast<double>(m_size.width) / static_cast<double>(m_size.height),
         0.001, 2000);
   }
 
-  m_camera = vsg::Camera::create(perspective, lookAt,
-                                 vsg::ViewportState::create(m_size));
+  auto viewport_state = vsg::ViewportState::create(m_size);
+
+  // if camera already exists, just modify it
+  if (!m_camera) {
+    m_camera = vsg::Camera::create(m_current_projection_matrix,
+                                   m_current_view_matrix, viewport_state);
+  } else {
+    m_camera->projectionMatrix = m_current_projection_matrix;
+    m_camera->viewMatrix = m_current_view_matrix;
+    m_camera->viewportState = viewport_state;
+  }
 }
 
 OffscreenRenderer::OffscreenRenderer(RendererInfo pre_init_info,
@@ -514,15 +506,18 @@ void OffscreenRenderer::Resize(int width, int height) {
   m_size.width = width;
   m_size.height = height;
 
-  /*
-   * We might need to replace the framebuffer, camera settings, images, image
-   * capture commands and image views.
-   *
-   * TODO: check if a total re-setup is necessary or if there's a quicker way
-   */
-  SetupCamera();
-  SetupRenderGraph();
-  SetupCommandGraph();
+  if (auto perspective =
+          dynamic_cast<vsg::Perspective *>(m_current_projection_matrix.get())) {
+    perspective->aspectRatio =
+        static_cast<double>(m_size.width) / static_cast<double>(m_size.height);
+    m_camera->viewportState = vsg::ViewportState::create(m_size);
+  } else {
+    m_current_projection_matrix.reset();
+  }
+
+  SetupCamera();       // apply new aspect ratio
+  SetupRenderGraph();  // create new render graph for image captures
+  SetupCommandGraph(); // create new image captures for new size
 }
 
 std::optional<SharedRenderResult> OffscreenRenderer::GetResult() {
@@ -581,6 +576,13 @@ std::optional<SharedRenderResult> OffscreenRenderer::GetResult() {
                   imageData->dataSize());
 
       render_result->SetExtent(imageData->width(), imageData->height());
+
+      static int i{0};
+      std::stringstream ss;
+      ss << "/home/danielmehlber/Pictures/output-" << i << ".jpg";
+      i++;
+      stbi_write_jpg(ss.str().c_str(), imageData->width(), imageData->height(),
+                     4, color_buffer.data(), 100);
     }
 
     if (m_copied_depth_buffer) {
@@ -713,9 +715,11 @@ std::tuple<int, int> OffscreenRenderer::GetCurrentSize() const {
 void OffscreenRenderer::SetCameraProjectionMatrix(
     vsg::ref_ptr<vsg::ProjectionMatrix> matrix) {
   m_camera->projectionMatrix = matrix;
+  m_current_projection_matrix = matrix;
 }
 
 void OffscreenRenderer::SetCameraViewMatrix(
     vsg::ref_ptr<vsg::ViewMatrix> matrix) {
   m_camera->viewMatrix = matrix;
+  m_current_view_matrix = matrix;
 }

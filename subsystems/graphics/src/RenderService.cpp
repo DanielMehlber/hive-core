@@ -56,6 +56,15 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
 
   auto rendering_subsystem = opt_rendering_subsystem.value();
 
+  // check if renderer must be resized
+  const auto [current_width, current_height] =
+      rendering_subsystem->GetCurrentSize();
+  bool size_changed =
+      current_height != extend.height || current_width != extend.width;
+  if (size_changed) {
+    rendering_subsystem->Resize(extend.width, extend.height);
+  }
+
   try {
 
     // apply settings to renderer's main camera
@@ -87,15 +96,6 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
     response->SetStatusMessage(exception.what());
     promise.set_value(response);
     return future;
-  }
-
-  // check if renderer must be resized
-  const auto [current_width, current_height] =
-      rendering_subsystem->GetCurrentSize();
-  bool size_changed =
-      current_height != extend.height || current_width != extend.width;
-  if (size_changed) {
-    rendering_subsystem->Resize(extend.width, extend.height);
   }
 
   // check if camera must be moved

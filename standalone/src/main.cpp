@@ -35,30 +35,27 @@ int main(int argc, const char **argv) {
 
   kernel::Kernel kernel;
 
-  vsg::Builder builder;
+  auto vsg_options = vsg::Options::create();
+  vsg_options->sharedObjects = vsg::SharedObjects::create();
+  vsg_options->fileCache = vsg::getEnv("VSG_FILE_CACHE");
+  vsg_options->paths = vsg::getEnvPaths("VSG_FILE_PATH");
+
   auto scene = std::make_shared<scene::SceneManager>();
-  vsg::StateInfo info;
-  info.lighting = true;
-  info.two_sided = true;
 
-  vsg::GeometryInfo sphere1_geom_info;
-  sphere1_geom_info.color = {0, 1.0, 0, 1.0};
-  sphere1_geom_info.position = {0, 0, -0.5};
-
-  vsg::GeometryInfo sphere2_geom_info;
-  sphere2_geom_info.color = {1.0, 0, 1.0, 1.0};
-
-  auto light = vsg::PointLight::create();
+  auto light = vsg::DirectionalLight::create();
   light->color = {1, 1, 1};
   light->intensity = 20;
-  light->position = {3, 3, 3};
-
-  scene->GetRoot()->addChild(builder.createSphere(sphere1_geom_info, info));
-  scene->GetRoot()->addChild(builder.createSphere(sphere2_geom_info, info));
+  light->direction = {-3, -3, -3};
   scene->GetRoot()->addChild(light);
 
+  auto node = vsg::read_cast<vsg::Node>("models/teapot.vsgt", vsg_options);
+  scene->GetRoot()->addChild(node);
+
+  auto skybox = vsg::read_cast<vsg::Node>("models/skybox.vsgt", vsg_options);
+  scene->GetRoot()->addChild(skybox);
+
   if (renderer_type == "onscreen") {
-    auto renderer = std::make_shared<graphics::OnscreenRenderer>();
+    auto renderer = std::make_shared<graphics::OnscreenRenderer>(scene);
     kernel.SetRenderer(renderer);
     kernel.EnableRenderingJob();
 
@@ -70,11 +67,18 @@ int main(int argc, const char **argv) {
       kernel.EnableRenderingService(offscreen_renderer);
     }
   } else if (renderer_type == "offscreen") {
-    auto renderer = std::make_shared<graphics::OffscreenRenderer>();
+    graphics::RendererInfo info{};
+    auto renderer = std::make_shared<graphics::OffscreenRenderer>(info, scene);
     kernel.SetRenderer(renderer);
     kernel.EnableRenderingJob();
 
     renderer->Resize(500, 500);
+    renderer->Render();
+    renderer->GetResult();
+
+    renderer->Resize(500, 1000);
+    renderer->Render();
+    renderer->GetResult();
 
     if (enable_rendering_service) {
       kernel.EnableRenderingService();
