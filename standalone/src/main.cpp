@@ -63,8 +63,8 @@ int main(int argc, const char **argv) {
       auto offscreen_renderer = std::make_shared<graphics::OffscreenRenderer>(
           renderer->GetInfo(), scene);
 
-      offscreen_renderer->Resize(500, 500);
       kernel.EnableRenderingService(offscreen_renderer);
+      offscreen_renderer->Resize(500, 500);
     }
   } else if (renderer_type == "offscreen") {
     graphics::RendererInfo info{};
@@ -73,12 +73,6 @@ int main(int argc, const char **argv) {
     kernel.EnableRenderingJob();
 
     renderer->Resize(500, 500);
-    renderer->Render();
-    renderer->GetResult();
-
-    renderer->Resize(500, 1000);
-    renderer->Render();
-    renderer->GetResult();
 
     if (enable_rendering_service) {
       kernel.EnableRenderingService();

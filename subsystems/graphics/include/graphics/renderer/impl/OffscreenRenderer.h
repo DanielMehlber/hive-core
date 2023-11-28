@@ -27,9 +27,10 @@ private:
   vsg::ref_ptr<vsg::ImageView> m_color_image_view;
   vsg::ref_ptr<vsg::ImageView> m_depth_image_view;
 
-  vsg::ref_ptr<vsg::Framebuffer> m_framebuffer;
   vsg::ref_ptr<vsg::Image> m_copied_color_buffer;
   vsg::ref_ptr<vsg::Buffer> m_copied_depth_buffer;
+
+  vsg::ref_ptr<vsg::StateGroup> m_scene_graph_root;
 
   int m_queueFamily;
 
@@ -48,6 +49,13 @@ private:
   void SetupRenderGraph();
   void SetupInstanceAndDevice(const RendererInfo &pre_init_info = {});
   void SetupCommandGraph();
+
+  /**
+   * Replaces framebuffer and image captures
+   * @note This can be used when the render size has changed.
+   * @see Inspired by vsgExample vsgheadless
+   */
+  void ReplaceFramebufferAndCaptures();
 
 public:
   /**
@@ -78,6 +86,11 @@ public:
 
   bool Render() override;
 
+  /**
+   * Reads render results from captured images of framebuffer
+   * @see Inspired by vsgExample vsgheadless
+   * @return
+   */
   std::optional<SharedRenderResult> GetResult() override;
 
   void SetScene(const scene::SharedScene &scene) override;

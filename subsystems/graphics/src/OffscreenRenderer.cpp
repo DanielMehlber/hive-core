@@ -1,9 +1,6 @@
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "logging/LogManager.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "graphics/renderer/impl/stb_image_write.h"
-
 using namespace graphics;
 
 vsg::ref_ptr<vsg::ImageView>
@@ -461,19 +458,34 @@ OffscreenRenderer::OffscreenRenderer(RendererInfo pre_init_info,
 
   SetupInstanceAndDevice(pre_init_info);
   SetupCamera();
-  SetupRenderGraph();
+
+  m_scene_graph_root = vsg::StateGroup::create();
+  m_scene_graph_root->addChild(m_scene->GetRoot());
 
   m_viewer = vsg::Viewer::create();
+  SetupRenderGraph();
   SetupCommandGraph();
+
+  /*
+   * *** This is a workaround ***
+   *
+   * Somehow, when we initialize this renderer and directly resize it, the
+   * rendered image is messed up: The rendered area is wrong.
+   * It is only resolved by only resizing the renderer AFTER it once rendered.
+   *
+   * Might this be a bug in the VulkanSceneGraph RenderGraph? Its renderArea
+   * attribute is all over the place. Waiting for documentation of fix.
+   *
+   * -> Constructor -> render -> resize -> render -> ... [OKAY]
+   * -> Constructor -> resize -> render -> ... [NOT OKAY]
+   */
+  Render();
 }
 
 void OffscreenRenderer::SetScene(const scene::SharedScene &scene) {
+  m_scene_graph_root->children.clear();
+  m_scene_graph_root->addChild(scene->GetRoot());
   m_scene = scene;
-
-  // TODO: check if there is a more efficient method than a complete setup
-  SetupRenderGraph();
-  m_viewer = vsg::Viewer::create();
-  SetupCommandGraph();
 }
 
 scene::SharedScene OffscreenRenderer::GetScene() const { return m_scene; }
@@ -500,24 +512,20 @@ void OffscreenRenderer::Resize(int width, int height) {
   width = std::max(width, 1);
   height = std::max(height, 1);
 
-  LOG_INFO("offscreen renderer canvas was resized to " << width << "x"
-                                                       << height)
+  VkExtent2D previous_size = m_size;
 
   m_size.width = width;
   m_size.height = height;
 
-  if (auto perspective =
-          dynamic_cast<vsg::Perspective *>(m_current_projection_matrix.get())) {
-    perspective->aspectRatio =
-        static_cast<double>(m_size.width) / static_cast<double>(m_size.height);
-    m_camera->viewportState = vsg::ViewportState::create(m_size);
-  } else {
-    m_current_projection_matrix.reset();
-  }
+  // modify current camera
+  m_camera->projectionMatrix->changeExtent(previous_size, m_size);
+  m_camera->viewportState = vsg::ViewportState::create(m_size);
 
-  SetupCamera();       // apply new aspect ratio
-  SetupRenderGraph();  // create new render graph for image captures
-  SetupCommandGraph(); // create new image captures for new size
+  // replace image views and capture commands (image size has changed)
+  ReplaceFramebufferAndCaptures();
+
+  LOG_INFO("offscreen renderer canvas was resized to " << width << "x"
+                                                       << height)
 }
 
 std::optional<SharedRenderResult> OffscreenRenderer::GetResult() {
@@ -576,13 +584,6 @@ std::optional<SharedRenderResult> OffscreenRenderer::GetResult() {
                   imageData->dataSize());
 
       render_result->SetExtent(imageData->width(), imageData->height());
-
-      static int i{0};
-      std::stringstream ss;
-      ss << "/home/danielmehlber/Pictures/output-" << i << ".jpg";
-      i++;
-      stbi_write_jpg(ss.str().c_str(), imageData->width(), imageData->height(),
-                     4, color_buffer.data(), 100);
     }
 
     if (m_copied_depth_buffer) {
@@ -621,6 +622,9 @@ std::optional<SharedRenderResult> OffscreenRenderer::GetResult() {
 }
 
 void OffscreenRenderer::SetupRenderGraph() {
+
+  vsg::ref_ptr<vsg::Framebuffer> framebuffer;
+
   if (m_use_depth_buffer) {
     m_color_image_view = createColorImageView(
         m_device, m_size, m_color_image_format, VK_SAMPLE_COUNT_1_BIT);
@@ -629,7 +633,7 @@ void OffscreenRenderer::SetupRenderGraph() {
     if (m_sample_count == VK_SAMPLE_COUNT_1_BIT) {
       auto renderPass = vsg::createRenderPass(m_device, m_color_image_format,
                                               m_depth_image_format, true);
-      m_framebuffer = vsg::Framebuffer::create(
+      framebuffer = vsg::Framebuffer::create(
           renderPass, vsg::ImageViews{m_color_image_view, m_depth_image_view},
           m_size.width, m_size.height, 1);
     } else {
@@ -641,7 +645,7 @@ void OffscreenRenderer::SetupRenderGraph() {
       auto renderPass = vsg::createMultisampledRenderPass(
           m_device, m_color_image_format, m_depth_image_format, m_sample_count,
           true);
-      m_framebuffer = vsg::Framebuffer::create(
+      framebuffer = vsg::Framebuffer::create(
           renderPass,
           vsg::ImageViews{msaa_m_colorImageView, m_color_image_view,
                           msaa_m_depthImageView, m_depth_image_view},
@@ -660,7 +664,7 @@ void OffscreenRenderer::SetupRenderGraph() {
         m_device, m_size, m_color_image_format, VK_SAMPLE_COUNT_1_BIT);
     if (m_sample_count == VK_SAMPLE_COUNT_1_BIT) {
       auto renderPass = vsg::createRenderPass(m_device, m_color_image_format);
-      m_framebuffer = vsg::Framebuffer::create(
+      framebuffer = vsg::Framebuffer::create(
           renderPass, vsg::ImageViews{m_color_image_view}, m_size.width,
           m_size.height, 1);
     } else {
@@ -669,7 +673,7 @@ void OffscreenRenderer::SetupRenderGraph() {
 
       auto renderPass = vsg::createMultisampledRenderPass(
           m_device, m_color_image_format, m_sample_count);
-      m_framebuffer = vsg::Framebuffer::create(
+      framebuffer = vsg::Framebuffer::create(
           renderPass,
           vsg::ImageViews{msaa_m_colorImageView, m_color_image_view},
           m_size.width, m_size.height, 1);
@@ -683,7 +687,7 @@ void OffscreenRenderer::SetupRenderGraph() {
 
   m_render_graph = vsg::RenderGraph::create();
 
-  m_render_graph->framebuffer = m_framebuffer;
+  m_render_graph->framebuffer = framebuffer;
   m_render_graph->renderArea.offset = {0, 0};
   m_render_graph->renderArea.extent = m_size;
   m_render_graph->setClearValues({{1.0f, 1.0f, 0.0f, 0.0f}},
@@ -691,7 +695,7 @@ void OffscreenRenderer::SetupRenderGraph() {
 }
 
 void OffscreenRenderer::SetupCommandGraph() {
-  auto view = vsg::View::create(m_camera, m_scene->GetRoot());
+  auto view = vsg::View::create(m_camera, m_scene_graph_root);
 
   vsg::CommandGraphs commandGraphs;
   m_render_graph->addChild(view);
@@ -722,4 +726,93 @@ void OffscreenRenderer::SetCameraViewMatrix(
     vsg::ref_ptr<vsg::ViewMatrix> matrix) {
   m_camera->viewMatrix = matrix;
   m_current_view_matrix = matrix;
+}
+
+void replaceChild(vsg::Group *group, const vsg::ref_ptr<vsg::Node> &previous,
+                  const vsg::ref_ptr<vsg::Node> &replacement) {
+
+  for (auto &child : group->children) {
+    if (child == previous)
+      child = replacement;
+  }
+};
+
+void OffscreenRenderer::ReplaceFramebufferAndCaptures() {
+  auto previous_colorBufferCapture = m_color_buffer_capture;
+  auto previous_depthBufferCapture = m_depth_buffer_capture;
+
+  vsg::ref_ptr<vsg::Framebuffer> framebuffer;
+
+  if (m_use_depth_buffer) {
+    m_color_image_view = createColorImageView(
+        m_device, m_size, m_color_image_format, VK_SAMPLE_COUNT_1_BIT);
+    m_depth_image_view = createDepthImageView(
+        m_device, m_size, m_depth_image_format, VK_SAMPLE_COUNT_1_BIT);
+    if (m_sample_count == VK_SAMPLE_COUNT_1_BIT) {
+      auto renderPass = vsg::createRenderPass(m_device, m_color_image_format,
+                                              m_depth_image_format, true);
+      framebuffer = vsg::Framebuffer::create(
+          renderPass, vsg::ImageViews{m_color_image_view, m_depth_image_view},
+          m_size.width, m_size.height, 1);
+    } else {
+      auto msaa_colorImageView = createColorImageView(
+          m_device, m_size, m_color_image_format, m_sample_count);
+      auto msaa_depthImageView = createDepthImageView(
+          m_device, m_size, m_depth_image_format, m_sample_count);
+
+      auto renderPass = vsg::createMultisampledRenderPass(
+          m_device, m_color_image_format, m_depth_image_format, m_sample_count,
+          true);
+      framebuffer = vsg::Framebuffer::create(
+          renderPass,
+          vsg::ImageViews{msaa_colorImageView, m_color_image_view,
+                          msaa_depthImageView, m_depth_image_view},
+          m_size.width, m_size.height, 1);
+    }
+
+    m_render_graph->framebuffer = framebuffer;
+
+    // create new copy subgraphs
+    std::tie(m_color_buffer_capture, m_copied_color_buffer) =
+        createColorCapture(m_device, m_size, m_color_image_view->image,
+                           m_color_image_format);
+    std::tie(m_depth_buffer_capture, m_copied_depth_buffer) =
+        createDepthCapture(m_device, m_size, m_depth_image_view->image,
+                           m_depth_image_format);
+
+    replaceChild(m_command_graph, previous_colorBufferCapture,
+                 m_color_buffer_capture);
+    replaceChild(m_command_graph, previous_depthBufferCapture,
+                 m_depth_buffer_capture);
+  } else {
+    m_color_image_view = createColorImageView(
+        m_device, m_size, m_color_image_format, VK_SAMPLE_COUNT_1_BIT);
+    if (m_sample_count == VK_SAMPLE_COUNT_1_BIT) {
+      auto renderPass = vsg::createRenderPass(m_device, m_color_image_format);
+      framebuffer = vsg::Framebuffer::create(
+          renderPass, vsg::ImageViews{m_color_image_view}, m_size.width,
+          m_size.height, 1);
+    } else {
+      auto msaa_colorImageView = createColorImageView(
+          m_device, m_size, m_color_image_format, m_sample_count);
+
+      auto renderPass = vsg::createMultisampledRenderPass(
+          m_device, m_color_image_format, m_sample_count);
+      framebuffer = vsg::Framebuffer::create(
+          renderPass, vsg::ImageViews{msaa_colorImageView, m_color_image_view},
+          m_size.width, m_size.height, 1);
+    }
+
+    m_render_graph->framebuffer = framebuffer;
+
+    // create new copy subgraphs
+    std::tie(m_color_buffer_capture, m_copied_color_buffer) =
+        createColorCapture(m_device, m_size, m_color_image_view->image,
+                           m_color_image_format);
+
+    replaceChild(m_command_graph, previous_colorBufferCapture,
+                 m_color_buffer_capture);
+    replaceChild(m_command_graph, previous_depthBufferCapture,
+                 m_depth_buffer_capture);
+  }
 }
