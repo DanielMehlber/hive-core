@@ -8,18 +8,16 @@ std::string CharEscapeRenderResultEncoder::Encode(
 
   // escape some special chars by incrementing them
   for (char &i : str) {
-    char c = i;
-    switch (c) {
+    switch (i) {
     case '\"':
     case '\'':
     case '\n':
     case '\r':
-      c = c++;
+      i = i + ((char)1);
       break;
     default:
       break;
     }
-    i = c;
   }
 
   return str;

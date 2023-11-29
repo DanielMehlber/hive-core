@@ -5,6 +5,7 @@
 #include "resourcemgmt/ResourceFactory.h"
 #include "resourcemgmt/loader/impl/FileLoader.h"
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
+#include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
 
 using namespace kernel;
 using namespace jobsystem;
@@ -14,8 +15,8 @@ using namespace resourcemgmt;
 using namespace services;
 using namespace plugins;
 
-Kernel::Kernel(common::subsystems::SharedSubsystemManager subsystems)
-    : m_subsystems(std::move(subsystems)) {
+Kernel::Kernel(bool only_local)
+    : m_subsystems(std::make_shared<common::subsystems::SubsystemManager>()) {
 
   auto job_manager = std::make_shared<JobManager>();
   m_subsystems->AddOrReplaceSubsystem(job_manager);
@@ -33,9 +34,21 @@ Kernel::Kernel(common::subsystems::SharedSubsystemManager subsystems)
       std::make_shared<resourcemgmt::loaders::FileLoader>();
   resource_manager->RegisterLoader(file_resource_loader);
 
-  auto service_registry =
-      std::make_shared<services::impl::LocalOnlyServiceRegistry>();
-  m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(service_registry);
+  if (only_local) {
+    auto service_registry =
+        std::make_shared<services::impl::LocalOnlyServiceRegistry>();
+    m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(service_registry);
+  } else {
+    auto network_manager =
+        std::make_shared<networking::NetworkingManager>(m_subsystems);
+    m_subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
+        network_manager);
+
+    auto service_registry =
+        std::make_shared<services::impl::WebSocketServiceRegistry>(
+            m_subsystems);
+    m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(service_registry);
+  }
 
   auto plugin_context = std::make_shared<PluginContext>(m_subsystems);
   auto plugin_manager = std::make_shared<plugins::BoostPluginManager>(

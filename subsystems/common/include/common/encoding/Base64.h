@@ -1,3 +1,6 @@
+#ifndef BASE64_H
+#define BASE64_H
+
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
@@ -9,7 +12,7 @@
 
 namespace common::coding {
 
-std::string base64_encode(const std::vector<unsigned char> &input) {
+inline std::string base64_encode(const std::vector<unsigned char> &input) {
   using namespace boost::archive::iterators;
 
   typedef base64_from_binary<
@@ -22,7 +25,7 @@ std::string base64_encode(const std::vector<unsigned char> &input) {
   return result.str();
 }
 
-std::vector<unsigned char> base64_decode(const std::string &input) {
+inline std::vector<unsigned char> base64_decode(const std::string &input) {
   using namespace boost::archive::iterators;
 
   typedef transform_width<binary_from_base64<std::string::const_iterator>, 8, 6>
@@ -37,3 +40,5 @@ std::vector<unsigned char> base64_decode(const std::string &input) {
   return std::vector<unsigned char>(decoded_str.begin(), decoded_str.end());
 }
 } // namespace common::coding
+
+#endif

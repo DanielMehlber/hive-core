@@ -110,21 +110,22 @@ BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
   std::promise<void> sending_promise;
   std::future<void> sending_future = sending_promise.get_future();
 
-  std::string payload =
-      networking::websockets::WebSocketMessageConverter::ToJson(message);
+  std::shared_ptr<std::string> payload = std::make_shared<std::string>(
+      networking::websockets::WebSocketMessageConverter::ToJson(message));
 
-  m_socket.async_write(
-      asio::buffer(payload),
-      boost::beast::bind_front_handler(&BoostWebSocketConnection::OnMessageSent,
-                                       shared_from_this(),
-                                       std::move(sending_promise), message));
+  m_socket.binary(true);
+  m_socket.async_write(asio::buffer(*payload),
+                       boost::beast::bind_front_handler(
+                           &BoostWebSocketConnection::OnMessageSent,
+                           shared_from_this(), std::move(sending_promise),
+                           message, payload));
 
   return std::move(sending_future);
 }
 
 void BoostWebSocketConnection::OnMessageSent(
     std::promise<void> &&promise, SharedWebSocketMessage message,
-    boost::beast::error_code error_code,
+    std::shared_ptr<std::string> sent_data, boost::beast::error_code error_code,
     [[maybe_unused]] std::size_t bytes_transferred) {
   if (error_code) {
     LOG_WARN("Sending message via web-socket to remote host "
@@ -143,7 +144,8 @@ void BoostWebSocketConnection::OnMessageSent(
 
   promise.set_value();
   LOG_DEBUG("Sent message of type "
-            << message->GetType() << " via web-socket to host "
+            << message->GetType() << " (" << sent_data->size()
+            << " bytes) via web-socket to host "
             << m_remote_endpoint_data.address().to_string() << ":"
             << m_remote_endpoint_data.port());
 }

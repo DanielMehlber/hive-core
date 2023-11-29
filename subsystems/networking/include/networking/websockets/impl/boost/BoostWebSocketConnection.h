@@ -67,6 +67,7 @@ private:
    */
   void OnMessageSent(std::promise<void> &&promise,
                      SharedWebSocketMessage message,
+                     std::shared_ptr<std::string> sent_data,
                      boost::beast::error_code error_code,
                      [[maybe_unused]] std::size_t bytes_transferred);
 

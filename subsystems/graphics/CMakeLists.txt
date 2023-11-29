@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(graphics)
 
-find_package(Boost REQUIRED COMPONENTS log)
+find_package(Boost REQUIRED COMPONENTS log system iostreams)
 find_package(vsg REQUIRED)
+find_package(ZLIB REQUIRED)
 
 add_subdirectory(src)
 add_subdirectory(test)

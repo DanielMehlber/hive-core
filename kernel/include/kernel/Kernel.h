@@ -24,8 +24,7 @@ protected:
   std::shared_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
 public:
-  Kernel(common::subsystems::SharedSubsystemManager subsystems =
-             std::make_shared<common::subsystems::SubsystemManager>());
+  Kernel(bool only_local = true);
 
   /**
    * @brief Places a timed rendering job in the job system and causes the

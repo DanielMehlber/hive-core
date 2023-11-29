@@ -1,7 +1,7 @@
 #ifndef BASE64RENDERRESULTENCODER_H
 #define BASE64RENDERRESULTENCODER_H
 
-#include "common/coding/Base64.h"
+#include "common/encoding/Base64.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 
 namespace graphics {

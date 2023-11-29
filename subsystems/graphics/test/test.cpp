@@ -3,6 +3,9 @@
 #include "graphics/service/RenderService.h"
 #include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
+#include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
+#include "graphics/service/encoders/impl/CharEscapeRenderResultEncoder.h"
+#include "graphics/service/encoders/impl/GzipRenderResultEncoder.h"
 #include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
@@ -72,12 +75,16 @@ common::subsystems::SharedSubsystemManager SetupSubsystems() {
 TEST(GraphicsTests, remote_render_service) {
   auto subsystems_1 = SetupSubsystems();
 
+  auto encoder = std::make_shared<graphics::GzipRenderResultEncoder>();
+  subsystems_1->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(encoder);
+
   auto job_manager = subsystems_1->RequireSubsystem<JobManager>();
 
   auto subsystems_2 =
       std::make_shared<common::subsystems::SubsystemManager>(*subsystems_1);
 
   SharedRenderer renderer = std::make_shared<OffscreenRenderer>();
+  subsystems_2->AddOrReplaceSubsystem<IRenderer>(renderer);
 
   NODE node1 = setupNode(9005, subsystems_1);
   NODE node2 = setupNode(9006, subsystems_2);
@@ -106,8 +113,7 @@ TEST(GraphicsTests, remote_render_service) {
 
   SharedServiceCaller caller = REGISTRY_OF(node2)->Find("render").get().value();
   for (int i = 0; i < 3; i++) {
-    auto result_fut =
-        caller->Call(GenerateRenderingRequest(100, 100), job_manager);
+    auto result_fut = caller->Call(GenerateRenderingRequest(5, 5), job_manager);
 
     auto start_point = std::chrono::high_resolution_clock::now();
     job_manager->InvokeCycleAndWait();
@@ -120,6 +126,7 @@ TEST(GraphicsTests, remote_render_service) {
 
     SharedServiceResponse response;
     ASSERT_NO_THROW(response = result_fut.get());
+    ASSERT_TRUE(response->GetStatus() == OK);
   }
 }
 
