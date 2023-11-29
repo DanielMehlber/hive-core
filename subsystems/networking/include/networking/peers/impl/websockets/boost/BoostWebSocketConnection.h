@@ -1,12 +1,12 @@
 #ifndef BOOSTWEBSOCKETCONNECTION_H
 #define BOOSTWEBSOCKETCONNECTION_H
 
+#include "common/exceptions/ExceptionsBase.h"
 #include "networking/Networking.h"
-#include "networking/websockets/PeerConnectionInfo.h"
-#include "networking/websockets/PeerMessage.h"
+#include "networking/peers/PeerConnectionInfo.h"
+#include "networking/peers/PeerMessage.h"
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
-#include <common/exceptions/ExceptionsBase.h>
 #include <future>
 #include <memory>
 

@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETSERVICEEXECUTOR_H
 #define WEBSOCKETSERVICEEXECUTOR_H
 
-#include "networking/websockets/IPeer.h"
+#include "networking/peers/IPeer.h"
 #include "services/Services.h"
 #include "services/executor/IServiceExecutor.h"
 #include "services/registry/impl/websockets/WebSocketServiceResponseConsumer.h"

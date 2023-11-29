@@ -1,4 +1,4 @@
-#include "networking/websockets/PeerMessageConsumerJob.h"
+#include "networking/peers/PeerMessageConsumerJob.h"
 #include <functional>
 #include <utility>
 

@@ -1,4 +1,4 @@
-#include "networking/websockets/impl/boost/BoostWebSocketConnectionListener.h"
+#include "networking/peers/impl/websockets/boost/BoostWebSocketConnectionListener.h"
 
 using namespace networking::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>

@@ -2,12 +2,12 @@
 #define BOOSTWEBSOCKETCONNECTIONLISTENER_H
 
 #include "BoostWebSocketConnection.h"
+#include "common/exceptions/ExceptionsBase.h"
+#include "properties/PropertyProvider.h"
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
-#include <common/exceptions/ExceptionsBase.h>
 #include <functional>
 #include <memory>
-#include <properties/PropertyProvider.h>
 
 namespace networking::websockets {
 

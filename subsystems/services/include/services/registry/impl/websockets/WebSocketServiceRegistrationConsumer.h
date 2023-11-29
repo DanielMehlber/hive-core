@@ -1,8 +1,8 @@
 #ifndef WEBSOCKETSERVICEREGISTRATIONCONSUMER_H
 #define WEBSOCKETSERVICEREGISTRATIONCONSUMER_H
 
-#include "networking/websockets/IPeer.h"
-#include "networking/websockets/IPeerMessageConsumer.h"
+#include "networking/peers/IPeer.h"
+#include "networking/peers/IPeerMessageConsumer.h"
 #include "services/Services.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistrationMessage.h"

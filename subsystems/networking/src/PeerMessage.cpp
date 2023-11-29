@@ -1,4 +1,4 @@
-#include "networking/websockets/PeerMessage.h"
+#include "networking/peers/PeerMessage.h"
 #include "common/uuid/UuidGenerator.h"
 
 using namespace networking::websockets;

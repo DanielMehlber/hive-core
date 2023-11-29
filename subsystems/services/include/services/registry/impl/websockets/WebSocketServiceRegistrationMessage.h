@@ -3,7 +3,7 @@
 
 #include <utility>
 
-#include "networking/websockets/PeerMessage.h"
+#include "networking/peers/PeerMessage.h"
 #include "services/Services.h"
 
 using namespace networking::websockets;

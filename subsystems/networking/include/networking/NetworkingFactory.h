@@ -2,8 +2,8 @@
 #define NETWORKINGFACTORY_H
 
 #include "networking/Networking.h"
-#include "websockets/IPeer.h"
-#include "websockets/impl/boost/BoostWebSocketPeer.h"
+#include "peers/IPeer.h"
+#include "peers/impl/websockets/boost/BoostWebSocketPeer.h"
 #include <memory>
 
 using namespace networking::websockets;

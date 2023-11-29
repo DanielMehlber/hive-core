@@ -1,5 +1,5 @@
 #include "logging/LogManager.h"
-#include "networking/websockets/PeerMessageConverter.h"
+#include "networking/peers/PeerMessageConverter.h"
 #include <boost/json.hpp>
 
 using namespace networking::websockets;

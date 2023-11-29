@@ -1,6 +1,6 @@
 #include "services/registry/impl/websockets/WebSocketServiceRegistrationConsumer.h"
 #include "logging/LogManager.h"
-#include "networking/websockets/PeerConnectionInfo.h"
+#include "networking/peers/PeerConnectionInfo.h"
 #include "services/executor/impl/WebSocketServiceExecutor.h"
 
 using namespace services::impl;

@@ -1,7 +1,7 @@
-#include "networking/websockets/impl/boost/BoostWebSocketPeer.h"
+#include "networking/peers/impl/websockets/boost/BoostWebSocketPeer.h"
+#include "networking/peers/PeerMessageConsumerJob.h"
+#include "networking/peers/PeerMessageConverter.h"
 #include "networking/util/UrlParser.h"
-#include "networking/websockets/PeerMessageConsumerJob.h"
-#include "networking/websockets/PeerMessageConverter.h"
 #include <regex>
 #include <utility>
 

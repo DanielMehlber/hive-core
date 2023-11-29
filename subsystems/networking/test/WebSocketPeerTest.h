@@ -5,7 +5,7 @@
 #include "jobsystem/JobSystem.h"
 #include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
-#include "networking/websockets/PeerConnectionInfo.h"
+#include "networking/peers/PeerConnectionInfo.h"
 
 using namespace networking;
 using namespace networking::websockets;

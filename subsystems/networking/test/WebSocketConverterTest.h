@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETCONVERTERTEST_H
 #define WEBSOCKETCONVERTERTEST_H
 
-#include "networking/websockets/PeerMessageConverter.h"
+#include "networking/peers/PeerMessageConverter.h"
 #include <gtest/gtest.h>
 #include <memory>
 

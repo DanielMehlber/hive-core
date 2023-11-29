@@ -2,10 +2,10 @@
 #define BOOSTWEBSOCKETCONNECTIONESTABLISHER_H
 
 #include "BoostWebSocketConnection.h"
+#include "common/exceptions/ExceptionsBase.h"
+#include "properties/PropertyProvider.h"
 #include <boost/asio.hpp>
-#include <common/exceptions/ExceptionsBase.h>
 #include <future>
-#include <properties/PropertyProvider.h>
 
 namespace networking::websockets {
 

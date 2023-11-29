@@ -2,8 +2,8 @@
 #define WEBSOCKETSERVICEREQUESTCONSUMER_H
 
 #include "jobsystem/manager/JobManager.h"
-#include "networking/websockets/IPeer.h"
-#include "networking/websockets/IPeerMessageConsumer.h"
+#include "networking/peers/IPeer.h"
+#include "networking/peers/IPeerMessageConsumer.h"
 #include "services/Services.h"
 #include "services/caller/IServiceCaller.h"
 

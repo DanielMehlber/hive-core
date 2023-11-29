@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETSERVICERESPONSECONSUMER_H
 #define WEBSOCKETSERVICERESPONSECONSUMER_H
 
-#include "networking/websockets/IPeerMessageConsumer.h"
+#include "networking/peers/IPeerMessageConsumer.h"
 #include "services/ServiceResponse.h"
 #include "services/Services.h"
 #include <future>

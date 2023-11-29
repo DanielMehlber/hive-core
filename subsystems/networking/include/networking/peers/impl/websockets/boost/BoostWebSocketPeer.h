@@ -8,7 +8,7 @@
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/Networking.h"
-#include "networking/websockets/IPeer.h"
+#include "networking/peers/IPeer.h"
 #include "properties/PropertyProvider.h"
 #include <atomic>
 #include <boost/beast/core.hpp>
