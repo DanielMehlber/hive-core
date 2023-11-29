@@ -9,7 +9,7 @@ using namespace services;
 using namespace jobsystem;
 
 WebSocketServiceExecutor::WebSocketServiceExecutor(
-    std::string service_name, std::weak_ptr<IWebSocketPeer> peer,
+    std::string service_name, std::weak_ptr<IPeer> peer,
     std::string remote_host_name,
     std::weak_ptr<WebSocketServiceResponseConsumer> response_consumer)
     : m_web_socket_peer(std::move(peer)),

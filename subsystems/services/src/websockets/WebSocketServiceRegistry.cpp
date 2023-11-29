@@ -8,8 +8,7 @@ using namespace services::impl;
 using namespace std::placeholders;
 
 void broadcastServiceRegistration(
-    const std::weak_ptr<IWebSocketPeer> &sender,
-    const SharedServiceExecutor &stub,
+    const std::weak_ptr<IPeer> &sender, const SharedServiceExecutor &stub,
     const jobsystem::SharedJobManager &job_manager) {
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
       [sender, stub](jobsystem::JobContext *context) {
@@ -18,7 +17,7 @@ void broadcastServiceRegistration(
                    << stub->GetServiceName()
                    << " because web-socket peer has been destroyed")
         } else {
-          auto message = std::make_shared<WebSocketMessage>(
+          auto message = std::make_shared<PeerMessage>(
               MESSAGE_TYPE_WS_SERVICE_REGISTRATION);
           auto registration =
               std::make_shared<WebSocketServiceRegistrationMessage>(message);
@@ -48,8 +47,7 @@ void broadcastServiceRegistration(
 void WebSocketServiceRegistry::Register(const SharedServiceExecutor &stub) {
   auto job_manager =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
-  auto web_socket_peer =
-      m_subsystems.lock()->RequireSubsystem<IWebSocketPeer>();
+  auto web_socket_peer = m_subsystems.lock()->RequireSubsystem<IPeer>();
 
   std::string name = stub->GetServiceName();
 
@@ -139,8 +137,7 @@ WebSocketServiceRegistry::WebSocketServiceRegistry(
 
   auto job_manager =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
-  auto web_socket_peer =
-      m_subsystems.lock()->RequireSubsystem<IWebSocketPeer>();
+  auto web_socket_peer = m_subsystems.lock()->RequireSubsystem<IPeer>();
 
   auto response_consumer = std::make_shared<WebSocketServiceResponseConsumer>();
   m_response_consumer = response_consumer;

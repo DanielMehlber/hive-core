@@ -1,8 +1,8 @@
 #ifndef WEBSOCKETSERVICEREGISTRATIONCONSUMER_H
 #define WEBSOCKETSERVICEREGISTRATIONCONSUMER_H
 
-#include "networking/websockets/IWebSocketMessageConsumer.h"
-#include "networking/websockets/IWebSocketPeer.h"
+#include "networking/websockets/IPeer.h"
+#include "networking/websockets/IPeerMessageConsumer.h"
 #include "services/Services.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistrationMessage.h"
@@ -17,24 +17,24 @@ namespace services::impl {
  * host.
  */
 class SERVICES_API WebSocketServiceRegistrationConsumer
-    : public IWebSocketMessageConsumer {
+    : public IPeerMessageConsumer {
 private:
   std::function<void(SharedServiceExecutor)> m_consumer;
   std::weak_ptr<WebSocketServiceResponseConsumer> m_response_consumer;
-  std::weak_ptr<IWebSocketPeer> m_web_socket_peer;
+  std::weak_ptr<IPeer> m_web_socket_peer;
 
 public:
   WebSocketServiceRegistrationConsumer() = delete;
   explicit WebSocketServiceRegistrationConsumer(
       std::function<void(SharedServiceExecutor)> consumer,
       std::weak_ptr<WebSocketServiceResponseConsumer> response_consumer,
-      std::weak_ptr<IWebSocketPeer> web_socket_peer);
+      std::weak_ptr<IPeer> web_socket_peer);
 
   std::string GetMessageType() const noexcept override;
 
-  void ProcessReceivedMessage(
-      SharedWebSocketMessage received_message,
-      WebSocketConnectionInfo connection_info) noexcept override;
+  void
+  ProcessReceivedMessage(SharedWebSocketMessage received_message,
+                         PeerConnectionInfo connection_info) noexcept override;
 };
 
 inline std::string

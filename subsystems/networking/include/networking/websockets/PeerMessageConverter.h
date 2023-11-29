@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETMESSAGECONVERTER_H
 #define WEBSOCKETMESSAGECONVERTER_H
 
-#include "WebSocketMessage.h"
+#include "PeerMessage.h"
 #include "common/exceptions/ExceptionsBase.h"
 #include "networking/Networking.h"
 
@@ -12,7 +12,7 @@ DECLARE_EXCEPTION(MessagePayloadInvalidException);
 /**
  * Converts the payload of web-socket messages to data objects and vice versa.
  */
-class NETWORKING_API WebSocketMessageConverter {
+class NETWORKING_API PeerMessageConverter {
 public:
   /**
    * Generates a web-socket data object from json payload

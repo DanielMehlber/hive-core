@@ -5,7 +5,7 @@
 #include "jobsystem/JobSystem.h"
 #include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
-#include "networking/websockets/WebSocketConnectionInfo.h"
+#include "networking/websockets/PeerConnectionInfo.h"
 
 using namespace networking;
 using namespace networking::websockets;
@@ -34,14 +34,14 @@ SetupWebSocketPeer(const common::subsystems::SharedSubsystemManager &subsystems,
   return server;
 }
 
-class TestConsumer : public IWebSocketMessageConsumer {
+class TestConsumer : public IPeerMessageConsumer {
 public:
   std::mutex counter_mutex;
   size_t counter{0};
   std::string GetMessageType() const noexcept override { return "test-type"; }
-  void ProcessReceivedMessage(
-      SharedWebSocketMessage received_message,
-      WebSocketConnectionInfo connection_info) noexcept override {
+  void
+  ProcessReceivedMessage(SharedWebSocketMessage received_message,
+                         PeerConnectionInfo connection_info) noexcept override {
     std::unique_lock lock(counter_mutex);
     counter++;
   }
@@ -79,8 +79,7 @@ TEST(WebSockets, websockets_connection_closing) {
   subsystems->AddOrReplaceSubsystem(job_manager);
 
   SharedWebSocketPeer peer1 = SetupWebSocketPeer(subsystems, 9003);
-  SharedWebSocketMessage message =
-      std::make_shared<WebSocketMessage>("test-type");
+  SharedWebSocketMessage message = std::make_shared<PeerMessage>("test-type");
   {
     auto subsystems_copy =
         std::make_shared<common::subsystems::SubsystemManager>(*subsystems);
@@ -117,8 +116,7 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
   result1.wait();
   ASSERT_NO_THROW(result1.get());
 
-  SharedWebSocketMessage message =
-      std::make_shared<WebSocketMessage>("test-type");
+  SharedWebSocketMessage message = std::make_shared<PeerMessage>("test-type");
 
   SendMessageAndWait(message, peer1, "ws://127.0.0.1:9004");
 
@@ -163,8 +161,7 @@ TEST(WebSockets, websockets_message_receiving_multiple) {
   ASSERT_NO_THROW(result1.get());
 
   for (int i = 0; i < 5; i++) {
-    SharedWebSocketMessage message =
-        std::make_shared<WebSocketMessage>("test-type");
+    SharedWebSocketMessage message = std::make_shared<PeerMessage>("test-type");
     SendMessageAndWait(message, peer1, "ws://127.0.0.1:9004");
   }
 
@@ -199,8 +196,7 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
     result.wait();
     ASSERT_NO_THROW(result.get());
 
-    SharedWebSocketMessage message =
-        std::make_shared<WebSocketMessage>("test-type");
+    SharedWebSocketMessage message = std::make_shared<PeerMessage>("test-type");
 
     SendMessageAndWait(message, peer, "ws://127.0.0.1:9003");
 
@@ -240,8 +236,7 @@ TEST(WebSockets, websockets_message_broadcast) {
     peers.push_back(peer);
   }
 
-  SharedWebSocketMessage message =
-      std::make_shared<WebSocketMessage>("test-type");
+  SharedWebSocketMessage message = std::make_shared<PeerMessage>("test-type");
 
   auto future = peer1->Broadcast(message);
   job_manager->InvokeCycleAndWait();

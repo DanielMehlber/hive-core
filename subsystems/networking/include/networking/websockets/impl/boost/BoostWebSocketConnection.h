@@ -2,8 +2,8 @@
 #define BOOSTWEBSOCKETCONNECTION_H
 
 #include "networking/Networking.h"
-#include "networking/websockets/WebSocketConnectionInfo.h"
-#include "networking/websockets/WebSocketMessage.h"
+#include "networking/websockets/PeerConnectionInfo.h"
+#include "networking/websockets/PeerMessage.h"
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <common/exceptions/ExceptionsBase.h>
@@ -127,7 +127,7 @@ public:
    * Generates connection info object from current connection data
    * @return connection info object
    */
-  WebSocketConnectionInfo GetConnectionInfo() const;
+  PeerConnectionInfo GetConnectionInfo() const;
 };
 
 inline std::string BoostWebSocketConnection::GetRemoteHostAddress() const {

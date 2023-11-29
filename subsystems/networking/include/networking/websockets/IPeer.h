@@ -1,7 +1,7 @@
 #ifndef IWEBSOCKETSERVER_H
 #define IWEBSOCKETSERVER_H
 
-#include "IWebSocketMessageConsumer.h"
+#include "IPeerMessageConsumer.h"
 #include "common/exceptions/ExceptionsBase.h"
 #include "properties/PropertyProvider.h"
 #include <future>
@@ -17,7 +17,7 @@ DECLARE_EXCEPTION(PeerSetupException);
  * @brief A generic interface declaring a web-socket peer that can accept
  * connections,
  */
-class IWebSocketPeer {
+class IPeer {
 public:
   /**
    * @brief Adds a consumer for a specific type of arriving messages to the
@@ -28,8 +28,7 @@ public:
    * @throws DuplicateConsumerTypeException if there is already a consumer for
    * that type registered.
    */
-  virtual void
-  AddConsumer(std::weak_ptr<IWebSocketMessageConsumer> consumer) = 0;
+  virtual void AddConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) = 0;
 
   /**
    * @brief Tries to retrieve a valid consumer for the given message type (if
@@ -95,7 +94,7 @@ public:
   virtual bool HasConnectionTo(const std::string &uri) const noexcept = 0;
 };
 
-typedef std::shared_ptr<IWebSocketPeer> SharedWebSocketPeer;
+typedef std::shared_ptr<IPeer> SharedWebSocketPeer;
 
 } // namespace networking::websockets
 

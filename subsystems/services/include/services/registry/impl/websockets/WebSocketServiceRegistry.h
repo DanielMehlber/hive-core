@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETSERVICEREGISTRY_H
 #define WEBSOCKETSERVICEREGISTRY_H
 
-#include "networking/websockets/IWebSocketPeer.h"
+#include "networking/websockets/IPeer.h"
 #include "services/Services.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistrationConsumer.h"

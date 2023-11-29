@@ -2,8 +2,8 @@
 #define WEBSOCKETSERVICEREQUESTCONSUMER_H
 
 #include "jobsystem/manager/JobManager.h"
-#include "networking/websockets/IWebSocketMessageConsumer.h"
-#include "networking/websockets/IWebSocketPeer.h"
+#include "networking/websockets/IPeer.h"
+#include "networking/websockets/IPeerMessageConsumer.h"
 #include "services/Services.h"
 #include "services/caller/IServiceCaller.h"
 
@@ -16,7 +16,7 @@ namespace services::impl {
  * service and sends its response back to the caller.
  */
 class SERVICES_API WebSocketServiceRequestConsumer
-    : public IWebSocketMessageConsumer {
+    : public IPeerMessageConsumer {
 private:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
@@ -28,7 +28,7 @@ private:
   query_func_type m_service_query_func;
 
   /** Used to send responses */
-  std::weak_ptr<IWebSocketPeer> m_web_socket_peer;
+  std::weak_ptr<IPeer> m_web_socket_peer;
 
 public:
   WebSocketServiceRequestConsumer(
@@ -38,9 +38,9 @@ public:
 
   std::string GetMessageType() const noexcept override;
 
-  void ProcessReceivedMessage(
-      SharedWebSocketMessage received_message,
-      WebSocketConnectionInfo connection_info) noexcept override;
+  void
+  ProcessReceivedMessage(SharedWebSocketMessage received_message,
+                         PeerConnectionInfo connection_info) noexcept override;
 };
 
 inline std::string

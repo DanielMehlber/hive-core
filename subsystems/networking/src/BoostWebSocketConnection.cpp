@@ -1,6 +1,6 @@
 #include "networking/websockets/impl/boost/BoostWebSocketConnection.h"
 #include "logging/LogManager.h"
-#include "networking/websockets/WebSocketMessageConverter.h"
+#include "networking/websockets/PeerMessageConverter.h"
 #include <boost/asio.hpp>
 #include <utility>
 
@@ -111,7 +111,7 @@ BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
   std::future<void> sending_future = sending_promise.get_future();
 
   std::shared_ptr<std::string> payload = std::make_shared<std::string>(
-      networking::websockets::WebSocketMessageConverter::ToJson(message));
+      networking::websockets::PeerMessageConverter::ToJson(message));
 
   m_socket.binary(true);
   m_socket.async_write(asio::buffer(*payload),
@@ -150,8 +150,8 @@ void BoostWebSocketConnection::OnMessageSent(
             << m_remote_endpoint_data.port());
 }
 
-WebSocketConnectionInfo BoostWebSocketConnection::GetConnectionInfo() const {
-  WebSocketConnectionInfo info;
+PeerConnectionInfo BoostWebSocketConnection::GetConnectionInfo() const {
+  PeerConnectionInfo info;
   info.SetHostname(GetRemoteHostAddress());
   return std::move(info);
 }

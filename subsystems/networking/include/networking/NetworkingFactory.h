@@ -2,7 +2,7 @@
 #define NETWORKINGFACTORY_H
 
 #include "networking/Networking.h"
-#include "websockets/IWebSocketPeer.h"
+#include "websockets/IPeer.h"
 #include "websockets/impl/boost/BoostWebSocketPeer.h"
 #include <memory>
 
@@ -20,7 +20,7 @@ class NETWORKING_API NetworkingFactory {
 public:
   /**
    * @brief Create new web-socket peer implementation
-   * @tparam ServerImpl Implementation type of IWebSocketPeer interface
+   * @tparam ServerImpl Implementation type of IPeer interface
    * @tparam Args Arguments types
    * @param args Arguments that will be passed to the implementation's
    * constructor
@@ -33,8 +33,7 @@ public:
 template <typename ServerImpl, typename... Args>
 inline SharedWebSocketPeer
 NetworkingFactory::CreateWebSocketPeer(Args... args) {
-  return std::static_pointer_cast<IWebSocketPeer>(
-      std::make_shared<ServerImpl>(args...));
+  return std::static_pointer_cast<IPeer>(std::make_shared<ServerImpl>(args...));
 }
 
 } // namespace networking

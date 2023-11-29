@@ -1,8 +1,8 @@
 #ifndef IWEBSOCKETMESSAGECONSUMER_H
 #define IWEBSOCKETMESSAGECONSUMER_H
 
-#include "WebSocketConnectionInfo.h"
-#include "WebSocketMessage.h"
+#include "PeerConnectionInfo.h"
+#include "PeerMessage.h"
 #include <memory>
 
 namespace networking::websockets {
@@ -11,8 +11,8 @@ namespace networking::websockets {
  * @brief Generic interface for receiving messages that are sent over the
  * network
  */
-class IWebSocketMessageConsumer
-    : public std::enable_shared_from_this<IWebSocketMessageConsumer> {
+class IPeerMessageConsumer
+    : public std::enable_shared_from_this<IPeerMessageConsumer> {
 public:
   /**
    * @brief Returns the web-socket message type this consumer listens to
@@ -26,11 +26,10 @@ public:
    */
   virtual void
   ProcessReceivedMessage(SharedWebSocketMessage received_message,
-                         WebSocketConnectionInfo connection_info) noexcept = 0;
+                         PeerConnectionInfo connection_info) noexcept = 0;
 };
 
-typedef std::shared_ptr<IWebSocketMessageConsumer>
-    SharedWebSocketMessageConsumer;
+typedef std::shared_ptr<IPeerMessageConsumer> SharedWebSocketMessageConsumer;
 
 } // namespace networking::websockets
 

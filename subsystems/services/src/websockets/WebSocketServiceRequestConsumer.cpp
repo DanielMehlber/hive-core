@@ -12,7 +12,7 @@ WebSocketServiceRequestConsumer::WebSocketServiceRequestConsumer(
 
 void WebSocketServiceRequestConsumer::ProcessReceivedMessage(
     SharedWebSocketMessage received_message,
-    WebSocketConnectionInfo connection_info) noexcept {
+    PeerConnectionInfo connection_info) noexcept {
 
   if (m_subsystems.expired()) {
     LOG_ERR("Cannot process received message because subsystems have already "

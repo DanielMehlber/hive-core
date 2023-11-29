@@ -17,7 +17,7 @@ namespace networking::websockets {
  * renders messages extendable because new types with custom attributes can be
  * defined anytime.
  */
-class NETWORKING_API WebSocketMessage {
+class NETWORKING_API PeerMessage {
 protected:
   /**
    * @brief Type of this message
@@ -35,9 +35,9 @@ protected:
   std::map<std::string, std::string> m_attributes;
 
 public:
-  explicit WebSocketMessage(std::string message_type);
-  WebSocketMessage(std::string message_type, std::string id);
-  virtual ~WebSocketMessage();
+  explicit PeerMessage(std::string message_type);
+  PeerMessage(std::string message_type, std::string id);
+  virtual ~PeerMessage();
 
   /**
    * @return unique id of this message
@@ -76,13 +76,13 @@ public:
    * @param other other message
    * @return true if both messages are equal in content
    */
-  bool EqualsTo(std::shared_ptr<WebSocketMessage> other) const noexcept;
+  bool EqualsTo(std::shared_ptr<PeerMessage> other) const noexcept;
 };
 
-inline std::string WebSocketMessage::GetId() const noexcept { return m_uuid; }
-inline std::string WebSocketMessage::GetType() const noexcept { return m_type; }
+inline std::string PeerMessage::GetId() const noexcept { return m_uuid; }
+inline std::string PeerMessage::GetType() const noexcept { return m_type; }
 
-typedef std::shared_ptr<WebSocketMessage> SharedWebSocketMessage;
+typedef std::shared_ptr<PeerMessage> SharedWebSocketMessage;
 
 } // namespace networking::websockets
 

@@ -1,7 +1,7 @@
 #include "networking/websockets/impl/boost/BoostWebSocketPeer.h"
 #include "networking/util/UrlParser.h"
-#include "networking/websockets/WebSocketMessageConsumerJob.h"
-#include "networking/websockets/WebSocketMessageConverter.h"
+#include "networking/websockets/PeerMessageConsumerJob.h"
+#include "networking/websockets/PeerMessageConverter.h"
 #include <regex>
 #include <utility>
 
@@ -112,7 +112,7 @@ BoostWebSocketPeer::~BoostWebSocketPeer() {
 }
 
 void BoostWebSocketPeer::AddConsumer(
-    std::weak_ptr<IWebSocketMessageConsumer> consumer) {
+    std::weak_ptr<IPeerMessageConsumer> consumer) {
   bool is_valid_consumer = !consumer.expired();
   if (is_valid_consumer) {
     SharedWebSocketMessageConsumer shared_consumer = consumer.lock();
@@ -155,10 +155,9 @@ void BoostWebSocketPeer::CleanUpConsumersOf(const std::string &type) noexcept {
   if (m_consumers.contains(type)) {
     std::unique_lock consumers_lock(m_consumers_mutex);
     auto &consumer_list = m_consumers[type];
-    consumer_list.remove_if(
-        [](const std::weak_ptr<IWebSocketMessageConsumer> &con) {
-          return con.expired();
-        });
+    consumer_list.remove_if([](const std::weak_ptr<IPeerMessageConsumer> &con) {
+      return con.expired();
+    });
   }
 }
 
@@ -182,7 +181,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   // convert payload into message
   SharedWebSocketMessage message;
   try {
-    message = networking::websockets::WebSocketMessageConverter::FromJson(data);
+    message = networking::websockets::PeerMessageConverter::FromJson(data);
   } catch (const MessagePayloadInvalidException &ex) {
     LOG_WARN("message received from host "
              << over_connection->GetRemoteHostAddress()
@@ -193,7 +192,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   std::string message_type = message->GetType();
   auto consumer_list = GetConsumersOfType(message_type);
   for (auto consumer : consumer_list) {
-    auto job = std::make_shared<WebSocketMessageConsumerJob>(
+    auto job = std::make_shared<PeerMessageConsumerJob>(
         consumer, message, over_connection->GetConnectionInfo());
     job_manager->KickJob(job);
   }

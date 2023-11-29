@@ -6,7 +6,7 @@ using namespace services::impl;
 
 void WebSocketServiceResponseConsumer::ProcessReceivedMessage(
     SharedWebSocketMessage received_message,
-    WebSocketConnectionInfo connection_info) noexcept {
+    PeerConnectionInfo connection_info) noexcept {
 
   auto opt_response = WebSocketServiceMessagesConverter::ToServiceResponse(
       std::move(*received_message));

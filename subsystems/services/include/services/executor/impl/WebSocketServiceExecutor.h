@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETSERVICEEXECUTOR_H
 #define WEBSOCKETSERVICEEXECUTOR_H
 
-#include "networking/websockets/IWebSocketPeer.h"
+#include "networking/websockets/IPeer.h"
 #include "services/Services.h"
 #include "services/executor/IServiceExecutor.h"
 #include "services/registry/impl/websockets/WebSocketServiceResponseConsumer.h"
@@ -21,7 +21,7 @@ class SERVICES_API WebSocketServiceExecutor
       public std::enable_shared_from_this<WebSocketServiceExecutor> {
 private:
   /** Peer that will be used to send calls to remote services */
-  std::weak_ptr<IWebSocketPeer> m_web_socket_peer;
+  std::weak_ptr<IPeer> m_web_socket_peer;
 
   /** Hostname of remote endpoint (recipient of call message) */
   std::string m_remote_host_name;
@@ -39,7 +39,7 @@ private:
 public:
   WebSocketServiceExecutor() = delete;
   explicit WebSocketServiceExecutor(
-      std::string service_name, std::weak_ptr<IWebSocketPeer> peer,
+      std::string service_name, std::weak_ptr<IPeer> peer,
       std::string remote_host_name,
       std::weak_ptr<WebSocketServiceResponseConsumer> response_consumer);
 

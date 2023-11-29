@@ -5,7 +5,7 @@
 
 namespace networking::websockets {
 
-class WebSocketConnectionInfo {
+class PeerConnectionInfo {
 protected:
   std::string m_hostname;
 
@@ -14,11 +14,11 @@ public:
   std::string GetHostname() const;
 };
 
-inline void WebSocketConnectionInfo::SetHostname(const std::string &hostname) {
+inline void PeerConnectionInfo::SetHostname(const std::string &hostname) {
   m_hostname = hostname;
 }
 
-inline std::string WebSocketConnectionInfo::GetHostname() const {
+inline std::string PeerConnectionInfo::GetHostname() const {
   return m_hostname;
 }
 

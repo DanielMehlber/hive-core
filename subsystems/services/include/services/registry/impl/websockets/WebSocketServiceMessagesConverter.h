@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETSERVICERESPONSEMESSAGE_H
 #define WEBSOCKETSERVICERESPONSEMESSAGE_H
 
-#include "networking/websockets/WebSocketMessage.h"
+#include "networking/websockets/PeerMessage.h"
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
 #include "services/Services.h"
@@ -24,7 +24,7 @@ public:
    * @return service response object (or nothing if message was invalid)
    */
   static std::optional<SharedServiceResponse>
-  ToServiceResponse(WebSocketMessage &&message);
+  ToServiceResponse(PeerMessage &&message);
 
   /**
    * Consumes and converts a response object to a web-socket message.

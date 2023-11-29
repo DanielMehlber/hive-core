@@ -5,8 +5,7 @@ using namespace services::impl;
 using namespace services;
 
 std::optional<SharedServiceResponse>
-WebSocketServiceMessagesConverter::ToServiceResponse(
-    WebSocketMessage &&message) {
+WebSocketServiceMessagesConverter::ToServiceResponse(PeerMessage &&message) {
 
   auto opt_transaction_id = message.GetAttribute("transaction-id");
   if (!opt_transaction_id.has_value()) {
@@ -51,7 +50,7 @@ SharedWebSocketMessage WebSocketServiceMessagesConverter::FromServiceRequest(
     const services::ServiceRequest &request) {
 
   SharedWebSocketMessage message =
-      std::make_shared<WebSocketMessage>("service-request");
+      std::make_shared<PeerMessage>("service-request");
 
   for (const auto &result_name : request.GetParameterNames()) {
     message->SetAttribute(result_name,
@@ -96,7 +95,7 @@ SharedWebSocketMessage WebSocketServiceMessagesConverter::FromServiceResponse(
     ServiceResponse &&response) {
 
   SharedWebSocketMessage message =
-      std::make_shared<WebSocketMessage>("service-response");
+      std::make_shared<PeerMessage>("service-response");
 
   for (const auto &result_name : response.GetResultNames()) {
     message->SetAttribute(result_name,

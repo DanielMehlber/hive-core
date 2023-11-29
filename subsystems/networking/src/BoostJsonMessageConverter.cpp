@@ -1,12 +1,11 @@
 #include "logging/LogManager.h"
-#include "networking/websockets/WebSocketMessageConverter.h"
+#include "networking/websockets/PeerMessageConverter.h"
 #include <boost/json.hpp>
 
 using namespace networking::websockets;
 using namespace boost;
 
-SharedWebSocketMessage
-networking::websockets::WebSocketMessageConverter::FromJson(
+SharedWebSocketMessage networking::websockets::PeerMessageConverter::FromJson(
     const std::string &json) {
   json::error_code err;
   json::value message_body = boost::json::parse(json, err);
@@ -25,7 +24,7 @@ networking::websockets::WebSocketMessageConverter::FromJson(
     std::string type = message_body.at("type").as_string().c_str();
 
     SharedWebSocketMessage parsed_message =
-        std::make_shared<WebSocketMessage>(type, id);
+        std::make_shared<PeerMessage>(type, id);
 
     // Extract 'attributes' as a map
     std::map<std::string, std::string> attributes;
@@ -43,7 +42,7 @@ networking::websockets::WebSocketMessageConverter::FromJson(
 }
 
 std::string
-WebSocketMessageConverter::ToJson(const SharedWebSocketMessage &message) {
+PeerMessageConverter::ToJson(const SharedWebSocketMessage &message) {
   auto id = message->GetId();
   json::object message_body;
   message_body["id"] = message->GetId();

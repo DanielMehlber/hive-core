@@ -8,7 +8,7 @@
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/Networking.h"
-#include "networking/websockets/IWebSocketPeer.h"
+#include "networking/websockets/IPeer.h"
 #include "properties/PropertyProvider.h"
 #include <atomic>
 #include <boost/beast/core.hpp>
@@ -25,7 +25,7 @@ DECLARE_EXCEPTION(NoSuchPeerException);
  * a web-socket communication peer.
  */
 class NETWORKING_API BoostWebSocketPeer
-    : public IWebSocketPeer,
+    : public IPeer,
       public std::enable_shared_from_this<BoostWebSocketPeer> {
 private:
   /**
@@ -39,7 +39,7 @@ private:
   /**
    * @brief maps message type names to their consumers
    */
-  std::map<std::string, std::list<std::weak_ptr<IWebSocketMessageConsumer>>>
+  std::map<std::string, std::list<std::weak_ptr<IPeerMessageConsumer>>>
       m_consumers;
   mutable std::mutex m_consumers_mutex;
 
@@ -103,7 +103,7 @@ public:
       const common::subsystems::SharedSubsystemManager &subsystems);
   virtual ~BoostWebSocketPeer();
 
-  void AddConsumer(std::weak_ptr<IWebSocketMessageConsumer> consumer) override;
+  void AddConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) override;
 
   std::list<SharedWebSocketMessageConsumer>
   GetConsumersOfType(const std::string &type_name) noexcept override;
