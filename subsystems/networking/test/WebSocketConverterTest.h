@@ -14,9 +14,11 @@ TEST(WebSockets, message_converter_serializing) {
   message->SetAttribute("attr2", "value2");
 
   std::string payload =
-      networking::websockets::PeerMessageConverter::ToJson(message);
+      networking::websockets::PeerMessageConverter::ToMultipartFormData(
+          message);
   SharedWebSocketMessage same_message =
-      networking::websockets::PeerMessageConverter::FromJson(payload);
+      networking::websockets::PeerMessageConverter::FromMultipartFormData(
+          payload);
 
   ASSERT_TRUE(message->EqualsTo(same_message));
 }
@@ -29,12 +31,13 @@ TEST(WebSockets, message_converter_invalid) {
   message->SetAttribute("attr2", "value2");
 
   std::string payload =
-      networking::websockets::PeerMessageConverter::ToJson(message);
+      networking::websockets::PeerMessageConverter::ToMultipartFormData(
+          message);
 
   // now half of the message gets lost
   auto invalid_payload = payload.substr(0, payload.size() / 2);
 
-  ASSERT_THROW(converter.FromJson(invalid_payload),
+  ASSERT_THROW(converter.FromMultipartFormData(invalid_payload),
                MessagePayloadInvalidException);
 }
 

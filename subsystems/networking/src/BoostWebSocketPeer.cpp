@@ -181,7 +181,9 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   // convert payload into message
   SharedWebSocketMessage message;
   try {
-    message = networking::websockets::PeerMessageConverter::FromJson(data);
+    message =
+        networking::websockets::PeerMessageConverter::FromMultipartFormData(
+            data);
   } catch (const MessagePayloadInvalidException &ex) {
     LOG_WARN("message received from host "
              << over_connection->GetRemoteHostAddress()

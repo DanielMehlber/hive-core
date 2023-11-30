@@ -111,7 +111,8 @@ BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
   std::future<void> sending_future = sending_promise.get_future();
 
   std::shared_ptr<std::string> payload = std::make_shared<std::string>(
-      networking::websockets::PeerMessageConverter::ToJson(message));
+      networking::websockets::PeerMessageConverter::ToMultipartFormData(
+          message));
 
   m_socket.binary(true);
   m_socket.async_write(asio::buffer(*payload),

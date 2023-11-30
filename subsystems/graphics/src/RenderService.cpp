@@ -23,7 +23,7 @@ RenderService::RenderService(
   // register render-result encoder if none
   if (!m_subsystems.lock()->ProvidesSubsystem<IRenderResultEncoder>()) {
     m_subsystems.lock()->AddOrReplaceSubsystem<IRenderResultEncoder>(
-        std::make_shared<GzipRenderResultEncoder>());
+        std::make_shared<PlainRenderResultEncoder>());
   }
 }
 

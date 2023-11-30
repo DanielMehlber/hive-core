@@ -16,9 +16,9 @@ void TiledCompositeRendererPlugin::Init(plugins::SharedPluginContext context) {
 
   auto tiling_job = std::make_shared<TimerJob>(
       [tiled_renderer](jobsystem::JobContext *context) {
-        static int i{0};
+        static int i{1};
         i++;
-        if (i > 3) {
+        if (i > 5) {
           return JobContinuation::DISPOSE;
         } else {
           tiled_renderer->SetServiceCount(i);

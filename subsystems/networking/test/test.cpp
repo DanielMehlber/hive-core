@@ -1,3 +1,4 @@
+#include "MultipartFormdataTest.h"
 #include "UrlParserTest.h"
 #include "WebSocketConverterTest.h"
 #include "WebSocketPeerTest.h"

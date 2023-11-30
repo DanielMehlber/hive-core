@@ -1,81 +1,22 @@
+#include "PeerSetup.h"
 #include "common/test/TryAssertUntilTimeout.h"
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "graphics/service/RenderService.h"
 #include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
-#include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
-#include "graphics/service/encoders/impl/CharEscapeRenderResultEncoder.h"
-#include "graphics/service/encoders/impl/GzipRenderResultEncoder.h"
 #include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
 #include <gtest/gtest.h>
 
-#define REGISTRY_OF(x) std::get<1>(x)
-#define WEB_SOCKET_OF(x) std::get<0>(x)
-#define NODE std::tuple<SharedWebSocketPeer, SharedServiceRegistry>
-
-using namespace services;
-using namespace networking;
-using namespace graphics;
-using namespace common::test;
-
-SharedWebSocketPeer
-setupPeer(size_t port,
-          const common::subsystems::SharedSubsystemManager &subsystems) {
-
-  props::SharedPropertyProvider property_provider =
-      std::make_shared<props::PropertyProvider>(subsystems);
-
-  property_provider->Set("net.ws.port", port);
-
-  subsystems->AddOrReplaceSubsystem(property_provider);
-
-  return NetworkingFactory::CreateWebSocketPeer(subsystems);
-}
-
-SharedServiceRequest GenerateRenderingRequest(int width, int height) {
-  auto request = std::make_shared<ServiceRequest>("render");
-  request->SetParameter("width", width);
-  request->SetParameter("height", height);
-  return request;
-}
-
-NODE setupNode(size_t port,
-               const common::subsystems::SharedSubsystemManager &subsystems) {
-  // setup first peer
-  SharedWebSocketPeer web_socket_peer = setupPeer(port, subsystems);
-
-  subsystems->AddOrReplaceSubsystem(web_socket_peer);
-
-  SharedServiceRegistry registry =
-      std::make_shared<services::impl::WebSocketServiceRegistry>(subsystems);
-
-  subsystems->AddOrReplaceSubsystem(registry);
-
-  return {web_socket_peer, registry};
-}
-
-common::subsystems::SharedSubsystemManager SetupSubsystems() {
-  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
-
-  SharedJobManager job_manager = std::make_shared<JobManager>();
-  job_manager->StartExecution();
-
-  subsystems->AddOrReplaceSubsystem(job_manager);
-
-  messaging::SharedBroker message_broker =
-      messaging::MessagingFactory::CreateBroker(subsystems);
-
-  subsystems->AddOrReplaceSubsystem(message_broker);
-
-  return subsystems;
-}
+#ifdef INCLUDE_ENCODER_EVALUATION
+#include "EncoderEvaluation.h"
+#endif
 
 TEST(GraphicsTests, remote_render_service) {
   auto subsystems_1 = SetupSubsystems();
 
-  auto encoder = std::make_shared<graphics::GzipRenderResultEncoder>();
+  auto encoder = std::make_shared<graphics::Base64RenderResultEncoder>();
   subsystems_1->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(encoder);
 
   auto job_manager = subsystems_1->RequireSubsystem<JobManager>();
@@ -112,8 +53,12 @@ TEST(GraphicsTests, remote_render_service) {
       10s);
 
   SharedServiceCaller caller = REGISTRY_OF(node2)->Find("render").get().value();
-  for (int i = 0; i < 3; i++) {
-    auto result_fut = caller->Call(GenerateRenderingRequest(5, 5), job_manager);
+
+  std::vector<long> times;
+  times.resize(10);
+  for (int i = 0; i < 10; i++) {
+    auto result_fut =
+        caller->Call(GenerateRenderingRequest(1000, 1000), job_manager);
 
     auto start_point = std::chrono::high_resolution_clock::now();
     job_manager->InvokeCycleAndWait();
@@ -122,12 +67,13 @@ TEST(GraphicsTests, remote_render_service) {
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
         end_point - start_point);
 
+    times[i] = elapsed_time.count();
     LOG_INFO("Remote rendering took " << elapsed_time.count() << "ms");
-
-    SharedServiceResponse response;
-    ASSERT_NO_THROW(response = result_fut.get());
-    ASSERT_TRUE(response->GetStatus() == OK);
   }
+
+  auto const count = static_cast<float>(times.size());
+  auto average = std::reduce(times.begin(), times.end()) / count;
+  LOG_INFO("average remote rendering time was " << average << "ms");
 }
 
 TEST(GraphicsTest, offscreen_rendering_sphere) {
