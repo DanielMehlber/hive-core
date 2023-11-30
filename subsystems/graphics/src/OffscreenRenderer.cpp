@@ -363,7 +363,7 @@ createDepthCapture(const vsg::ref_ptr<vsg::Device> &device,
 }
 
 void OffscreenRenderer::SetupInstanceAndDevice(
-    const RendererInfo &pre_init_info) {
+    const RendererSetup &pre_init_info) {
   if (pre_init_info.instance && pre_init_info.device) {
     m_instance = pre_init_info.instance;
     m_device = pre_init_info.device;
@@ -443,7 +443,7 @@ void OffscreenRenderer::SetupCamera() {
   }
 }
 
-OffscreenRenderer::OffscreenRenderer(RendererInfo pre_init_info,
+OffscreenRenderer::OffscreenRenderer(RendererSetup pre_init_setup,
                                      scene::SharedScene scene,
                                      bool use_depth_buffer, bool msaa,
                                      VkFormat imageFormat, VkFormat depthFormat,
@@ -456,7 +456,7 @@ OffscreenRenderer::OffscreenRenderer(RendererInfo pre_init_info,
   if (m_msaa)
     m_sample_count = VK_SAMPLE_COUNT_8_BIT;
 
-  SetupInstanceAndDevice(pre_init_info);
+  SetupInstanceAndDevice(pre_init_setup);
   SetupCamera();
 
   m_scene_graph_root = vsg::StateGroup::create();

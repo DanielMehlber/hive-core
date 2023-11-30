@@ -7,7 +7,11 @@
 
 namespace graphics {
 
-struct RendererInfo {
+/**
+ * Contains Vulkan setup that can be used to create more renderers without
+ * initializing them from the ground up.
+ */
+struct RendererSetup {
   vsg::ref_ptr<vsg::Device> device;
   vsg::ref_ptr<vsg::Instance> instance;
 };
@@ -37,7 +41,7 @@ public:
   SetCameraProjectionMatrix(vsg::ref_ptr<vsg::ProjectionMatrix> matrix) = 0;
   virtual void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) = 0;
 
-  virtual RendererInfo GetInfo() const = 0;
+  virtual RendererSetup GetSetup() const = 0;
 };
 
 typedef std::shared_ptr<IRenderer> SharedRenderer;

@@ -84,7 +84,7 @@ TEST(GraphicsTest, offscreen_rendering_sphere) {
   auto scene = std::make_shared<scene::SceneManager>();
   scene->GetRoot()->addChild(builder.createSphere());
 
-  graphics::RendererInfo info;
+  graphics::RendererSetup info;
   SharedRenderer renderer = std::make_shared<OffscreenRenderer>(info, scene);
   subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(renderer);
 

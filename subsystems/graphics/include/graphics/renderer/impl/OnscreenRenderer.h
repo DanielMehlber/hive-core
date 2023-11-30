@@ -17,7 +17,8 @@ protected:
 
 public:
   explicit OnscreenRenderer(
-      scene::SharedScene scene = std::make_shared<scene::SceneManager>());
+      scene::SharedScene scene = std::make_shared<scene::SceneManager>(),
+      int width = 500, int height = 500);
 
   bool Render() override;
 
@@ -33,10 +34,10 @@ public:
       vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
   void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
 
-  RendererInfo GetInfo() const override;
+  RendererSetup GetSetup() const override;
 };
 
-inline RendererInfo OnscreenRenderer::GetInfo() const {
+inline RendererSetup OnscreenRenderer::GetSetup() const {
   return {m_window->getDevice(), m_window->getInstance()};
 }
 

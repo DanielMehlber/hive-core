@@ -14,6 +14,8 @@ int main(int argc, const char **argv) {
   bool enable_rendering_service;
   bool enable_rendering_job;
   int service_port;
+  int width, height;
+  int max_update_rate;
 
   po::options_description options("Allowed options");
   options.add_options()("help", "Shows this help message")(
@@ -29,7 +31,13 @@ int main(int argc, const char **argv) {
       "Sets port to access network services of this instance and enables "
       "remote services")("enable-render-job",
                          po::bool_switch(&enable_rendering_job),
-                         "Enables rendering job and continuous rendering");
+                         "Enables rendering job and continuous rendering")(
+      "width,w", po::value<int>(&width)->default_value(500),
+      "Initial width of the renderer")(
+      "height,h", po::value<int>(&height)->default_value(500),
+      "Initial height of the renderer")(
+      "update,u", po::value<int>(&max_update_rate)->default_value(-1),
+      "Rate limit of update operations");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, options), vm);
@@ -66,7 +74,8 @@ int main(int argc, const char **argv) {
   }
 
   if (renderer_type == "onscreen") {
-    auto renderer = std::make_shared<graphics::OnscreenRenderer>(scene);
+    auto renderer =
+        std::make_shared<graphics::OnscreenRenderer>(scene, width, height);
     kernel.SetRenderer(renderer);
 
     if (enable_rendering_job) {
@@ -75,17 +84,17 @@ int main(int argc, const char **argv) {
 
     if (enable_rendering_service) {
       auto offscreen_renderer = std::make_shared<graphics::OffscreenRenderer>(
-          renderer->GetInfo(), scene);
+          renderer->GetSetup(), scene);
 
       kernel.EnableRenderingService(offscreen_renderer);
-      offscreen_renderer->Resize(200, 200);
+      offscreen_renderer->Resize(width, height);
     }
   } else if (renderer_type == "offscreen") {
-    graphics::RendererInfo info{};
+    graphics::RendererSetup info{};
     auto renderer = std::make_shared<graphics::OffscreenRenderer>(info, scene);
     kernel.SetRenderer(renderer);
 
-    renderer->Resize(500, 500);
+    renderer->Resize(width, height);
 
     if (enable_rendering_job) {
       kernel.EnableRenderingJob();
@@ -100,7 +109,21 @@ int main(int argc, const char **argv) {
     kernel.GetPluginManager()->InstallPlugins(plugin_path);
   }
 
-  while (true) {
+  auto targetInterval = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      1000ms / max_update_rate);
+
+  auto lastIterationTime = std::chrono::steady_clock::now();
+
+  while (!kernel.ShouldShutdown()) {
+
+    auto currentTime = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(
+        currentTime - lastIterationTime);
+    if (elapsed < targetInterval) {
+      // Sleep to maintain the desired rate limit
+      std::this_thread::sleep_for(targetInterval - elapsed);
+    }
+    lastIterationTime = std::chrono::steady_clock::now();
     kernel.GetJobManager()->InvokeCycleAndWait();
   }
 

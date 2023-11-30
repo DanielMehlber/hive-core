@@ -22,9 +22,22 @@ namespace kernel {
 class Kernel : public std::enable_shared_from_this<Kernel> {
 protected:
   std::shared_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  bool m_should_shutdown{false};
 
 public:
   Kernel(bool only_local = true);
+
+  /**
+   * Checks if the kernel is supposed to shut down
+   * @return true if shutdown should be performed
+   */
+  bool ShouldShutdown() const;
+
+  /**
+   * Advices the kernel to shutdown on the next occasion.
+   * @param value shutdown value
+   */
+  void Shutdown(bool value = true);
 
   /**
    * @brief Places a timed rendering job in the job system and causes the
@@ -137,6 +150,10 @@ inline graphics::SharedRenderer Kernel::GetRenderer() const {
 inline void Kernel::SetRenderer(const graphics::SharedRenderer &renderer) {
   m_subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(renderer);
 }
+
+inline bool Kernel::ShouldShutdown() const { return m_should_shutdown; }
+
+inline void Kernel::Shutdown(bool value) { m_should_shutdown = value; }
 
 } // namespace kernel
 

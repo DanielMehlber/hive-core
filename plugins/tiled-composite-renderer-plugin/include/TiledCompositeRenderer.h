@@ -72,11 +72,11 @@ public:
       vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
   void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
 
-  graphics::RendererInfo GetInfo() const override;
+  graphics::RendererSetup GetSetup() const override;
 };
 
-inline graphics::RendererInfo TiledCompositeRenderer::GetInfo() const {
-  return m_output_renderer->GetInfo();
+inline graphics::RendererSetup TiledCompositeRenderer::GetSetup() const {
+  return m_output_renderer->GetSetup();
 }
 
 #endif // TILEDCOMPOSITERENDERER_H

@@ -45,11 +45,12 @@ void OnscreenRenderer::SetupCommandGraph() {
   m_viewer->compile();
 }
 
-OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene)
+OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene, int width,
+                                   int height)
     : m_scene(std::move(scene)) {
   auto windowTraits = vsg::WindowTraits::create();
-  windowTraits->width = 1000;
-  windowTraits->height = 1000;
+  windowTraits->width = width;
+  windowTraits->height = height;
 
 #ifndef NDEBUG
   // windowTraits->debugLayer = true;

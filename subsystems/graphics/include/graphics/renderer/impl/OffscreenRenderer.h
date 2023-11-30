@@ -47,7 +47,7 @@ private:
 
   void SetupCamera();
   void SetupRenderGraph();
-  void SetupInstanceAndDevice(const RendererInfo &pre_init_info = {});
+  void SetupInstanceAndDevice(const RendererSetup &pre_init_info = {});
   void SetupCommandGraph();
 
   /**
@@ -71,12 +71,12 @@ public:
    * buffer
    * @param m_sample_count sample count for multisampling
    * @param m_size initial size of image to render (can be changed later)
-   * @param pre_init_info if the device and instance are already set-up, they
+   * @param pre_init_setup if the device and instance are already set-up, they
    * can be passed using the renderer info. This renderer will then use the
    * provided ones and does not create its own.
    */
   explicit OffscreenRenderer(
-      RendererInfo pre_init_info = {},
+      RendererSetup pre_init_setup = {},
       scene::SharedScene scene = std::make_shared<scene::SceneManager>(),
       bool use_depth_buffer = true, bool msaa = false,
       VkFormat m_imageFormat = VK_FORMAT_R8G8B8A8_UNORM,
@@ -103,10 +103,10 @@ public:
       vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
   void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
 
-  RendererInfo GetInfo() const override;
+  RendererSetup GetSetup() const override;
 };
 
-inline RendererInfo OffscreenRenderer::GetInfo() const {
+inline RendererSetup OffscreenRenderer::GetSetup() const {
   return {m_device, m_instance};
 }
 
