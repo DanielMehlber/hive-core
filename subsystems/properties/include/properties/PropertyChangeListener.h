@@ -1,8 +1,8 @@
 #ifndef PROPERTYCHANGELISTENER_H
 #define PROPERTYCHANGELISTENER_H
 
+#include "events/listener/IEventListener.h"
 #include "logging/LogManager.h"
-#include "messaging/subscriber/IMessageSubscriber.h"
 #include "properties/Properties.h"
 #include <memory>
 
@@ -11,16 +11,15 @@ namespace props {
 /**
  * @brief Listens to changes of a specific property or a subset of properties
  * based on their path in the property tree. Under the hood, updating properties
- * emits messages to topics that instances of this class subscribed. Therefore,
- * the property system is founded on the messaging system and makes heavy use of
+ * emits events to topics that instances of this class subscribed. Therefore,
+ * the property system is founded on the events system and makes heavy use of
  * it.
  */
-class PROPERTIES_API PropertyChangeListener
-    : public messaging::IMessageSubscriber {
+class PROPERTIES_API PropertyChangeListener : public events::IEventListener {
 protected:
   const std::string m_property_listener_id;
 
-  void HandleMessage(messaging::SharedMessage message) override;
+  void HandleMessage(events::SharedEvent message) override;
   std::string GetId() const override;
 
 public:

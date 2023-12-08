@@ -1,13 +1,13 @@
 #ifndef SIMULATION_FRAMEWORK_PEERSETUP_H
 #define SIMULATION_FRAMEWORK_PEERSETUP_H
 
+#include "events/EventFactory.h"
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "graphics/service/RenderService.h"
 #include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
-#include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
-#include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
+#include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
 #define REGISTRY_OF(x) std::get<1>(x)
 #define WEB_SOCKET_OF(x) std::get<0>(x)
@@ -45,8 +45,8 @@ NODE setupNode(size_t port,
 
   subsystems->AddOrReplaceSubsystem(web_socket_peer);
 
-  SharedServiceRegistry registry =
-      std::make_shared<services::impl::WebSocketServiceRegistry>(subsystems);
+  auto registry =
+      std::make_shared<services::impl::RemoteServiceRegistry>(subsystems);
 
   subsystems->AddOrReplaceSubsystem(registry);
 
@@ -61,8 +61,8 @@ common::subsystems::SharedSubsystemManager SetupSubsystems() {
 
   subsystems->AddOrReplaceSubsystem(job_manager);
 
-  messaging::SharedBroker message_broker =
-      messaging::MessagingFactory::CreateBroker(subsystems);
+  events::SharedEventBroker message_broker =
+      events::EventFactory::CreateBroker(subsystems);
 
   subsystems->AddOrReplaceSubsystem(message_broker);
 

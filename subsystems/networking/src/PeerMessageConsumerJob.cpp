@@ -6,7 +6,7 @@ using namespace networking::websockets;
 using namespace std::placeholders;
 
 PeerMessageConsumerJob::PeerMessageConsumerJob(
-    SharedWebSocketMessageConsumer consumer, SharedWebSocketMessage message,
+    SharedPeerMessageConsumer consumer, SharedWebSocketMessage message,
     PeerConnectionInfo connection_info)
     : jobsystem::job::Job(
           std::bind(&PeerMessageConsumerJob::ConsumeMessage, this, _1),

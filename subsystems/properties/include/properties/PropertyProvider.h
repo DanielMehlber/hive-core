@@ -3,7 +3,7 @@
 
 #include "PropertyChangeListener.h"
 #include "common/subsystems/SubsystemManager.h"
-#include "messaging/broker/IMessageBroker.h"
+#include "events/broker/IEventBroker.h"
 #include "properties/Properties.h"
 #include <boost/property_tree/ptree.hpp>
 #include <memory>

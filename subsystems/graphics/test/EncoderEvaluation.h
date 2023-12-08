@@ -3,6 +3,7 @@
 
 #include "PeerSetup.h"
 #include "common/test/TryAssertUntilTimeout.h"
+#include "events/EventFactory.h"
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "graphics/service/RenderService.h"
 #include "graphics/service/RenderServiceRequest.h"
@@ -10,7 +11,6 @@
 #include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
 #include "graphics/service/encoders/impl/GzipRenderResultEncoder.h"
 #include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
-#include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
 #include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
 #include <gtest/gtest.h>

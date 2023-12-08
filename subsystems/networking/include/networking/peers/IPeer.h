@@ -20,7 +20,7 @@ DECLARE_EXCEPTION(PeerSetupException);
 class IPeer {
 public:
   /**
-   * @brief Adds a consumer for a specific type of arriving messages to the
+   * @brief Adds a consumer for a specific type of arriving events to the
    * register.
    * @attention Every type of message can only have a single consumer at a time,
    * so the type must be unique.
@@ -33,10 +33,10 @@ public:
   /**
    * @brief Tries to retrieve a valid consumer for the given message type (if
    * one is registered and has not expired yet)
-   * @param type_name type name of the messages that the consumer processes
+   * @param type_name type name of the events that the consumer processes
    * @return a consumer if one has been found for the given type
    */
-  virtual std::list<SharedWebSocketMessageConsumer>
+  virtual std::list<SharedPeerMessageConsumer>
   GetConsumersOfType(const std::string &type_name) noexcept = 0;
 
   /**

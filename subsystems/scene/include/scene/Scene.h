@@ -1,5 +1,5 @@
-#ifndef LOGGING_EXPORT_MACRO_H
-#define LOGGING_EXPORT_MACRO_H
+#ifndef SCENE_EXPORT_MACRO_H
+#define SCENE_EXPORT_MACRO_H
 
 #ifdef _WIN32
 // For Windows (MSVC compiler)

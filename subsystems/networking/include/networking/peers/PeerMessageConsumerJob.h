@@ -14,14 +14,14 @@ namespace networking::websockets {
 class NETWORKING_API PeerMessageConsumerJob : public jobsystem::job::Job {
 protected:
   const SharedWebSocketMessage m_message;
-  const SharedWebSocketMessageConsumer m_consumer;
+  const SharedPeerMessageConsumer m_consumer;
   const PeerConnectionInfo m_connection_info;
 
   jobsystem::job::JobContinuation
   ConsumeMessage([[maybe_unused]] jobsystem::JobContext *context);
 
 public:
-  PeerMessageConsumerJob(SharedWebSocketMessageConsumer consumer,
+  PeerMessageConsumerJob(SharedPeerMessageConsumer consumer,
                          SharedWebSocketMessage message,
                          PeerConnectionInfo connection_info);
 };

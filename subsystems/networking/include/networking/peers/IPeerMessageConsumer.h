@@ -8,7 +8,7 @@
 namespace networking::websockets {
 
 /**
- * @brief Generic interface for receiving messages that are sent over the
+ * @brief Generic interface for receiving events that are sent over the
  * network
  */
 class IPeerMessageConsumer
@@ -21,7 +21,7 @@ public:
   virtual std::string GetMessageType() const noexcept = 0;
 
   /**
-   * @brief Reacts to received messages and processes them
+   * @brief Reacts to received events and processes them
    * @param received_message message
    */
   virtual void
@@ -29,7 +29,7 @@ public:
                          PeerConnectionInfo connection_info) noexcept = 0;
 };
 
-typedef std::shared_ptr<IPeerMessageConsumer> SharedWebSocketMessageConsumer;
+typedef std::shared_ptr<IPeerMessageConsumer> SharedPeerMessageConsumer;
 
 } // namespace networking::websockets
 

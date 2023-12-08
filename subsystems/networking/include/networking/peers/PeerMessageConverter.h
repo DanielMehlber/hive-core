@@ -10,7 +10,7 @@ namespace networking::websockets {
 DECLARE_EXCEPTION(MessagePayloadInvalidException);
 
 /**
- * Converts the payload of web-socket messages to data objects and vice versa.
+ * Converts the payload of web-socket events to data objects and vice versa.
  */
 class NETWORKING_API PeerMessageConverter {
 public:

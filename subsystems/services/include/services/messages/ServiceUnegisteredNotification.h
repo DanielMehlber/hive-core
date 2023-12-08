@@ -1,4 +1,4 @@
-#include "messaging/Message.h"
+#include "events/Event.h"
 
 #ifndef SERVICEUNREGISTEREDMESSAGE_H
 #define SERVICEUNREGISTEREDMESSAGE_H
@@ -6,21 +6,21 @@
 namespace services {
 class ServiceUnregisteredNotification {
 private:
-  messaging::SharedMessage m_message;
+  events::SharedEvent m_message;
 
 public:
   explicit ServiceUnregisteredNotification(
-      messaging::SharedMessage message = std::make_shared<messaging::Message>(
-          "service-unregistered-notification"))
+      events::SharedEvent message =
+          std::make_shared<events::Event>("service-unregistered-notification"))
       : m_message(std::move(message)) {}
 
-  messaging::SharedMessage GetMessage();
+  events::SharedEvent GetMessage();
 
   void SetServiceName(const std::string &name);
   std::string GetServiceName();
 };
 
-inline messaging::SharedMessage ServiceUnregisteredNotification::GetMessage() {
+inline events::SharedEvent ServiceUnregisteredNotification::GetMessage() {
   return m_message;
 }
 

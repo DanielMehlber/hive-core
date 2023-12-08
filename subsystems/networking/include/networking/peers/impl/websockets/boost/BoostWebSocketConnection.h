@@ -27,7 +27,7 @@ private:
   mutable std::mutex m_socket_mutex;
 
   /**
-   * @brief Buffer for received messages
+   * @brief Buffer for received events
    */
   boost::beast::flat_buffer m_buffer;
 
@@ -78,7 +78,7 @@ public:
    * @param on_message_received callback function on when a message has been
    * received
    * @attention The newly constructed connection won't automatically listen to
-   * incoming messages. This can be started by calling StartReceivingMessages.
+   * incoming events. This can be started by calling StartReceivingMessages.
    */
   BoostWebSocketConnection(
       stream_type &&socket,
@@ -92,10 +92,10 @@ public:
   ~BoostWebSocketConnection();
 
   /**
-   * @brief Lets connection listen for incoming messages and processes them on
+   * @brief Lets connection listen for incoming events and processes them on
    * arrival
    * @attention Without this call, the connection won't be able to process
-   * incoming messages
+   * incoming events
    */
   void StartReceivingMessages();
 
@@ -119,7 +119,7 @@ public:
   /**
    * Checks if the connected endpoint is reachable, i.e. if the connection is
    * still standing.
-   * @return true, if the connection can be used for sending/receiving messages
+   * @return true, if the connection can be used for sending/receiving events
    */
   bool IsUsable() const;
 

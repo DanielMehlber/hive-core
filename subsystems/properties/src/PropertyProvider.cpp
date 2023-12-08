@@ -1,5 +1,5 @@
 #include "properties/PropertyProvider.h"
-#include "messaging/MessagingFactory.h"
+#include "events/EventFactory.h"
 #include <sstream>
 #include <vector>
 
@@ -46,22 +46,22 @@ std::string buildTopicName(const std::string &path) {
 
 void PropertyProvider::RegisterListener(
     const std::string &path, const SharedPropertyListener &listener) {
-  std::shared_ptr<messaging::IMessageSubscriber> subscriber =
-      std::static_pointer_cast<messaging::IMessageSubscriber>(listener);
+  std::shared_ptr<events::IEventListener> subscriber =
+      std::static_pointer_cast<events::IEventListener>(listener);
 
   auto message_broker =
-      m_subsystems.lock()->RequireSubsystem<messaging::IMessageBroker>();
-  message_broker->AddSubscriber(subscriber, buildTopicName(path));
+      m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+  message_broker->RegisterListener(subscriber, buildTopicName(path));
 }
 
 void PropertyProvider::UnregisterListener(
     const SharedPropertyListener &listener) {
-  std::shared_ptr<messaging::IMessageSubscriber> subscriber =
-      std::static_pointer_cast<messaging::IMessageSubscriber>(listener);
+  std::shared_ptr<events::IEventListener> subscriber =
+      std::static_pointer_cast<events::IEventListener>(listener);
 
   auto message_broker =
-      m_subsystems.lock()->RequireSubsystem<messaging::IMessageBroker>();
-  message_broker->RemoveSubscriber(subscriber);
+      m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+  message_broker->UnregisterListener(subscriber);
 }
 
 void PropertyProvider::NotifyListenersAboutChange(
@@ -69,13 +69,12 @@ void PropertyProvider::NotifyListenersAboutChange(
   std::vector<std::string> paths = getSubpaths(path, '.');
 
   for (const auto &subpath : paths) {
-    messaging::SharedMessage message =
-        messaging::MessagingFactory::CreateMessage(buildTopicName(subpath));
+    auto event = std::make_shared<events::Event>(buildTopicName(subpath));
 
-    message->SetPayload("property-key", path);
+    event->SetPayload("property-key", path);
 
     auto message_broker =
-        m_subsystems.lock()->RequireSubsystem<messaging::IMessageBroker>();
-    message_broker->PublishMessage(message);
+        m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+    message_broker->FireEvent(event);
   }
 }

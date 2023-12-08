@@ -1,8 +1,8 @@
 #ifndef PROPERTYCHANGELISTENERTEST_H
 #define PROPERTYCHANGELISTENERTEST_H
 
+#include "events/EventFactory.h"
 #include "logging/LogManager.h"
-#include "messaging/MessagingFactory.h"
 #include "properties/PropertyChangeListener.h"
 #include "properties/PropertyProvider.h"
 #include <gtest/gtest.h>
@@ -33,8 +33,8 @@ common::subsystems::SharedSubsystemManager SetupSubsystems() {
 
   subsystems->AddOrReplaceSubsystem(job_manager);
 
-  messaging::SharedBroker broker =
-      messaging::MessagingFactory::CreateBroker(subsystems);
+  events::SharedEventBroker broker =
+      events::EventFactory::CreateBroker(subsystems);
 
   subsystems->AddOrReplaceSubsystem(broker);
   return subsystems;
@@ -98,7 +98,7 @@ TEST(PropertyTest, listener_unregistered) {
   auto subsystems = SetupSubsystems();
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
   job_manager->StartExecution();
-  
+
   PropertyProvider provider(subsystems);
 
   // this just assures that there is no segfault happening when the listener is

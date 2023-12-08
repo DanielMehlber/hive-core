@@ -13,8 +13,8 @@ TEST(PropertyTest, prop_get_set) {
 
   subsystems->AddOrReplaceSubsystem(job_manager);
 
-  messaging::SharedBroker broker =
-      messaging::MessagingFactory::CreateBroker(subsystems);
+  events::SharedEventBroker broker =
+      events::EventFactory::CreateBroker(subsystems);
   subsystems->AddOrReplaceSubsystem(broker);
 
   PropertyProvider provider(subsystems);

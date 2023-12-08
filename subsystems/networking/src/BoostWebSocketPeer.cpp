@@ -1,6 +1,7 @@
 #include "networking/peers/impl/websockets/boost/BoostWebSocketPeer.h"
 #include "networking/peers/PeerMessageConsumerJob.h"
 #include "networking/peers/PeerMessageConverter.h"
+#include "networking/peers/events/ConnectionEstablishedEvent.h"
 #include "networking/util/UrlParser.h"
 #include <regex>
 #include <utility>
@@ -115,7 +116,7 @@ void BoostWebSocketPeer::AddConsumer(
     std::weak_ptr<IPeerMessageConsumer> consumer) {
   bool is_valid_consumer = !consumer.expired();
   if (is_valid_consumer) {
-    SharedWebSocketMessageConsumer shared_consumer = consumer.lock();
+    SharedPeerMessageConsumer shared_consumer = consumer.lock();
     const auto &consumer_message_type = shared_consumer->GetMessageType();
     std::unique_lock consumers_lock(m_consumers_mutex);
     m_consumers[consumer_message_type].push_back(consumer);
@@ -127,9 +128,9 @@ void BoostWebSocketPeer::AddConsumer(
   }
 }
 
-std::list<SharedWebSocketMessageConsumer>
+std::list<SharedPeerMessageConsumer>
 BoostWebSocketPeer::GetConsumersOfType(const std::string &type_name) noexcept {
-  std::list<SharedWebSocketMessageConsumer> ret_consumer_list;
+  std::list<SharedPeerMessageConsumer> ret_consumer_list;
 
   std::unique_lock consumers_lock(m_consumers_mutex);
   if (m_consumers.contains(type_name)) {
@@ -229,6 +230,16 @@ void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
 
   std::unique_lock conn_lock(m_connections_mutex);
   m_connections[connection_id] = connection;
+
+  // fire event if event subsystem is found
+  if (m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>()) {
+    ConnectionEstablishedEvent event;
+    event.SetPeer(url);
+
+    auto event_subsystem =
+        m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+    event_subsystem->FireEvent(event.GetEvent());
+  }
 }
 
 std::optional<SharedBoostWebSocketConnection>

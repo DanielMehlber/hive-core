@@ -1,15 +1,15 @@
 #include "kernel/Kernel.h"
+#include "events/EventFactory.h"
 #include "graphics/service/RenderService.h"
-#include "messaging/MessagingFactory.h"
 #include "plugins/impl/BoostPluginManager.h"
 #include "resourcemgmt/ResourceFactory.h"
 #include "resourcemgmt/loader/impl/FileLoader.h"
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
-#include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
+#include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
 using namespace kernel;
 using namespace jobsystem;
-using namespace messaging;
+using namespace events;
 using namespace props;
 using namespace resourcemgmt;
 using namespace services;
@@ -22,7 +22,7 @@ Kernel::Kernel(bool only_local)
   m_subsystems->AddOrReplaceSubsystem(job_manager);
   job_manager->StartExecution();
 
-  auto message_broker = MessagingFactory::CreateBroker(m_subsystems);
+  auto message_broker = EventFactory::CreateBroker(m_subsystems);
   m_subsystems->AddOrReplaceSubsystem(message_broker);
 
   auto property_provider = std::make_shared<PropertyProvider>(m_subsystems);
@@ -45,8 +45,7 @@ Kernel::Kernel(bool only_local)
         network_manager);
 
     auto service_registry =
-        std::make_shared<services::impl::WebSocketServiceRegistry>(
-            m_subsystems);
+        std::make_shared<services::impl::RemoteServiceRegistry>(m_subsystems);
     m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(service_registry);
   }
 

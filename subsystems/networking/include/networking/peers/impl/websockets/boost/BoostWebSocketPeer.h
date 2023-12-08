@@ -45,7 +45,7 @@ private:
 
   /**
    * @brief Acts as execution environment for asynchronous operations, such as
-   * receiving messages
+   * receiving events
    */
   std::shared_ptr<boost::asio::io_context> m_execution_context;
 
@@ -66,7 +66,7 @@ private:
 
   /**
    * @brief This is the local endpoint over which the peer should communicate
-   * with others (receive & send messages).
+   * with others (receive & send events).
    * @note This is important for the connection establishing and listening
    * process.
    */
@@ -105,7 +105,7 @@ public:
 
   void AddConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) override;
 
-  std::list<SharedWebSocketMessageConsumer>
+  std::list<SharedPeerMessageConsumer>
   GetConsumersOfType(const std::string &type_name) noexcept override;
 
   std::future<void> Send(const std::string &uri,

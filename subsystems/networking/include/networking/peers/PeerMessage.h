@@ -12,9 +12,9 @@ namespace networking::websockets {
 
 /**
  * @brief Message that can be sent or received via web sockets. The message
- * always has a type and according attributes: This helps messages to be
+ * always has a type and according attributes: This helps events to be
  * multiplexed to different consumers that handle each message type. This also
- * renders messages extendable because new types with custom attributes can be
+ * renders events extendable because new types with custom attributes can be
  * defined anytime.
  */
 class NETWORKING_API PeerMessage {
@@ -74,7 +74,7 @@ public:
   /**
    * @brief Compares this message with another message for equality.
    * @param other other message
-   * @return true if both messages are equal in content
+   * @return true if both events are equal in content
    */
   bool EqualsTo(std::shared_ptr<PeerMessage> other) const noexcept;
 };

@@ -2,8 +2,8 @@
 #define WEBSOCKETPEERTEST_H
 
 #include "common/test/TryAssertUntilTimeout.h"
+#include "events/EventFactory.h"
 #include "jobsystem/JobSystem.h"
-#include "messaging/MessagingFactory.h"
 #include "networking/NetworkingFactory.h"
 #include "networking/peers/PeerConnectionInfo.h"
 
@@ -11,14 +11,14 @@ using namespace networking;
 using namespace networking::websockets;
 using namespace jobsystem;
 using namespace props;
-using namespace messaging;
+using namespace events;
 using namespace std::chrono_literals;
 using namespace common::test;
 
 SharedWebSocketPeer
 SetupWebSocketPeer(const common::subsystems::SharedSubsystemManager &subsystems,
                    int port) {
-  SharedBroker message_broker = MessagingFactory::CreateBroker(subsystems);
+  SharedEventBroker message_broker = EventFactory::CreateBroker(subsystems);
   subsystems->AddOrReplaceSubsystem(message_broker);
 
   SharedPropertyProvider property_provider =

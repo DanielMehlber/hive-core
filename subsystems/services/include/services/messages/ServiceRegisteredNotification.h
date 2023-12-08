@@ -1,4 +1,4 @@
-#include "messaging/Message.h"
+#include "events/Event.h"
 
 #ifndef SERVICEREGISTEREDMESSAGE_H
 #define SERVICEREGISTEREDMESSAGE_H
@@ -6,21 +6,21 @@
 namespace services {
 class ServiceRegisteredNotification {
 private:
-  messaging::SharedMessage m_message;
+  events::SharedEvent m_message;
 
 public:
   explicit ServiceRegisteredNotification(
-      messaging::SharedMessage message = std::make_shared<messaging::Message>(
-          "service-registered-notification"))
+      events::SharedEvent message =
+          std::make_shared<events::Event>("service-registered-notification"))
       : m_message(std::move(message)) {}
 
-  messaging::SharedMessage GetMessage();
+  events::SharedEvent GetMessage();
 
   void SetServiceName(const std::string &name);
   std::string GetServiceName();
 };
 
-inline messaging::SharedMessage ServiceRegisteredNotification::GetMessage() {
+inline events::SharedEvent ServiceRegisteredNotification::GetMessage() {
   return m_message;
 }
 

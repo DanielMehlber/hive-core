@@ -1,22 +1,19 @@
 #include "PeerSetup.h"
 #include "common/test/TryAssertUntilTimeout.h"
-#include "graphics/renderer/impl/OffscreenRenderer.h"
-#include "graphics/service/RenderService.h"
 #include "graphics/service/RenderServiceRequest.h"
-#include "graphics/service/encoders/IRenderResultEncoder.h"
-#include "messaging/MessagingFactory.h"
-#include "networking/NetworkingFactory.h"
-#include "services/registry/impl/websockets/WebSocketServiceRegistry.h"
+#include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
 #include <gtest/gtest.h>
 
 #ifdef INCLUDE_ENCODER_EVALUATION
 #include "EncoderEvaluation.h"
 #endif
 
+using namespace common::test;
+
 TEST(GraphicsTests, remote_render_service) {
   auto subsystems_1 = SetupSubsystems();
 
-  auto encoder = std::make_shared<graphics::Base64RenderResultEncoder>();
+  auto encoder = std::make_shared<graphics::PlainRenderResultEncoder>();
   subsystems_1->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(encoder);
 
   auto job_manager = subsystems_1->RequireSubsystem<JobManager>();
@@ -26,6 +23,10 @@ TEST(GraphicsTests, remote_render_service) {
 
   SharedRenderer renderer = std::make_shared<OffscreenRenderer>();
   subsystems_2->AddOrReplaceSubsystem<IRenderer>(renderer);
+
+  // each subsystem needs its own event broker
+  SharedEventBroker event_broker_2 = EventFactory::CreateBroker(subsystems_2);
+  subsystems_2->AddOrReplaceSubsystem<IEventBroker>(event_broker_2);
 
   NODE node1 = setupNode(9005, subsystems_1);
   NODE node2 = setupNode(9006, subsystems_2);

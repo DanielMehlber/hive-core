@@ -2,9 +2,9 @@
 #define KERNEL_H
 
 #include "common/subsystems/SubsystemManager.h"
+#include "events/broker/IEventBroker.h"
 #include "graphics/renderer/IRenderer.h"
 #include "jobsystem/manager/JobManager.h"
-#include "messaging/broker/IMessageBroker.h"
 #include "networking/NetworkingManager.h"
 #include "plugins/IPluginManager.h"
 #include "properties/PropertyProvider.h"
@@ -60,7 +60,7 @@ public:
 
   props::SharedPropertyProvider GetPropertyProvider() const;
 
-  messaging::SharedBroker GetMessageBroker() const;
+  events::SharedEventBroker GetMessageBroker() const;
 
   resourcemgmt::SharedResourceManager GetResourceManager() const;
   void SetResourceManager(
@@ -96,8 +96,8 @@ inline resourcemgmt::SharedResourceManager Kernel::GetResourceManager() const {
   return m_subsystems->GetSubsystem<resourcemgmt::IResourceManager>().value();
 }
 
-inline messaging::SharedBroker Kernel::GetMessageBroker() const {
-  return m_subsystems->GetSubsystem<messaging::IMessageBroker>().value();
+inline events::SharedEventBroker Kernel::GetMessageBroker() const {
+  return m_subsystems->GetSubsystem<events::IEventBroker>().value();
 }
 
 inline void Kernel::SetResourceManager(

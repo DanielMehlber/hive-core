@@ -1,5 +1,5 @@
 #include "TestPlugin.h"
-#include "messaging/MessagingFactory.h"
+#include "events/EventFactory.h"
 #include "plugins/impl/BoostPluginManager.h"
 #include "resourcemgmt/ResourceFactory.h"
 #include <gtest/gtest.h>
@@ -9,7 +9,7 @@
 TEST(PluginsTest, lifecycle_test) {
   auto job_manager = std::make_shared<jobsystem::JobManager>();
   job_manager->StartExecution();
-  
+
   auto resource_manager =
       resourcemgmt::ResourceFactory::CreateResourceManager();
 

@@ -3,8 +3,7 @@
 
 using namespace props;
 
-void PropertyChangeListener::HandleMessage(
-    const messaging::SharedMessage message) {
+void PropertyChangeListener::HandleMessage(const events::SharedEvent message) {
   std::optional<std::string> optional_key =
       message->GetPayload<std::string>("property-key");
 
