@@ -120,11 +120,26 @@ BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
   }
 
   m_socket.binary(true);
-  m_socket.async_write(asio::buffer(*payload),
-                       boost::beast::bind_front_handler(
-                           &BoostWebSocketConnection::OnMessageSent,
-                           shared_from_this(), std::move(sending_promise),
-                           message, payload, std::move(lock)));
+
+  /*
+   * TODO: Make this async to avoid blocking
+   * Warning: The async_write call must be synchronized with some sort of lock
+   * or condition variable. The async call must finish before another can be
+   * started.
+   */
+
+  //  m_socket.async_write(asio::buffer(*payload),
+  //                       boost::beast::bind_front_handler(
+  //                           &BoostWebSocketConnection::OnMessageSent,
+  //                           shared_from_this(), std::move(sending_promise),
+  //                           message, payload, std::move(lock)));
+
+  boost::beast::error_code error_code;
+  std::size_t bytes_transferred =
+      m_socket.write(asio::buffer(*payload), error_code);
+
+  OnMessageSent(std::move(sending_promise), message, payload, std::move(lock),
+                error_code, bytes_transferred);
 
   return std::move(sending_future);
 }

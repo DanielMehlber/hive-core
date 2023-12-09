@@ -134,7 +134,7 @@ TEST(ServiceTests, remote_service_load_balancing) {
         }
 
         auto caller = opt_caller.value();
-        return caller->GetCallableCount() >= 5;
+        return caller->GetCallableCount() == 5;
       },
       10s);
 
@@ -154,8 +154,11 @@ TEST(ServiceTests, remote_service_load_balancing) {
           return future.wait_for(0s) == std::future_status::ready;
         },
         10s);
+
+    ASSERT_NO_THROW(future.get());
   }
 
+  // check that each service has been called 1 time (round-robin)
   for (auto &[peer, service] : peers) {
     ASSERT_EQ(1, service->count);
   }

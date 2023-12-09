@@ -50,7 +50,12 @@ void broadcastServiceRegistration(
 
 void RemoteServiceRegistry::Register(const SharedServiceExecutor &stub) {
 
-  ASSERT(stub->IsCallable(), "executor should be callable")
+  if (!stub->IsCallable()) {
+    LOG_WARN("Cannot register " << (stub->IsLocal() ? "local" : "remote")
+                                << " service '" << stub->GetServiceName()
+                                << " because it is not callable (anymore)")
+    return;
+  }
 
   auto job_manager =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
@@ -160,8 +165,8 @@ void RemoteServiceRegistry::SetupEventSubscribers() {
             SendServicePortfolioToPeer(peer_id);
           });
 
-  // event_system->RegisterListener(m_new_peer_connection_listener,
-  //                                "connection-established");
+  event_system->RegisterListener(m_new_peer_connection_listener,
+                                 "connection-established");
 }
 
 void RemoteServiceRegistry::SetupMessageConsumers() {
