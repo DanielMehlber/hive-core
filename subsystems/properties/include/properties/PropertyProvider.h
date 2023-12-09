@@ -43,7 +43,7 @@ public:
   template <typename PropType> void Set(const std::string &key, PropType value);
 
   /**
-   * @brief Get value of some property (if it exists)
+   * @brief GetAsInt value of some property (if it exists)
    * @tparam PropType type of the property's value
    * @param key path to some leaf in the property tree
    * @return value of property if it exists
@@ -55,8 +55,8 @@ public:
   std::optional<PropType> Get(const std::string &key);
 
   /**
-   * @brief Get value of some property or a alternative value if this property
-   * does not exist
+   * @brief GetAsInt value of some property or a alternative value if this
+   * property does not exist
    * @tparam PropType type of the property's value
    * @param key path to some leaf in the property tree
    * @param value alternative value that will be returned if the requested

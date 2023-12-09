@@ -62,12 +62,15 @@ private:
    * remote host (or if that operation has failed)
    * @param promise promise that must be resolved
    * @param message message that was sent (or maybe not)
+   * @param sent_data data that has been sent to the other peer.
+   * @param lock locks the async_write call and must be unlocked
    * @param error_code status indicating the success of sending the message
    * @param bytes_transferred number of bytes that have been sent
    */
   void OnMessageSent(std::promise<void> &&promise,
                      SharedWebSocketMessage message,
                      std::shared_ptr<std::string> sent_data,
+                     std::unique_lock<std::mutex> lock,
                      boost::beast::error_code error_code,
                      [[maybe_unused]] std::size_t bytes_transferred);
 

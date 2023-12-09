@@ -25,13 +25,13 @@ public:
       : m_cycle_number{frame_number}, m_job_manager{manager} {}
 
   /**
-   * @brief Get number of current job cycle
+   * @brief GetAsInt number of current job cycle
    * @return current job cycle number
    */
   size_t GetCycleNumber() const noexcept;
 
   /**
-   * @brief Get the managing instance of the current job execution
+   * @brief GetAsInt the managing instance of the current job execution
    * @return managing instance of the current job execution
    */
   std::shared_ptr<JobManager> GetJobManager() noexcept;

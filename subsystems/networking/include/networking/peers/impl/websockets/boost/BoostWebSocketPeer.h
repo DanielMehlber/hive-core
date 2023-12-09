@@ -36,6 +36,8 @@ private:
 
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
+  common::config::SharedConfiguration m_config;
+
   /**
    * @brief maps message type names to their consumers
    */
@@ -100,7 +102,8 @@ private:
 
 public:
   BoostWebSocketPeer(
-      const common::subsystems::SharedSubsystemManager &subsystems);
+      const common::subsystems::SharedSubsystemManager &subsystems,
+      const common::config::SharedConfiguration &config);
   virtual ~BoostWebSocketPeer();
 
   void AddConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) override;

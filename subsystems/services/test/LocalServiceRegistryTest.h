@@ -10,14 +10,16 @@ using namespace services;
 using namespace std::placeholders;
 
 TEST(ServiceTests, adding_service) {
+  auto config = std::make_shared<common::config::Configuration>();
+
   SharedServiceRegistry registry =
       std::make_shared<services::impl::LocalOnlyServiceRegistry>();
 
   SharedServiceExecutor adding_service =
       std::make_shared<AddingServiceExecutor>();
   jobsystem::SharedJobManager job_manager =
-      std::make_shared<jobsystem::JobManager>();
-  
+      std::make_shared<jobsystem::JobManager>(config);
+
   job_manager->StartExecution();
   registry->Register(adding_service);
 

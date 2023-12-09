@@ -1,4 +1,5 @@
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
+#include "common/assert/Assert.h"
 #include "networking/peers/events/ConnectionEstablishedEvent.h"
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "services/messages/ServiceRegisteredNotification.h"
@@ -11,6 +12,10 @@ using namespace std::placeholders;
 void broadcastServiceRegistration(
     const std::weak_ptr<IPeer> &sender, const SharedServiceExecutor &stub,
     const jobsystem::SharedJobManager &job_manager) {
+
+  ASSERT(!sender.expired(), "sender should exist")
+  ASSERT(stub->IsCallable(), "executor should be callable")
+
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
       [sender, stub](jobsystem::JobContext *context) {
         if (sender.expired()) {
@@ -44,6 +49,9 @@ void broadcastServiceRegistration(
 }
 
 void RemoteServiceRegistry::Register(const SharedServiceExecutor &stub) {
+
+  ASSERT(stub->IsCallable(), "executor should be callable")
+
   auto job_manager =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
   auto web_socket_peer = m_subsystems.lock()->RequireSubsystem<IPeer>();
@@ -136,6 +144,11 @@ RemoteServiceRegistry::RemoteServiceRegistry(
 }
 
 void RemoteServiceRegistry::SetupEventSubscribers() {
+
+  ASSERT(!m_subsystems.expired(), "subsystems should still exist")
+  ASSERT(m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>(),
+         "event broker subsystem should exist")
+
   auto event_system =
       m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
 
@@ -147,11 +160,16 @@ void RemoteServiceRegistry::SetupEventSubscribers() {
             SendServicePortfolioToPeer(peer_id);
           });
 
-  event_system->RegisterListener(m_new_peer_connection_listener,
-                                 "connection-established");
+  // event_system->RegisterListener(m_new_peer_connection_listener,
+  //                                "connection-established");
 }
 
 void RemoteServiceRegistry::SetupMessageConsumers() {
+
+  ASSERT(!m_subsystems.expired(), "subsystems should still exist")
+  ASSERT(m_subsystems.lock()->ProvidesSubsystem<IPeer>(),
+         "peer networking subsystem should exist")
+
   auto web_socket_peer = m_subsystems.lock()->RequireSubsystem<IPeer>();
 
   auto response_consumer = std::make_shared<RemoteServiceResponseConsumer>();
@@ -170,6 +188,12 @@ void RemoteServiceRegistry::SetupMessageConsumers() {
 
 void RemoteServiceRegistry::SendServicePortfolioToPeer(
     const std::string &peer_id) const {
+
+  ASSERT(!m_subsystems.expired(), "subsystems should still exist")
+  ASSERT(m_subsystems.lock()->ProvidesSubsystem<IPeer>(),
+         "peer networking subsystem should exist")
+  ASSERT(m_subsystems.lock()->ProvidesSubsystem<jobsystem::JobManager>(),
+         "job system should exist")
 
   if (!m_subsystems.lock()
            ->ProvidesSubsystem<networking::websockets::IPeer>()) {
@@ -196,6 +220,9 @@ void RemoteServiceRegistry::SendServicePortfolioToPeer(
 SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
     const std::string &peer_id, const std::string &service_name,
     const std::weak_ptr<networking::websockets::IPeer> &sending_peer) {
+
+  ASSERT(!sending_peer.expired(), "sending peer should exist")
+
   auto job = std::make_shared<Job>(
       [sending_peer, peer_id, service_name](jobsystem::JobContext *context) {
         if (sending_peer.expired()) {
@@ -213,6 +240,8 @@ SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
         this_peer->Send(peer_id, registration.GetMessage());
 
         return DISPOSE;
-      });
+      },
+      "register-service-{" + service_name + "}-at-peer-{" + peer_id + "}",
+      MAIN);
   return job;
 }

@@ -1,6 +1,7 @@
 #ifndef SUBSYSTEMMANAGER_H
 #define SUBSYSTEMMANAGER_H
 
+#include "boost/core/demangle.hpp"
 #include "common/exceptions/ExceptionsBase.h"
 #include <any>
 #include <map>
@@ -29,7 +30,7 @@ public:
   void AddOrReplaceSubsystem(const std::shared_ptr<subsystem_t> &subsystem);
 
   /**
-   * Get subsystem if it is registered
+   * GetAsInt subsystem if it is registered
    * @tparam subsystem_t type of subsystem
    * @return optional subsystem
    */
@@ -37,7 +38,7 @@ public:
   std::optional<std::shared_ptr<subsystem_t>> GetSubsystem() const;
 
   /**
-   * Get subsystem, but throw exception if it is not provided
+   * GetAsInt subsystem, but throw exception if it is not provided
    * @tparam subsystem_t type of subsystem
    * @return subsystem
    */
@@ -59,9 +60,10 @@ std::shared_ptr<subsystem_t> SubsystemManager::RequireSubsystem() const {
     return opt_subsystem.value();
   } else {
     const char *name = typeid(subsystem_t).name();
+
+    auto demangled = boost::core::demangle(name);
     THROW_EXCEPTION(SubsystemNotFoundException,
-                    "subsystem " << typeid(subsystem_t).name()
-                                 << " is not provided")
+                    "subsystem " << demangled << " is not provided")
   }
 }
 

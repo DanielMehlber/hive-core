@@ -48,8 +48,9 @@ int main(int argc, const char **argv) {
     return 1;
   }
 
+  auto config = std::make_shared<common::config::Configuration>();
   bool local_only = service_port < 0;
-  kernel::Kernel kernel(local_only);
+  kernel::Kernel kernel(config, local_only);
 
   auto vsg_options = vsg::Options::create();
   vsg_options->sharedObjects = vsg::SharedObjects::create();
@@ -61,7 +62,7 @@ int main(int argc, const char **argv) {
   auto skybox = vsg::read_cast<vsg::Node>("models/skybox.vsgt", vsg_options);
 
   if (!node || !skybox) {
-    LOG_WARN("Demo scene not created: models not found");
+    LOG_WARN("Demo scene not created: models not found")
   } else {
     scene->GetRoot()->addChild(node);
     scene->GetRoot()->addChild(skybox);

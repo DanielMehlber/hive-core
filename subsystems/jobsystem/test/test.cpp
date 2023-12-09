@@ -1,13 +1,15 @@
 #include "jobsystem/JobSystem.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
+#include <future>
 #include <gtest/gtest.h>
 
 using namespace jobsystem;
 using namespace std::chrono_literals;
 
 TEST(JobSystem, allPhases) {
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   std::vector<short> vec;
@@ -41,7 +43,8 @@ TEST(JobSystem, allPhases) {
 }
 
 TEST(JobSystem, multiple_jobs_per_phase) {
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   int job_count = 5;
@@ -59,7 +62,8 @@ TEST(JobSystem, multiple_jobs_per_phase) {
 }
 
 TEST(JobSystem, auto_requeue) {
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
   int executions = 0;
 
@@ -76,7 +80,8 @@ TEST(JobSystem, auto_requeue) {
 }
 
 TEST(JobSystem, timer_job) {
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   size_t job_executed = 0;
@@ -91,20 +96,21 @@ TEST(JobSystem, timer_job) {
   manager->InvokeCycleAndWait();
   ASSERT_EQ(0, job_executed);
 
-  std::this_thread::sleep_for(1s);
+  std::this_thread::sleep_for(1.2s);
   manager->InvokeCycleAndWait();
   ASSERT_EQ(1, job_executed);
 
   manager->InvokeCycleAndWait();
   ASSERT_EQ(1, job_executed);
 
-  std::this_thread::sleep_for(1s);
+  std::this_thread::sleep_for(1.2s);
   manager->InvokeCycleAndWait();
   ASSERT_EQ(2, job_executed);
 }
 
 TEST(JobSystem, jobs_kicking_jobs) {
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   bool jobACompleted = false;
@@ -154,7 +160,8 @@ TEST(JobSystem, jobs_kicking_jobs) {
 
 // Checks that no jobs are getting lost (due to data races)
 TEST(JobSystem, job_bulk) {
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   SharedJobCounter absolute_counter = JobSystemFactory::CreateCounter();
@@ -181,12 +188,12 @@ TEST(JobSystem, job_bulk) {
   ASSERT_TRUE(absolute_counter->IsFinished());
 }
 
-TEST(JobSystem, wait_for_job_inside_job) {
 // single threaded job implementations do not allow waiting inside jobs because
 // doing so is the only surefire way to deadlock the entire execution
 #ifndef JOB_SYSTEM_SINGLE_THREAD
-
-  auto manager = std::make_shared<JobManager>();
+TEST(JobSystem, wait_for_job_inside_job) {
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   std::vector<short> order;
@@ -210,13 +217,13 @@ TEST(JobSystem, wait_for_job_inside_job) {
 
   ASSERT_EQ(1, order.at(0));
   ASSERT_EQ(2, order.at(1));
-
-#endif
 }
+#endif
 
 TEST(JobSystem, detach_jobs) {
   std::atomic<short> execution_counter = 0;
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
@@ -234,12 +241,13 @@ TEST(JobSystem, detach_jobs) {
   ASSERT_EQ(2, execution_counter);
 }
 
-TEST(JobSystem, detach_jobs_mid_execution) {
 // this waits for counters, what is not possible inside jobs using a single
 // threaded implementation
 #ifndef JOB_SYSTEM_SINGLE_THREAD
+TEST(JobSystem, detach_jobs_mid_execution) {
   std::atomic<short> execution_counter = 0;
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   SharedJobCounter detach_job_counter = JobSystemFactory::CreateCounter();
@@ -261,12 +269,13 @@ TEST(JobSystem, detach_jobs_mid_execution) {
   manager->InvokeCycleAndWait();
 
   ASSERT_EQ(1, execution_counter);
-#endif
 }
+#endif
 
 TEST(JobSystem, wait_for_future_completion) {
   std::vector<short> order;
-  auto manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
 
   SharedJob job = JobSystemFactory::CreateJob([&order](JobContext *context) {
@@ -288,6 +297,41 @@ TEST(JobSystem, wait_for_future_completion) {
   ASSERT_EQ(order.at(1), 1);
   ASSERT_EQ(order.at(2), 2);
 }
+
+// this waits for counters, what is not possible inside jobs using a single
+// threaded implementation
+#ifndef JOB_SYSTEM_SINGLE_THREAD
+TEST(JobSystem, test_yield) {
+  auto config = std::make_shared<common::config::Configuration>();
+  config->Set("jobs.concurrency", 1);
+  auto manager = std::make_shared<JobManager>(config);
+  manager->StartExecution();
+
+  auto promise = std::make_shared<std::promise<void>>();
+  auto future = promise->get_future();
+
+  SharedJob promise_job =
+      JobSystemFactory::CreateJob([promise](JobContext *context) {
+        for (int i = 0; i < 100; i++) {
+          boost::this_fiber::yield();
+        }
+
+        promise->set_value();
+        return JobContinuation::DISPOSE;
+      });
+
+  manager->KickJob(promise_job);
+
+  SharedJob future_job =
+      JobSystemFactory::CreateJob([&future](JobContext *context) {
+        context->GetJobManager()->WaitForCompletion(future);
+        return JobContinuation::DISPOSE;
+      });
+  manager->KickJob(future_job);
+
+  manager->InvokeCycleAndWait();
+}
+#endif
 
 int main(int argc, char **argv) {
 

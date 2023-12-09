@@ -1,5 +1,6 @@
 #include <utility>
 
+#include "common/assert/Assert.h"
 #include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
 #include "jobsystem/manager/JobManager.h"
 
@@ -7,7 +8,14 @@ using namespace jobsystem::execution::impl;
 using namespace jobsystem::job;
 using namespace std::chrono_literals;
 
-FiberExecutionImpl::FiberExecutionImpl() { Init(); }
+FiberExecutionImpl::FiberExecutionImpl(
+    const common::config::SharedConfiguration &config)
+    : m_config(config) {
+  m_worker_thread_count = config->GetAsInt(
+      "jobs.concurrency", (int)std::thread::hardware_concurrency());
+  Init();
+}
+
 FiberExecutionImpl::~FiberExecutionImpl() { ShutDown(); }
 
 void FiberExecutionImpl::Init() {
@@ -19,14 +27,23 @@ void FiberExecutionImpl::Init() {
 void FiberExecutionImpl::ShutDown() { Stop(); }
 
 void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
-  auto runner = [this, job]() {
-    JobContext context(m_managing_instance.lock()->GetTotalCyclesCount(),
-                       m_managing_instance.lock());
+  auto weak_manager = m_managing_instance;
+  auto runner = [weak_manager, job]() {
+    if (weak_manager.expired()) {
+      LOG_ERR("Cannot execute job "
+              << job->GetId()
+              << " because job manager has already been destroyed")
+      return;
+    }
+
+    auto manager = weak_manager.lock();
+
+    JobContext context(manager->GetTotalCyclesCount(), manager);
     JobContinuation continuation = job->Execute(&context);
     job->SetState(JobState::EXECUTION_FINISHED);
 
     if (continuation == JobContinuation::REQUEUE) {
-      m_managing_instance.lock()->KickJobForNextCycle(job);
+      manager->KickJobForNextCycle(job);
     }
   };
 
@@ -57,6 +74,9 @@ void FiberExecutionImpl::Start(std::weak_ptr<JobManager> manager) {
     return;
   }
 
+  LOG_DEBUG("Started fiber based job executor with " << m_worker_thread_count
+                                                     << " worker threads")
+
   // Spawn worker threads: They will add themselves to the workforce
   for (int i = 0; i < m_worker_thread_count; i++) {
     auto worker = std::make_shared<std::thread>(
@@ -77,6 +97,8 @@ void FiberExecutionImpl::Stop() {
   // closing channel causes workers to exit, so they can be joined
   m_job_channel->close();
   for (auto &worker : m_worker_threads) {
+    ASSERT(worker->get_id() != std::this_thread::get_id(),
+           "worker thread should not be calling this function and join itself")
     worker->join();
   }
 

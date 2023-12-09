@@ -7,7 +7,8 @@
 #define sharednullptr(x) std::shared_ptr<x>(nullptr)
 
 TEST(PluginsTest, lifecycle_test) {
-  auto job_manager = std::make_shared<jobsystem::JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<jobsystem::JobManager>(config);
   job_manager->StartExecution();
 
   auto resource_manager =

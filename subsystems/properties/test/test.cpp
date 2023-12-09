@@ -7,8 +7,8 @@ using namespace props;
 
 TEST(PropertyTest, prop_get_set) {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
-  jobsystem::SharedJobManager job_manager =
-      std::make_shared<jobsystem::JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<jobsystem::JobManager>(config);
   job_manager->StartExecution();
 
   subsystems->AddOrReplaceSubsystem(job_manager);

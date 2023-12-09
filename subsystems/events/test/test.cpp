@@ -3,7 +3,8 @@
 
 common::subsystems::SharedSubsystemManager SetupSubsystems() {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
-  auto job_manager = std::make_shared<jobsystem::JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<jobsystem::JobManager>(config);
   job_manager->StartExecution();
   subsystems->AddOrReplaceSubsystem<jobsystem::JobManager>(job_manager);
   return subsystems;

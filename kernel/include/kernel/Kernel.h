@@ -25,7 +25,9 @@ protected:
   bool m_should_shutdown{false};
 
 public:
-  Kernel(bool only_local = true);
+  Kernel(common::config::SharedConfiguration config =
+             std::make_shared<common::config::Configuration>(),
+         bool only_local = true);
 
   /**
    * Checks if the kernel is supposed to shut down

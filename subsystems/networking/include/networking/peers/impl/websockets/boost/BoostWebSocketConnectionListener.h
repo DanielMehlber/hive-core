@@ -2,6 +2,7 @@
 #define BOOSTWEBSOCKETCONNECTIONLISTENER_H
 
 #include "BoostWebSocketConnection.h"
+#include "common/config/Configuration.h"
 #include "common/exceptions/ExceptionsBase.h"
 #include "properties/PropertyProvider.h"
 #include <boost/asio.hpp>
@@ -32,7 +33,10 @@ private:
    */
   std::shared_ptr<boost::asio::io_context> m_execution_context;
 
-  props::SharedPropertyProvider m_properties;
+  /**
+   * Configuration of this connection listener and possibly other subsystems
+   */
+  common::config::SharedConfiguration m_config;
 
   /**
    * @brief Purpose of this component is listening and accepting incoming
@@ -77,7 +81,7 @@ private:
 public:
   BoostWebSocketConnectionListener(
       std::shared_ptr<boost::asio::io_context> execution_context,
-      props::SharedPropertyProvider property_provider,
+      const common::config::SharedConfiguration &config,
       std::shared_ptr<boost::asio::ip::tcp::endpoint> local_endpoint,
       std::function<void(std::string, stream_type &&)> connection_consumer);
 

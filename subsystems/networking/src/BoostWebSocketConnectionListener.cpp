@@ -9,11 +9,11 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 BoostWebSocketConnectionListener::BoostWebSocketConnectionListener(
     std::shared_ptr<boost::asio::io_context> execution_context,
-    props::SharedPropertyProvider property_provider,
+    const common::config::SharedConfiguration &config,
     std::shared_ptr<boost::asio::ip::tcp::endpoint> local_endpoint,
     std::function<void(std::string, stream_type &&)> connection_consumer)
     : m_connection_consumer{connection_consumer},
-      m_execution_context{execution_context}, m_properties{property_provider},
+      m_execution_context{execution_context}, m_config{config},
       m_local_endpoint{local_endpoint} {}
 
 BoostWebSocketConnectionListener::~BoostWebSocketConnectionListener() {
@@ -22,7 +22,7 @@ BoostWebSocketConnectionListener::~BoostWebSocketConnectionListener() {
 
 void BoostWebSocketConnectionListener::Init() {
   // load configurations
-  bool use_tls = m_properties->GetOrElse("net.ws.tls.enabled", true);
+  bool use_tls = m_config->GetBool("net.tls.enabled", true);
 
   if (use_tls) {
     LOG_WARN(
@@ -64,8 +64,9 @@ void BoostWebSocketConnectionListener::Init() {
       error_code);
   if (error_code) {
     LOG_ERR(
-        "cannot bind incoming web-socket connection acceptor to host address: "
-        << error_code.message());
+        "cannot bind incoming web-socket connection acceptor to host address "
+        << m_local_endpoint->address().to_string() << ":"
+        << m_local_endpoint->port() << ": " << error_code.message());
     THROW_EXCEPTION(
         WebSocketTcpServerException,
         "cannot bind incoming web-socket connection acceptor to host address: "

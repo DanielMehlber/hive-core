@@ -2,10 +2,10 @@
 #define NETWORKINGMANAGER_H
 
 #include "NetworkingFactory.h"
+#include "common/config/Configuration.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/JobSystem.h"
 #include "networking/Networking.h"
-#include "properties/PropertyProvider.h"
 #include <memory>
 
 namespace networking {
@@ -16,14 +16,16 @@ namespace networking {
 class NETWORKING_API NetworkingManager {
 private:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::config::SharedConfiguration m_config;
 
-  SharedWebSocketPeer m_web_socket_server;
+  SharedWebSocketPeer m_networking_peer;
 
-  void InitWebSocketServer();
+  void InitPeerNetworkingServer();
 
 public:
   NetworkingManager(
-      const common::subsystems::SharedSubsystemManager &subsystems);
+      const common::subsystems::SharedSubsystemManager &subsystems,
+      const common::config::SharedConfiguration &config);
 };
 
 typedef std::shared_ptr<NetworkingManager> SharedNetworkingManager;

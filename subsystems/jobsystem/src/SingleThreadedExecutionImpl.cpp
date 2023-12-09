@@ -4,7 +4,8 @@
 using namespace jobsystem::execution::impl;
 using namespace jobsystem::job;
 
-SingleThreadedExecutionImpl::SingleThreadedExecutionImpl() {
+SingleThreadedExecutionImpl::SingleThreadedExecutionImpl(
+    const common::config::SharedConfiguration &config) {
   m_current_state = JobExecutionState::STOPPED;
 }
 

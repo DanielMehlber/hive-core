@@ -12,8 +12,9 @@ namespace resourcemgmt::loaders {
 class RESOURCE_API FileLoader : public IResourceLoader {
 public:
   /**
-   * @brief Get id of this resource loader. This id will be used to determin the
-   * resource loader when the resource manager receives a resource request.
+   * @brief GetAsInt id of this resource loader. This id will be used to
+   * determin the resource loader when the resource manager receives a resource
+   * request.
    * @return id of this loader
    */
   const std::string &GetId() const noexcept override;

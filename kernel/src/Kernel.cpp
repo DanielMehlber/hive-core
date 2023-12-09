@@ -15,10 +15,10 @@ using namespace resourcemgmt;
 using namespace services;
 using namespace plugins;
 
-Kernel::Kernel(bool only_local)
+Kernel::Kernel(common::config::SharedConfiguration config, bool only_local)
     : m_subsystems(std::make_shared<common::subsystems::SubsystemManager>()) {
 
-  auto job_manager = std::make_shared<JobManager>();
+  auto job_manager = std::make_shared<JobManager>(config);
   m_subsystems->AddOrReplaceSubsystem(job_manager);
   job_manager->StartExecution();
 
@@ -40,7 +40,7 @@ Kernel::Kernel(bool only_local)
     m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(service_registry);
   } else {
     auto network_manager =
-        std::make_shared<networking::NetworkingManager>(m_subsystems);
+        std::make_shared<networking::NetworkingManager>(m_subsystems, config);
     m_subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
         network_manager);
 

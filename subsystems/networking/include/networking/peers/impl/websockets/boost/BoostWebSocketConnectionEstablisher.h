@@ -54,7 +54,6 @@ private:
 public:
   BoostWebSocketConnectionEstablisher(
       std::shared_ptr<boost::asio::io_context> execution_context,
-      [[maybe_unused]] props::SharedPropertyProvider provider,
       std::function<void(std::string, stream_type &&)> connection_consumer);
 
   /**

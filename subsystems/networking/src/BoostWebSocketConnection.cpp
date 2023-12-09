@@ -98,7 +98,19 @@ BoostWebSocketConnection::~BoostWebSocketConnection() { Close(); }
 
 std::future<void>
 BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
+  std::promise<void> sending_promise;
+  std::future<void> sending_future = sending_promise.get_future();
+
+  std::shared_ptr<std::string> payload = std::make_shared<std::string>(
+      networking::websockets::PeerMessageConverter::ToMultipartFormData(
+          message));
+
+  /*
+   * The async_write must finish before another one can be called. This lock
+   * will be released in the callback method.
+   */
   std::unique_lock lock(m_socket_mutex);
+
   if (!m_socket.is_open()) {
     LOG_WARN("Cannot sent message via web-socket to remote host "
              << m_remote_endpoint_data.address().to_string() << ":"
@@ -107,27 +119,25 @@ BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
     THROW_EXCEPTION(ConnectionClosedException, "connection is not open");
   }
 
-  std::promise<void> sending_promise;
-  std::future<void> sending_future = sending_promise.get_future();
-
-  std::shared_ptr<std::string> payload = std::make_shared<std::string>(
-      networking::websockets::PeerMessageConverter::ToMultipartFormData(
-          message));
-
   m_socket.binary(true);
   m_socket.async_write(asio::buffer(*payload),
                        boost::beast::bind_front_handler(
                            &BoostWebSocketConnection::OnMessageSent,
                            shared_from_this(), std::move(sending_promise),
-                           message, payload));
+                           message, payload, std::move(lock)));
 
   return std::move(sending_future);
 }
 
 void BoostWebSocketConnection::OnMessageSent(
     std::promise<void> &&promise, SharedWebSocketMessage message,
-    std::shared_ptr<std::string> sent_data, boost::beast::error_code error_code,
+    std::shared_ptr<std::string> sent_data, std::unique_lock<std::mutex> lock,
+    boost::beast::error_code error_code,
     [[maybe_unused]] std::size_t bytes_transferred) {
+
+  // allow others to send messages now
+  lock.unlock();
+
   if (error_code) {
     LOG_WARN("Sending message via web-socket to remote host "
              << m_remote_endpoint_data.address().to_string() << ":"

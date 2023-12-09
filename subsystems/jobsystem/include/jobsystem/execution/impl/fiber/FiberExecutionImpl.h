@@ -2,6 +2,7 @@
 #define FIBEREXECUTIONIMPL_H
 
 #include "boost/fiber/all.hpp"
+#include "common/config/Configuration.h"
 #include "jobsystem/execution/IJobExecution.h"
 #include <condition_variable>
 #include <memory>
@@ -23,9 +24,10 @@ namespace jobsystem::execution::impl {
  */
 class FiberExecutionImpl : IJobExecution<FiberExecutionImpl> {
 private:
+  common::config::SharedConfiguration m_config;
   JobExecutionState m_current_state{STOPPED};
 
-  const size_t m_worker_thread_count{std::thread::hardware_concurrency() - 1};
+  int m_worker_thread_count;
 
   /**
    * @brief Contains all worker threads that run scheduled fibers.
@@ -53,7 +55,9 @@ private:
   void ExecuteWorker();
 
 public:
-  FiberExecutionImpl();
+  FiberExecutionImpl() = delete;
+  explicit FiberExecutionImpl(
+      const common::config::SharedConfiguration &config);
   virtual ~FiberExecutionImpl();
 
   /**

@@ -1,6 +1,7 @@
 #ifndef SINGLETHREADEDEXECUTIONIMPL_H
 #define SINGLETHREADEDEXECUTIONIMPL_H
 
+#include "common/config/Configuration.h"
 #include "jobsystem/execution/IJobExecution.h"
 #include <atomic>
 #include <condition_variable>
@@ -35,7 +36,8 @@ private:
   void ExecuteJobs(const std::weak_ptr<JobManager> &manager);
 
 public:
-  SingleThreadedExecutionImpl();
+  explicit SingleThreadedExecutionImpl(
+      const common::config::SharedConfiguration &config);
   virtual ~SingleThreadedExecutionImpl();
   void Schedule(const std::shared_ptr<Job> &job);
   void WaitForCompletion(const std::shared_ptr<IJobWaitable> &waitable);

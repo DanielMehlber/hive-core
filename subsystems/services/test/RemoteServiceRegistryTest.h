@@ -16,82 +16,64 @@ using namespace services::impl;
 using namespace networking;
 using namespace common::test;
 
-#define REGISTRY_OF(x) std::get<1>(x)
-#define WEB_SOCKET_OF(x) std::get<0>(x)
-#define NODE std::tuple<SharedWebSocketPeer, SharedServiceRegistry>
-
-common::subsystems::SharedSubsystemManager SetupSubsystems() {
+common::subsystems::SharedSubsystemManager
+setupPeerNode(const jobsystem::SharedJobManager &job_manager,
+              const common::config::SharedConfiguration &config, int port) {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
-  SharedJobManager job_manager = std::make_shared<JobManager>();
-  job_manager->StartExecution();
   subsystems->AddOrReplaceSubsystem(job_manager);
 
-  events::SharedEventBroker message_broker =
+  // setup event broker
+  events::SharedEventBroker event_broker =
       events::EventFactory::CreateBroker(subsystems);
-  subsystems->AddOrReplaceSubsystem(message_broker);
+  subsystems->AddOrReplaceSubsystem(event_broker);
+
+  // setup networking peer
+  config->Set("net.port", port);
+  auto networking_peer =
+      networking::NetworkingFactory::CreateNetworkingPeer(subsystems, config);
+  subsystems->AddOrReplaceSubsystem(networking_peer);
+
+  // setup service registry
+  SharedServiceRegistry registry =
+      std::make_shared<services::impl::RemoteServiceRegistry>(subsystems);
+  subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(registry);
 
   return subsystems;
 }
 
-SharedWebSocketPeer
-setupPeer(size_t port,
-          const common::subsystems::SharedSubsystemManager &subsystems) {
-  props::SharedPropertyProvider property_provider =
-      std::make_shared<props::PropertyProvider>(subsystems);
+TEST(ServiceTests, run_single_remote_service) {
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<JobManager>(config);
+  job_manager->StartExecution();
 
-  subsystems->AddOrReplaceSubsystem(property_provider);
-
-  property_provider->Set("net.ws.port", port);
-
-  return NetworkingFactory::CreateWebSocketPeer(subsystems);
-}
-
-NODE setupNode(size_t port,
-               const common::subsystems::SharedSubsystemManager &subsystems) {
-  // setup first peer
-  SharedWebSocketPeer web_socket_peer = setupPeer(port, subsystems);
-  subsystems->AddOrReplaceSubsystem(web_socket_peer);
-
-  SharedServiceRegistry registry =
-      std::make_shared<services::impl::RemoteServiceRegistry>(subsystems);
-
-  return {web_socket_peer, registry};
-}
-
-TEST(ServiceTests, web_socket_run_single_remote_service) {
-  auto subsystems_1 = SetupSubsystems();
-  auto job_manager = subsystems_1->RequireSubsystem<JobManager>();
-
-  auto subsystems_2 =
-      std::make_shared<common::subsystems::SubsystemManager>(*subsystems_1);
-
-  // each subsystem needs its own event broker
-  SharedEventBroker event_broker_2 = EventFactory::CreateBroker(subsystems_2);
-  subsystems_2->AddOrReplaceSubsystem<IEventBroker>(event_broker_2);
-
-  NODE node1 = setupNode(9005, subsystems_1);
-  NODE node2 = setupNode(9006, subsystems_2);
+  auto peer_1 = setupPeerNode(job_manager, config, 9005);
+  auto peer_2 = setupPeerNode(job_manager, config, 9006);
 
   // first establish connection in order to broadcast the connection
+  auto peer_1_networking_subsystem = peer_1->RequireSubsystem<IPeer>();
   auto connection_progress =
-      WEB_SOCKET_OF(node1)->EstablishConnectionTo("127.0.0.1:9006");
+      peer_1_networking_subsystem->EstablishConnectionTo("127.0.0.1:9006");
 
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
 
   SharedServiceExecutor local_service =
       std::make_shared<AddingServiceExecutor>();
-  REGISTRY_OF(node1)->Register(local_service);
+
+  auto peer_1_service_registry = peer_1->RequireSubsystem<IServiceRegistry>();
+  peer_1_service_registry->Register(local_service);
   job_manager->InvokeCycleAndWait();
 
+  auto peer_2_service_registry = peer_2->RequireSubsystem<IServiceRegistry>();
   TryAssertUntilTimeout(
-      [&node2, job_manager] {
+      [&peer_2_service_registry, job_manager] {
         job_manager->InvokeCycleAndWait();
-        return REGISTRY_OF(node2)->Find("add").get().has_value();
+        return peer_2_service_registry->Find("add").get().has_value();
       },
       10s);
 
-  SharedServiceCaller caller = REGISTRY_OF(node2)->Find("add").get().value();
+  SharedServiceCaller caller =
+      peer_2_service_registry->Find("add").get().value();
   auto result_fut = caller->Call(GenerateAddingRequest(3, 5), job_manager);
   job_manager->InvokeCycleAndWait();
 
@@ -100,38 +82,30 @@ TEST(ServiceTests, web_socket_run_single_remote_service) {
   ASSERT_EQ(8, GetResultOfAddition(response));
 }
 
-TEST(ServiceTests, web_service_load_balancing) {
-  auto subsystems = SetupSubsystems();
-  auto job_manager = subsystems->RequireSubsystem<JobManager>();
+TEST(ServiceTests, remote_service_load_balancing) {
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<JobManager>(config);
+  job_manager->StartExecution();
 
-  auto subsystems_first_copy =
-      std::make_shared<common::subsystems::SubsystemManager>(*subsystems);
-  NODE main_node = setupNode(9004, subsystems_first_copy);
-  SharedServiceRegistry main_registry = REGISTRY_OF(main_node);
-  SharedWebSocketPeer main_web_socket_peer = WEB_SOCKET_OF(main_node);
+  auto main_peer = setupPeerNode(job_manager, config, 9004);
 
-  std::vector<std::tuple<SharedWebSocketPeer, SharedServiceRegistry,
-                         std::shared_ptr<AddingServiceExecutor>,
-                         common::subsystems::SharedSubsystemManager>>
+  auto main_peer_registry = main_peer->RequireSubsystem<IServiceRegistry>();
+  auto main_peer_networking_subsystem = main_peer->RequireSubsystem<IPeer>();
+
+  std::vector<std::pair<common::subsystems::SharedSubsystemManager,
+                        std::shared_ptr<AddingServiceExecutor>>>
       peers;
 
   for (int i = 9005; i < 9010; i++) {
-    auto subsystems_copy =
-        std::make_shared<common::subsystems::SubsystemManager>(*subsystems);
 
-    // each subsystem needs its own event broker
-    SharedEventBroker event_broker =
-        EventFactory::CreateBroker(subsystems_copy);
-    subsystems_copy->AddOrReplaceSubsystem<IEventBroker>(event_broker);
+    auto ith_peer = setupPeerNode(job_manager, config, i);
 
-    NODE node = setupNode(i, subsystems_copy);
-
-    SharedWebSocketPeer web_socket_peer = WEB_SOCKET_OF(node);
-    SharedServiceRegistry registry = REGISTRY_OF(node);
+    auto ith_peer_registry = ith_peer->RequireSubsystem<IServiceRegistry>();
+    auto ith_peer_networking_subsystem = ith_peer->RequireSubsystem<IPeer>();
 
     // first establish connection in order to broadcast the connection
     auto connection_progress =
-        web_socket_peer->EstablishConnectionTo("127.0.0.1:9004");
+        ith_peer_networking_subsystem->EstablishConnectionTo("127.0.0.1:9004");
 
     connection_progress.wait();
     ASSERT_NO_THROW(connection_progress.get());
@@ -139,20 +113,22 @@ TEST(ServiceTests, web_service_load_balancing) {
     std::shared_ptr<AddingServiceExecutor> service =
         std::make_shared<AddingServiceExecutor>();
 
-    peers.emplace_back(web_socket_peer, registry, service, subsystems_copy);
+    peers.emplace_back(ith_peer, service);
   }
 
   // register service at peers
-  for (auto &peer : peers) {
-    REGISTRY_OF(peer)->Register(std::get<2>(peer));
+  for (auto &[peer, service] : peers) {
+    auto peer_service_registry = peer->RequireSubsystem<IServiceRegistry>();
+    peer_service_registry->Register(service);
   }
+
   job_manager->InvokeCycleAndWait();
 
   // wait until remote services have been registered due to service broadcast
   TryAssertUntilTimeout(
-      [main_registry, job_manager] {
+      [main_peer_registry, job_manager] {
         job_manager->InvokeCycleAndWait();
-        auto opt_caller = main_registry->Find("add").get();
+        auto opt_caller = main_peer_registry->Find("add").get();
         if (!opt_caller.has_value()) {
           return false;
         }
@@ -163,7 +139,7 @@ TEST(ServiceTests, web_service_load_balancing) {
       10s);
 
   // call service 5 times (should equally distribute among all peers)
-  auto caller = main_registry->Find("add").get().value();
+  auto caller = main_peer_registry->Find("add").get().value();
   std::vector<std::future<SharedServiceResponse>> responses;
   for (int i = 0; i < 5; i++) {
     auto response = caller->Call(GenerateAddingRequest(1, i), job_manager);
@@ -180,55 +156,53 @@ TEST(ServiceTests, web_service_load_balancing) {
         10s);
   }
 
-  for (auto &peer : peers) {
-    ASSERT_EQ(1, std::get<2>(peer)->count);
+  for (auto &[peer, service] : peers) {
+    ASSERT_EQ(1, service->count);
   }
 }
 
 TEST(ServiceTests, web_socket_peer_destroyed) {
-  auto subsystems_1 = SetupSubsystems();
-  auto job_manager = subsystems_1->RequireSubsystem<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<JobManager>(config);
+  job_manager->StartExecution();
 
-  auto node1 = setupNode(9005, subsystems_1);
-  std::string connected_port;
+  auto peer_1 = setupPeerNode(job_manager, config, 9005);
+  auto peer_1_service_registry = peer_1->RequireSubsystem<IServiceRegistry>();
+  auto peer_1_networking_subsystem = peer_1->RequireSubsystem<IPeer>();
 
   {
-    auto subsystems_2 =
-        std::make_shared<common::subsystems::SubsystemManager>(*subsystems_1);
+    auto peer_2 = setupPeerNode(job_manager, config, 9006);
+    auto peer_2_networking_subsystem = peer_2->RequireSubsystem<IPeer>();
+    auto peer_2_service_registry = peer_2->RequireSubsystem<IServiceRegistry>();
 
-    // each subsystem needs its own event broker
-    SharedEventBroker event_broker_2 = EventFactory::CreateBroker(subsystems_2);
-    subsystems_2->AddOrReplaceSubsystem<IEventBroker>(event_broker_2);
-
-    auto node2 = setupNode(9006, subsystems_2);
     auto progress =
-        WEB_SOCKET_OF(node2)->EstablishConnectionTo("127.0.0.1:9005");
+        peer_2_networking_subsystem->EstablishConnectionTo("127.0.0.1:9005");
 
     ASSERT_NO_THROW(progress.get());
 
     SharedServiceExecutor adding_service =
         std::make_shared<AddingServiceExecutor>();
-    REGISTRY_OF(node2)->Register(adding_service);
+    peer_2_service_registry->Register(adding_service);
 
     // wait until service is available to node1 (because node2 provides it)
     TryAssertUntilTimeout(
-        [job_manager, &node1] {
+        [job_manager, &peer_1_service_registry] {
           job_manager->InvokeCycleAndWait();
-          return REGISTRY_OF(node1)->Find("add").get().has_value();
+          return peer_1_service_registry->Find("add").get().has_value();
         },
         10s);
   }
 
   // we need to wait until the connection closed
   TryAssertUntilTimeout(
-      [job_manager, &node1] {
+      [job_manager, peer_1_networking_subsystem] {
         job_manager->InvokeCycleAndWait();
-        return WEB_SOCKET_OF(node1)->GetActiveConnectionCount() == 0;
+        return peer_1_networking_subsystem->GetActiveConnectionCount() == 0;
       },
       10s);
 
   // scenario: both node2 and its services are gone.
-  ASSERT_FALSE(REGISTRY_OF(node1)->Find("add").get().has_value());
+  ASSERT_FALSE(peer_1_service_registry->Find("add").get().has_value());
 }
 
 #endif // WEBSOCKETMESSAGEREGISTRYTEST_H

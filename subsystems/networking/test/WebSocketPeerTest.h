@@ -18,16 +18,13 @@ using namespace common::test;
 SharedWebSocketPeer
 SetupWebSocketPeer(const common::subsystems::SharedSubsystemManager &subsystems,
                    int port) {
-  SharedEventBroker message_broker = EventFactory::CreateBroker(subsystems);
+  auto config = std::make_shared<common::config::Configuration>();
+  config->Set("net.port", port);
+  auto message_broker = EventFactory::CreateBroker(subsystems);
   subsystems->AddOrReplaceSubsystem(message_broker);
 
-  SharedPropertyProvider property_provider =
-      std::make_shared<props::PropertyProvider>(subsystems);
-  property_provider->Set<size_t>("net.ws.port", port);
-  subsystems->AddOrReplaceSubsystem<props::PropertyProvider>(property_provider);
-
   SharedWebSocketPeer server =
-      NetworkingFactory::CreateWebSocketPeer(subsystems);
+      NetworkingFactory::CreateNetworkingPeer(subsystems, config);
 
   subsystems->AddOrReplaceSubsystem(server);
 
@@ -56,7 +53,8 @@ void SendMessageAndWait(SharedWebSocketMessage message,
 }
 
 TEST(WebSockets, websockets_connection_establishment) {
-  SharedJobManager job_manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<JobManager>(config);
   job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
@@ -72,7 +70,8 @@ TEST(WebSockets, websockets_connection_establishment) {
 }
 
 TEST(WebSockets, websockets_connection_closing) {
-  SharedJobManager job_manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<JobManager>(config);
   job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
@@ -95,7 +94,8 @@ TEST(WebSockets, websockets_connection_closing) {
 }
 
 TEST(WebSockets, websockets_message_sending_1_to_1) {
-  SharedJobManager job_manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  SharedJobManager job_manager = std::make_shared<JobManager>(config);
   job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
@@ -142,7 +142,8 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
 }
 
 TEST(WebSockets, websockets_message_receiving_multiple) {
-  SharedJobManager job_manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  SharedJobManager job_manager = std::make_shared<JobManager>(config);
   job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
@@ -175,7 +176,8 @@ TEST(WebSockets, websockets_message_receiving_multiple) {
 }
 
 TEST(WebSockets, websockets_message_sending_1_to_n) {
-  SharedJobManager job_manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  SharedJobManager job_manager = std::make_shared<JobManager>(config);
   job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
@@ -213,7 +215,8 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
 }
 
 TEST(WebSockets, websockets_message_broadcast) {
-  SharedJobManager job_manager = std::make_shared<JobManager>();
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = std::make_shared<JobManager>(config);
   job_manager->StartExecution();
 
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();

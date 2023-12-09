@@ -2,6 +2,7 @@
 #define JOBMANAGER_H
 
 #include "JobManagerState.h"
+#include "common/config/Configuration.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/execution/IJobExecution.h"
 #include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
@@ -34,6 +35,8 @@ namespace jobsystem {
 class JOBSYSTEM_API JobManager
     : public std::enable_shared_from_this<JobManager> {
 private:
+  common::config::SharedConfiguration m_config;
+
   /**
    * @brief All jobs for the initialization phase of the cycle are collected
    * here.
@@ -118,8 +121,10 @@ private:
   void ResetContinuationRequeueBlacklist();
 
 public:
-  JobManager();
+  JobManager() = delete;
+  explicit JobManager(const common::config::SharedConfiguration &config);
   ~JobManager();
+  JobManager(JobManager &other) = delete;
 
   /**
    * @brief Starts the job system execution cycle.

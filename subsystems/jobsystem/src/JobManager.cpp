@@ -6,7 +6,8 @@ using namespace jobsystem;
 using namespace jobsystem::job;
 using namespace std::chrono_literals;
 
-JobManager::JobManager() {
+JobManager::JobManager(const common::config::SharedConfiguration &config)
+    : m_config(config), m_execution(config) {
 #ifndef NDEBUG
   auto job = std::make_shared<TimerJob>(
       [&](JobContext *) {

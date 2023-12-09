@@ -15,7 +15,7 @@ public:
   virtual void HandleMessage(SharedEvent event) = 0;
 
   /**
-   * @brief Get id of this listener instance
+   * @brief GetAsInt id of this listener instance
    * @return id (preferably uuid of this listener)
    */
   virtual std::string GetId() const = 0;

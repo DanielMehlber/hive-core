@@ -9,62 +9,31 @@
 #include "networking/NetworkingFactory.h"
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
-#define REGISTRY_OF(x) std::get<1>(x)
-#define WEB_SOCKET_OF(x) std::get<0>(x)
-#define NODE std::tuple<SharedWebSocketPeer, SharedServiceRegistry>
-
 using namespace services;
 using namespace networking;
 using namespace graphics;
 
-SharedWebSocketPeer
-setupPeer(size_t port,
-          const common::subsystems::SharedSubsystemManager &subsystems) {
-
-  props::SharedPropertyProvider property_provider =
-      std::make_shared<props::PropertyProvider>(subsystems);
-
-  property_provider->Set("net.ws.port", port);
-
-  subsystems->AddOrReplaceSubsystem(property_provider);
-
-  return NetworkingFactory::CreateWebSocketPeer(subsystems);
-}
-
-SharedServiceRequest GenerateRenderingRequest(int width, int height) {
-  auto request = std::make_shared<ServiceRequest>("render");
-  request->SetParameter("width", width);
-  request->SetParameter("height", height);
-  return request;
-}
-
-NODE setupNode(size_t port,
-               const common::subsystems::SharedSubsystemManager &subsystems) {
-  // setup first peer
-  SharedWebSocketPeer web_socket_peer = setupPeer(port, subsystems);
-
-  subsystems->AddOrReplaceSubsystem(web_socket_peer);
-
-  auto registry =
-      std::make_shared<services::impl::RemoteServiceRegistry>(subsystems);
-
-  subsystems->AddOrReplaceSubsystem(registry);
-
-  return {web_socket_peer, registry};
-}
-
-common::subsystems::SharedSubsystemManager SetupSubsystems() {
+common::subsystems::SharedSubsystemManager
+setupPeerNode(const jobsystem::SharedJobManager &job_manager,
+              const common::config::SharedConfiguration &config, int port) {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
-
-  SharedJobManager job_manager = std::make_shared<JobManager>();
-  job_manager->StartExecution();
-
   subsystems->AddOrReplaceSubsystem(job_manager);
 
-  events::SharedEventBroker message_broker =
+  // setup event broker
+  events::SharedEventBroker event_broker =
       events::EventFactory::CreateBroker(subsystems);
+  subsystems->AddOrReplaceSubsystem(event_broker);
 
-  subsystems->AddOrReplaceSubsystem(message_broker);
+  // setup networking peer
+  config->Set("net.port", port);
+  auto networking_peer =
+      networking::NetworkingFactory::CreateNetworkingPeer(subsystems, config);
+  subsystems->AddOrReplaceSubsystem(networking_peer);
+
+  // setup service registry
+  SharedServiceRegistry registry =
+      std::make_shared<services::impl::RemoteServiceRegistry>(subsystems);
+  subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(registry);
 
   return subsystems;
 }

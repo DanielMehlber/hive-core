@@ -16,21 +16,18 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 using namespace std::chrono_literals;
 
 BoostWebSocketPeer::BoostWebSocketPeer(
-    const common::subsystems::SharedSubsystemManager &subsystems)
-    : m_subsystems(subsystems) {
+    const common::subsystems::SharedSubsystemManager &subsystems,
+    const common::config::SharedConfiguration &config)
+    : m_subsystems(subsystems), m_config(config) {
 
-  auto properties =
-      m_subsystems.lock()->RequireSubsystem<props::PropertyProvider>();
-
-  bool init_server_at_startup =
-      properties->GetOrElse("net.ws.server.auto-init", true);
-  auto thread_count = properties->GetOrElse<size_t>("net.ws.threads", 1);
-  auto local_endpont_port = properties->GetOrElse<size_t>("net.ws.port", 9000);
-  auto local_endpoint_address =
-      properties->GetOrElse<std::string>("net.ws.address", "127.0.0.1");
+  // read configuration
+  bool init_server_at_startup = config->GetBool("net.server.auto-init", true);
+  int thread_count = config->GetAsInt("net.threads", 1);
+  int local_endpoint_port = config->GetAsInt("net.port", 9000);
+  std::string local_endpoint_address = config->Get("net.address", "127.0.0.1");
 
   m_local_endpoint = std::make_shared<boost::asio::ip::tcp::endpoint>(
-      asio::ip::make_address(local_endpoint_address), local_endpont_port);
+      asio::ip::make_address(local_endpoint_address), local_endpoint_port);
 
   m_execution_context = std::make_shared<boost::asio::io_context>();
 
@@ -262,10 +259,8 @@ networking::websockets::BoostWebSocketPeer::GetConnection(
 
 void BoostWebSocketPeer::InitAndStartConnectionListener() {
   if (!m_connection_listener) {
-    auto property_provider =
-        m_subsystems.lock()->RequireSubsystem<props::PropertyProvider>();
     m_connection_listener = std::make_shared<BoostWebSocketConnectionListener>(
-        m_execution_context, property_provider, m_local_endpoint,
+        m_execution_context, m_config, m_local_endpoint,
         std::bind(&BoostWebSocketPeer::AddConnection, this,
                   std::placeholders::_1, std::placeholders::_2));
     m_connection_listener->Init();
@@ -275,11 +270,9 @@ void BoostWebSocketPeer::InitAndStartConnectionListener() {
 
 void BoostWebSocketPeer::InitConnectionEstablisher() {
   if (!m_connection_establisher) {
-    auto property_provider =
-        m_subsystems.lock()->RequireSubsystem<props::PropertyProvider>();
     m_connection_establisher =
         std::make_shared<BoostWebSocketConnectionEstablisher>(
-            m_execution_context, property_provider,
+            m_execution_context,
             std::bind(&BoostWebSocketPeer::AddConnection, this,
                       std::placeholders::_1, std::placeholders::_2));
   }

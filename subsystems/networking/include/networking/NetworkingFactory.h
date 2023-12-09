@@ -27,12 +27,12 @@ public:
    * @return a shared web-socket peer implementation
    */
   template <typename ServerImpl = DEFAULT_WEBSOCKET_PEER_IMPL, typename... Args>
-  static SharedWebSocketPeer CreateWebSocketPeer(Args... args);
+  static SharedWebSocketPeer CreateNetworkingPeer(Args... args);
 };
 
 template <typename ServerImpl, typename... Args>
 inline SharedWebSocketPeer
-NetworkingFactory::CreateWebSocketPeer(Args... args) {
+NetworkingFactory::CreateNetworkingPeer(Args... args) {
   return std::static_pointer_cast<IPeer>(std::make_shared<ServerImpl>(args...));
 }
 

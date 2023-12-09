@@ -39,8 +39,6 @@ TEST(MultipartFormdata, generate_and_parse) {
 
   std::string str = generateMultipartFormData(multipart);
 
-  std::cout << str << std::endl;
-
   Multipart parsed_multipart = parseMultipartFormData(str);
 
   ASSERT_TRUE(parsed_multipart.parts.contains(a.name));

@@ -28,7 +28,7 @@ public:
   virtual void UninstallPlugin(const std::string &name) = 0;
 
   /**
-   * Get the current plugin context
+   * GetAsInt the current plugin context
    * @return current plugin context
    */
   virtual SharedPluginContext GetContext() = 0;

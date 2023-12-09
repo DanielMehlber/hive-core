@@ -45,7 +45,7 @@ public:
   template <typename T> void SetParameter(const std::string &name, const T &t);
 
   /**
-   * Get parameter value (if parameter has been set)
+   * GetAsInt parameter value (if parameter has been set)
    * @param name identifier of parameter in request
    * @return parameter value as string (if it exists)
    */
