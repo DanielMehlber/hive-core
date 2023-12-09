@@ -97,8 +97,29 @@ void FiberExecutionImpl::Stop() {
   // closing channel causes workers to exit, so they can be joined
   m_job_channel->close();
   for (auto &worker : m_worker_threads) {
+
+    /*
+     * *** Known bug ahead ***
+     *
+     * A job in execution has a shared_ptr of the job manager. In some rare
+     * unit testing occasions, a timer job was still in execution (outside of
+     * cycle?) and therefore the job manager was not destroyed directly.
+     *
+     * It was destroyed after the job has finished and its shared_ptr has gone
+     * out of scope. Therefore, the thread indirectly calling the destructor was
+     * the fiber (worker thread) that executed the job, not the main thread. It
+     * tried to join itself in the following statement.
+     *
+     * To fix this
+     * - the cause of the out-of-cycle job execution must be found (maybe a
+     * synchronization problem)
+     * - or this function has to be called at the end of every program by the
+     * main thread
+     */
+    // TODO: Fix this bug
     ASSERT(worker->get_id() != std::this_thread::get_id(),
-           "worker thread should not be calling this function and join itself")
+           "execution is not supposed to be terminated by one of its own "
+           "worker threads: The thread would join itself");
     worker->join();
   }
 

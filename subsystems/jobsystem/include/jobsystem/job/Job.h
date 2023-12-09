@@ -10,6 +10,7 @@
 #include <functional>
 #include <list>
 #include <memory>
+#include <mutex>
 #include <string>
 
 namespace jobsystem::job {
