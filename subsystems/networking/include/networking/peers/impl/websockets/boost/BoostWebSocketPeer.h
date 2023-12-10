@@ -80,7 +80,7 @@ private:
    * pointers that can be removed.
    * @param type message type name of consumers to clean up
    */
-  void CleanUpConsumersOf(const std::string &type) noexcept;
+  void CleanUpConsumersOfMessageType(const std::string &type) noexcept;
 
   /**
    * @brief Constructs a new connection object from a stream
@@ -100,16 +100,19 @@ private:
 
   void SetupCleanUpJob();
 
+  void OnConnectionClose(const std::string &id);
+
 public:
   BoostWebSocketPeer(
       const common::subsystems::SharedSubsystemManager &subsystems,
       const common::config::SharedConfiguration &config);
   virtual ~BoostWebSocketPeer();
 
-  void AddConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) override;
+  void
+  AddMessageConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) override;
 
   std::list<SharedPeerMessageConsumer>
-  GetConsumersOfType(const std::string &type_name) noexcept override;
+  GetConsumersOfMessageType(const std::string &type_name) noexcept override;
 
   std::future<void> Send(const std::string &uri,
                          SharedWebSocketMessage message) override;

@@ -31,11 +31,11 @@ std::future<void> BoostWebSocketConnectionEstablisher::EstablishConnectionTo(
   auto optional_uri = util::UrlParser::parse(uri);
   if (!optional_uri.has_value()) {
     LOG_WARN("failed to establish web-socket connection due to malformed URL '"
-             << uri << "'");
-    THROW_EXCEPTION(UrlMalformedException, "URL is malformed");
+             << uri << "'")
+    THROW_EXCEPTION(UrlMalformedException, "URL is malformed")
   }
 
-  LOG_DEBUG("connection attempt to host " << uri << " started");
+  LOG_DEBUG("connection attempt to host " << uri << " started")
 
   util::ParsedUrl url = optional_uri.value();
 
@@ -57,7 +57,7 @@ void BoostWebSocketConnectionEstablisher::ProcessResolvedHostnameOfServer(
   if (error_code) {
     LOG_WARN("cannot create web-socket connection to "
              << uri
-             << " due to hostname resolving issues: " << error_code.message());
+             << " due to hostname resolving issues: " << error_code.message())
     auto exception =
         BUILD_EXCEPTION(CannotResolveHostException, "cannot resolve host");
     connection_promise.set_exception(std::make_exception_ptr(exception));
@@ -88,7 +88,7 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedConnectionToServer(
   if (error_code) {
     LOG_WARN("cannot establish TCP connection to "
              << endpoint_type.address() << " (" << uri << ") "
-             << ": " << error_code.message());
+             << ": " << error_code.message())
 
     auto exception = BUILD_EXCEPTION(ConnectionFailedException,
                                      "cannot establish TCP connection to "
@@ -99,7 +99,7 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedConnectionToServer(
   }
 
   LOG_DEBUG("established TCP connection to "
-            << endpoint_type.address().to_string());
+            << endpoint_type.address().to_string())
 
   // Turn off the timeout on the tcp_stream, because
   // the websocket stream has its own timeout system.
@@ -136,7 +136,7 @@ void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
   auto port = stream->next_layer().socket().remote_endpoint().port();
   if (error_code) {
     LOG_WARN("web-socket handshake with remote host "
-             << address.to_string() << " failed: " << error_code.message());
+             << address.to_string() << " failed: " << error_code.message())
     auto exception = BUILD_EXCEPTION(
         ConnectionFailedException, "web-socket handshake with remote host "
                                        << address.to_string()
@@ -146,7 +146,7 @@ void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
   }
 
   LOG_INFO("established web-socket connection with remote peer "
-           << address.to_string() << " on port " << port);
+           << address.to_string() << " on port " << port)
 
   // consume connection
   m_connection_consumer(uri, std::move(*stream));

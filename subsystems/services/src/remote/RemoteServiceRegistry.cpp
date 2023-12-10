@@ -186,9 +186,9 @@ void RemoteServiceRegistry::SetupMessageConsumers() {
       m_subsystems.lock(),
       std::bind(&RemoteServiceRegistry::Find, this, _1, _2), web_socket_peer);
 
-  web_socket_peer->AddConsumer(m_registration_consumer);
-  web_socket_peer->AddConsumer(m_response_consumer);
-  web_socket_peer->AddConsumer(m_request_consumer);
+  web_socket_peer->AddMessageConsumer(m_registration_consumer);
+  web_socket_peer->AddMessageConsumer(m_response_consumer);
+  web_socket_peer->AddMessageConsumer(m_request_consumer);
 }
 
 void RemoteServiceRegistry::SendServicePortfolioToPeer(

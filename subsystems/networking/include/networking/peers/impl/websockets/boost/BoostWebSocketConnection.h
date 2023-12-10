@@ -34,9 +34,15 @@ private:
   /**
    * @brief Will be called to pass the received data on for further processing
    */
-  std::function<void(const std::string &,
-                     std::shared_ptr<BoostWebSocketConnection>)>
+  const std::function<void(const std::string &,
+                           std::shared_ptr<BoostWebSocketConnection>)>
       m_on_message_received;
+
+  /**
+   * @brief Will be called when the connection was closed by this or the other
+   * peer
+   */
+  const std::function<void(const std::string &)> m_on_connection_closed;
 
   /**
    * @brief Data describing the remote endpoint of this connection
@@ -87,7 +93,8 @@ public:
       stream_type &&socket,
       std::function<void(const std::string &,
                          std::shared_ptr<BoostWebSocketConnection>)>
-          on_message_received);
+          on_message_received,
+      std::function<void(const std::string &)> on_connection_closed);
 
   /**
    * Shuts down the connection

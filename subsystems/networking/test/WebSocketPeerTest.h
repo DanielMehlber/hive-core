@@ -109,8 +109,8 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
   std::shared_ptr<TestConsumer> test_consumer_2 =
       std::make_shared<TestConsumer>();
 
-  peer1->AddConsumer(test_consumer_1);
-  peer2->AddConsumer(test_consumer_2);
+  peer1->AddMessageConsumer(test_consumer_1);
+  peer2->AddMessageConsumer(test_consumer_2);
 
   auto result1 = peer1->EstablishConnectionTo("ws://127.0.0.1:9004");
   result1.wait();
@@ -155,7 +155,7 @@ TEST(WebSockets, websockets_message_receiving_multiple) {
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
 
-  peer2->AddConsumer(test_consumer_1);
+  peer2->AddMessageConsumer(test_consumer_1);
 
   auto result1 = peer1->EstablishConnectionTo("ws://127.0.0.1:9004");
   result1.wait();
@@ -188,7 +188,7 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
 
-  peer1->AddConsumer(test_consumer_1);
+  peer1->AddMessageConsumer(test_consumer_1);
 
   std::vector<SharedWebSocketPeer> peers;
   for (size_t i = 9005; i < 9010; i++) {
@@ -235,7 +235,7 @@ TEST(WebSockets, websockets_message_broadcast) {
     result.wait();
     ASSERT_NO_THROW(result.get());
 
-    peer->AddConsumer(test_consumer_1);
+    peer->AddMessageConsumer(test_consumer_1);
     peers.push_back(peer);
   }
 

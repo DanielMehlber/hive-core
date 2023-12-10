@@ -26,7 +26,7 @@ void BoostWebSocketConnectionListener::Init() {
 
   if (use_tls) {
     LOG_WARN(
-        "TLS in web-sockets is not implemented yet and is therefore not used");
+        "TLS in web-sockets is not implemented yet and is therefore not used")
   }
 
   // setup acceptor which listens for incoming connections asynchronously
@@ -40,22 +40,22 @@ void BoostWebSocketConnectionListener::Init() {
                                        error_code);
   if (error_code) {
     LOG_ERR("cannot setup acceptor for incoming web-socket connections: "
-            << error_code.message());
+            << error_code.message())
     THROW_EXCEPTION(
         WebSocketTcpServerException,
         "cannot setup acceptor for incoming web-socket connections: "
-            << error_code.message());
+            << error_code.message())
   }
 
   m_incoming_connection_acceptor->set_option(
       asio::socket_base::reuse_address(true), error_code);
   if (error_code) {
     LOG_ERR("cannot set option for accepting incoming web-socket connections: "
-            << error_code.message());
+            << error_code.message())
     THROW_EXCEPTION(
         WebSocketTcpServerException,
         "cannot set option for accepting incoming web-socket connections: "
-            << error_code.message());
+            << error_code.message())
   }
 
   // Bind the acceptor to the host address
@@ -66,11 +66,11 @@ void BoostWebSocketConnectionListener::Init() {
     LOG_ERR(
         "cannot bind incoming web-socket connection acceptor to host address "
         << m_local_endpoint->address().to_string() << ":"
-        << m_local_endpoint->port() << ": " << error_code.message());
+        << m_local_endpoint->port() << ": " << error_code.message())
     THROW_EXCEPTION(
         WebSocketTcpServerException,
         "cannot bind incoming web-socket connection acceptor to host address: "
-            << error_code.message());
+            << error_code.message())
   }
 
   // Listen for incoming connections
@@ -78,10 +78,10 @@ void BoostWebSocketConnectionListener::Init() {
       asio::socket_base::max_listen_connections, error_code);
   if (error_code) {
     LOG_ERR("cannot listen for incoming web-socket connections: "
-            << error_code.message());
+            << error_code.message())
     THROW_EXCEPTION(WebSocketTcpServerException,
                     "cannot listen for incoming web-socket connections: "
-                        << error_code.message());
+                        << error_code.message())
   }
 }
 
@@ -91,7 +91,7 @@ void BoostWebSocketConnectionListener::StartAcceptingAnotherConnection() {
   }
   LOG_DEBUG("waiting for web-socket connections on "
             << m_local_endpoint->address().to_string() << " port "
-            << m_local_endpoint->port());
+            << m_local_endpoint->port())
   // Accept incoming connections
   m_incoming_connection_acceptor->async_accept(
       asio::make_strand(*m_execution_context),
@@ -106,19 +106,19 @@ void BoostWebSocketConnectionListener::ProcessTcpConnection(
   if (error_code == asio::error::operation_aborted) {
     LOG_DEBUG("local web-socket connection acceptor at "
               << m_local_endpoint->address().to_string() << ":"
-              << m_local_endpoint->port() << " has stopped");
+              << m_local_endpoint->port() << " has stopped")
     return;
   } else if (error_code) {
     LOG_ERR(
         "server was not able to accept TCP connection for web-socket stream: "
-        << error_code.message());
+        << error_code.message())
     StartAcceptingAnotherConnection();
     return;
   }
 
   if (!socket.is_open()) {
     LOG_ERR("server was not able to accept TCP connection for web-socket "
-            "stream: TCP connection has already been closed");
+            "stream: TCP connection has already been closed")
     return;
   }
 
@@ -126,7 +126,7 @@ void BoostWebSocketConnectionListener::ProcessTcpConnection(
   auto remote_endpoint_address = remote_endpoint.address();
 
   LOG_DEBUG("new TCP connection for web-socket established by host "
-            << remote_endpoint_address.to_string());
+            << remote_endpoint_address.to_string())
 
   // create stream and perform handshake
   auto stream = std::make_shared<stream_type>(std::move(socket));
@@ -160,7 +160,7 @@ void BoostWebSocketConnectionListener::ProcessWebSocketHandshake(
       current_stream->next_layer().socket().remote_endpoint().address();
   if (ec) {
     LOG_ERR("performing web-socket handshake with " << address.to_string()
-                                                    << ": " << ec.message());
+                                                    << ": " << ec.message())
     // TODO: close TCP connection
     StartAcceptingAnotherConnection();
     return;
@@ -170,7 +170,7 @@ void BoostWebSocketConnectionListener::ProcessWebSocketHandshake(
   std::string host = address.to_string() + ":" + std::to_string(port);
 
   LOG_INFO("web-socket connection established by " << address.to_string() << ":"
-                                                   << port);
+                                                   << port)
   m_connection_consumer(host, std::move(*current_stream));
 
   StartAcceptingAnotherConnection();

@@ -14,9 +14,11 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 BoostWebSocketConnection::BoostWebSocketConnection(
     stream_type &&socket,
     std::function<void(const std::string &, SharedBoostWebSocketConnection)>
-        on_message_received)
+        on_message_received,
+    std::function<void(const std::string &)> on_connection_closed)
     : m_socket(std::move(socket)),
-      m_on_message_received{std::move(on_message_received)} {
+      m_on_message_received{std::move(on_message_received)},
+      m_on_connection_closed{std::move(on_connection_closed)} {
 
   m_remote_endpoint_data = m_socket.next_layer().socket().remote_endpoint();
 }
@@ -42,19 +44,18 @@ void BoostWebSocketConnection::OnMessageReceived(
       error_code == boost::asio::error::connection_reset) {
     LOG_WARN("remote host " << m_remote_endpoint_data.address().to_string()
                             << ":" << m_remote_endpoint_data.port()
-                            << " has closed the web-socket connection");
+                            << " has closed the web-socket connection")
 
     Close();
     return;
   } else if (error_code == asio::error::operation_aborted) {
     LOG_DEBUG("local host has cancelled listening to web-socket message from "
               << m_remote_endpoint_data.address().to_string() << ":"
-              << m_remote_endpoint_data.port());
+              << m_remote_endpoint_data.port())
     return;
   } else if (error_code) {
     LOG_ERR("failed to receive web-socket message from host "
-            << m_remote_endpoint_data.address() << ": "
-            << error_code.message());
+            << m_remote_endpoint_data.address() << ": " << error_code.message())
     return;
   }
 
@@ -90,8 +91,10 @@ void BoostWebSocketConnection::Close() {
 
     LOG_INFO("closed web-socket connection to "
              << m_remote_endpoint_data.address().to_string() << ":"
-             << m_remote_endpoint_data.port());
+             << m_remote_endpoint_data.port())
   }
+
+  m_on_connection_closed(GetConnectionInfo().GetHostname());
 }
 
 BoostWebSocketConnection::~BoostWebSocketConnection() { Close(); }
@@ -114,9 +117,9 @@ BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
   if (!m_socket.is_open()) {
     LOG_WARN("Cannot sent message via web-socket to remote host "
              << m_remote_endpoint_data.address().to_string() << ":"
-             << m_remote_endpoint_data.port() << " because socket is closed");
+             << m_remote_endpoint_data.port() << " because socket is closed")
 
-    THROW_EXCEPTION(ConnectionClosedException, "connection is not open");
+    THROW_EXCEPTION(ConnectionClosedException, "connection is not open")
   }
 
   m_socket.binary(true);
@@ -157,7 +160,7 @@ void BoostWebSocketConnection::OnMessageSent(
     LOG_WARN("Sending message via web-socket to remote host "
              << m_remote_endpoint_data.address().to_string() << ":"
              << m_remote_endpoint_data.port()
-             << " failed: " << error_code.message());
+             << " failed: " << error_code.message())
     auto exception =
         BUILD_EXCEPTION(MessageSendingException,
                         "Sending message via web-socket to remote host "
@@ -173,11 +176,11 @@ void BoostWebSocketConnection::OnMessageSent(
             << message->GetType() << " (" << sent_data->size()
             << " bytes) via web-socket to host "
             << m_remote_endpoint_data.address().to_string() << ":"
-            << m_remote_endpoint_data.port());
+            << m_remote_endpoint_data.port())
 }
 
 PeerConnectionInfo BoostWebSocketConnection::GetConnectionInfo() const {
   PeerConnectionInfo info;
   info.SetHostname(GetRemoteHostAddress());
-  return std::move(info);
+  return info;
 }

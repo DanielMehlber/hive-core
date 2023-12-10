@@ -28,7 +28,8 @@ public:
    * @throws DuplicateConsumerTypeException if there is already a consumer for
    * that type registered.
    */
-  virtual void AddConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) = 0;
+  virtual void
+  AddMessageConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) = 0;
 
   /**
    * @brief Tries to retrieve a valid consumer for the given message type (if
@@ -37,7 +38,7 @@ public:
    * @return a consumer if one has been found for the given type
    */
   virtual std::list<SharedPeerMessageConsumer>
-  GetConsumersOfType(const std::string &type_name) noexcept = 0;
+  GetConsumersOfMessageType(const std::string &type_name) noexcept = 0;
 
   /**
    * @brief Sends some message to some uri asynchronously

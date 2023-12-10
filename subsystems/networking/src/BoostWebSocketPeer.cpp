@@ -1,6 +1,7 @@
 #include "networking/peers/impl/websockets/boost/BoostWebSocketPeer.h"
 #include "networking/peers/PeerMessageConsumerJob.h"
 #include "networking/peers/PeerMessageConverter.h"
+#include "networking/peers/events/ConnectionClosedEvent.h"
 #include "networking/peers/events/ConnectionEstablishedEvent.h"
 #include "networking/util/UrlParser.h"
 #include <regex>
@@ -55,7 +56,7 @@ void BoostWebSocketPeer::SetupCleanUpJob() {
         // clean up consumers that are not referencing any valid ones
         auto _this = weak_this.lock();
         for (auto &consumer : _this->m_consumers) {
-          _this->CleanUpConsumersOf(consumer.first);
+          _this->CleanUpConsumersOfMessageType(consumer.first);
         }
 
         // clean up connections that are not usable anymore
@@ -64,7 +65,8 @@ void BoostWebSocketPeer::SetupCleanUpJob() {
         for (auto it = _this->m_connections.begin();
              it != _this->m_connections.end();
              /* no increment here */) {
-          if (it->second->IsUsable()) {
+          if (!it->second->IsUsable()) {
+            _this->OnConnectionClose(it->first);
             it = _this->m_connections.erase(it);
           } else {
             ++it;
@@ -81,7 +83,7 @@ void BoostWebSocketPeer::SetupCleanUpJob() {
       },
       "boost-web-socket-peer-clean-up-" +
           std::to_string(m_local_endpoint->port()),
-      5s, CLEAN_UP);
+      1s, CLEAN_UP);
 
   auto job_manager =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
@@ -109,7 +111,7 @@ BoostWebSocketPeer::~BoostWebSocketPeer() {
   LOG_DEBUG("local web-socket peer has been shut down")
 }
 
-void BoostWebSocketPeer::AddConsumer(
+void BoostWebSocketPeer::AddMessageConsumer(
     std::weak_ptr<IPeerMessageConsumer> consumer) {
   bool is_valid_consumer = !consumer.expired();
   if (is_valid_consumer) {
@@ -126,7 +128,8 @@ void BoostWebSocketPeer::AddConsumer(
 }
 
 std::list<SharedPeerMessageConsumer>
-BoostWebSocketPeer::GetConsumersOfType(const std::string &type_name) noexcept {
+BoostWebSocketPeer::GetConsumersOfMessageType(
+    const std::string &type_name) noexcept {
   std::list<SharedPeerMessageConsumer> ret_consumer_list;
 
   std::unique_lock consumers_lock(m_consumers_mutex);
@@ -135,7 +138,7 @@ BoostWebSocketPeer::GetConsumersOfType(const std::string &type_name) noexcept {
 
     consumers_lock.unlock();
     // remove expired references to consumers
-    CleanUpConsumersOf(type_name);
+    CleanUpConsumersOfMessageType(type_name);
     consumers_lock.lock();
 
     // collect all remaining consumers in the list
@@ -149,7 +152,8 @@ BoostWebSocketPeer::GetConsumersOfType(const std::string &type_name) noexcept {
   return ret_consumer_list;
 }
 
-void BoostWebSocketPeer::CleanUpConsumersOf(const std::string &type) noexcept {
+void BoostWebSocketPeer::CleanUpConsumersOfMessageType(
+    const std::string &type) noexcept {
   if (m_consumers.contains(type)) {
     std::unique_lock consumers_lock(m_consumers_mutex);
     auto &consumer_list = m_consumers[type];
@@ -164,7 +168,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
 
   if (m_subsystems.expired()) {
     LOG_ERR("Received message but subsystems have shut down. Cannot process "
-            "message.");
+            "message.")
     return;
   }
 
@@ -190,7 +194,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   }
 
   std::string message_type = message->GetType();
-  auto consumer_list = GetConsumersOfType(message_type);
+  auto consumer_list = GetConsumersOfMessageType(message_type);
   for (auto consumer : consumer_list) {
     auto job = std::make_shared<PeerMessageConsumerJob>(
         consumer, message, over_connection->GetConnectionInfo());
@@ -220,7 +224,9 @@ void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
       std::make_shared<BoostWebSocketConnection>(
           std::move(stream),
           std::bind(&BoostWebSocketPeer::ProcessReceivedMessage, this,
-                    std::placeholders::_1, std::placeholders::_2));
+                    std::placeholders::_1, std::placeholders::_2),
+          std::bind(&BoostWebSocketPeer::OnConnectionClose, this,
+                    std::placeholders::_1));
   connection->StartReceivingMessages();
 
   auto connection_id = connectionIdFromUrl(url).value();
@@ -290,7 +296,6 @@ std::future<void> BoostWebSocketPeer::Send(const std::string &uri,
 
 std::future<void>
 BoostWebSocketPeer::EstablishConnectionTo(const std::string &uri) noexcept {
-
   auto opt_connection = GetConnection(uri);
 
   // if connection has already been established
@@ -385,4 +390,19 @@ size_t BoostWebSocketPeer::GetActiveConnectionCount() const {
   }
 
   return count;
-};
+}
+
+void BoostWebSocketPeer::OnConnectionClose(const std::string &id) {
+  if (!m_subsystems.expired() &&
+      m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>()) {
+    auto event_broker =
+        m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+
+    ConnectionClosedEvent event;
+    event.SetPeerId(id);
+    event_broker->FireEvent(event.GetEvent());
+  } else {
+    LOG_WARN("Cannot publish connection close event because event subsystem is "
+             "not provided")
+  }
+}
