@@ -18,19 +18,19 @@ TEST(JobSystem, allPhases) {
         vec.push_back(0);
         return JobContinuation::DISPOSE;
       },
-      JobExecutionPhase::INIT);
+      "test-init-job", JobExecutionPhase::INIT);
   SharedJob jobB = JobSystemFactory::CreateJob(
       [&](JobContext *context) {
         vec.push_back(1);
         return JobContinuation::DISPOSE;
       },
-      JobExecutionPhase::MAIN);
+      "test-main-job", JobExecutionPhase::MAIN);
   SharedJob jobC = JobSystemFactory::CreateJob(
       [&](JobContext *context) {
         vec.push_back(2);
         return JobContinuation::DISPOSE;
       },
-      JobExecutionPhase::CLEAN_UP);
+      "test-clean-up-job", JobExecutionPhase::CLEAN_UP);
 
   manager->KickJob(jobA);
   manager->KickJob(jobC);
@@ -40,6 +40,8 @@ TEST(JobSystem, allPhases) {
   ASSERT_EQ(0, vec.at(0));
   ASSERT_EQ(1, vec.at(1));
   ASSERT_EQ(2, vec.at(2));
+
+  manager->StopExecution();
 }
 
 TEST(JobSystem, multiple_jobs_per_phase) {
@@ -59,6 +61,8 @@ TEST(JobSystem, multiple_jobs_per_phase) {
 
   manager->InvokeCycleAndWait();
   ASSERT_EQ(job_count, counter);
+
+  manager->StopExecution();
 }
 
 TEST(JobSystem, auto_requeue) {
@@ -77,6 +81,8 @@ TEST(JobSystem, auto_requeue) {
   manager->InvokeCycleAndWait();
 
   ASSERT_EQ(executions, 2);
+
+  manager->StopExecution();
 }
 
 TEST(JobSystem, timer_job) {
@@ -90,7 +96,7 @@ TEST(JobSystem, timer_job) {
         job_executed++;
         return JobContinuation::REQUEUE;
       },
-      1s, CLEAN_UP);
+      "timer-test-clean-up-job", 1s, CLEAN_UP);
 
   manager->KickJob(timer_job);
   manager->InvokeCycleAndWait();
@@ -106,6 +112,8 @@ TEST(JobSystem, timer_job) {
   std::this_thread::sleep_for(1.2s);
   manager->InvokeCycleAndWait();
   ASSERT_EQ(2, job_executed);
+
+  manager->StopExecution();
 }
 
 TEST(JobSystem, jobs_kicking_jobs) {
@@ -156,6 +164,8 @@ TEST(JobSystem, jobs_kicking_jobs) {
   manager->InvokeCycleAndWait();
 
   ASSERT_TRUE(jobDCompleted);
+
+  manager->StopExecution();
 }
 
 // Checks that no jobs are getting lost (due to data races)
@@ -186,6 +196,8 @@ TEST(JobSystem, job_bulk) {
     throw "";
   }
   ASSERT_TRUE(absolute_counter->IsFinished());
+
+  manager->StopExecution();
 }
 
 // single threaded job implementations do not allow waiting inside jobs because
@@ -217,6 +229,8 @@ TEST(JobSystem, wait_for_job_inside_job) {
 
   ASSERT_EQ(1, order.at(0));
   ASSERT_EQ(2, order.at(1));
+
+  manager->StopExecution();
 }
 #endif
 
@@ -239,6 +253,8 @@ TEST(JobSystem, detach_jobs) {
   manager->DetachJob(job->GetId());
   manager->InvokeCycleAndWait();
   ASSERT_EQ(2, execution_counter);
+
+  manager->StopExecution();
 }
 
 // this waits for counters, what is not possible inside jobs using a single
@@ -269,6 +285,8 @@ TEST(JobSystem, detach_jobs_mid_execution) {
   manager->InvokeCycleAndWait();
 
   ASSERT_EQ(1, execution_counter);
+
+  manager->StopExecution();
 }
 #endif
 
@@ -296,6 +314,8 @@ TEST(JobSystem, wait_for_future_completion) {
   ASSERT_EQ(order.at(0), 0);
   ASSERT_EQ(order.at(1), 1);
   ASSERT_EQ(order.at(2), 2);
+
+  manager->StopExecution();
 }
 
 // this waits for counters, what is not possible inside jobs using a single
@@ -330,6 +350,8 @@ TEST(JobSystem, test_yield) {
   manager->KickJob(future_job);
 
   manager->InvokeCycleAndWait();
+
+  manager->StopExecution();
 }
 #endif
 
