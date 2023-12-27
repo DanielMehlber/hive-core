@@ -1,11 +1,9 @@
 #include "graphics/service/RenderService.h"
 #include "graphics/service/RenderServiceRequest.h"
+#include "graphics/service/SimpleViewMatrix.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
-#include "graphics/service/encoders/impl/CharEscapeRenderResultEncoder.h"
-#include "graphics/service/encoders/impl/GzipRenderResultEncoder.h"
 #include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
-#include <boost/archive/iterators/transform_width.hpp>
 
 using namespace graphics;
 using namespace std::placeholders;
@@ -38,7 +36,7 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
 
   auto extend = request.GetExtend().value();
   auto opt_projection_type = request.GetProjectionType();
-  auto opt_camera = request.GetCameraData();
+  auto opt_view_matrix = request.GetViewMatrix();
 
   auto response =
       std::make_shared<ServiceResponse>(raw_request->GetTransactionId());
@@ -100,15 +98,11 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   }
 
   // check if camera must be moved
-  bool camera_view_set = opt_camera.has_value();
+  bool camera_view_set = opt_view_matrix.has_value();
   if (camera_view_set) {
-    auto camera_info = opt_camera.value();
-    vsg::dvec3 eye = camera_info.camera_position;
-    vsg::dvec3 direction = camera_info.camera_direction;
-    vsg::dvec3 up = camera_info.camera_up;
-
-    auto look_at = vsg::LookAt::create(eye, direction, up);
-    rendering_subsystem->SetCameraViewMatrix(look_at);
+    auto view_matrix = opt_view_matrix.value();
+    auto simple_view_matrix = graphics::SimpleViewMatrix::create(view_matrix);
+    rendering_subsystem->SetCameraViewMatrix(simple_view_matrix);
   }
 
   rendering_subsystem->Render();
@@ -131,6 +125,7 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   response->SetResult("encoding", encoder->GetName());
 
   auto color_data = result->ExtractColorData();
+
   auto encoded_color = encoder->Encode(color_data);
   response->SetResult("color", std::move(encoded_color));
 

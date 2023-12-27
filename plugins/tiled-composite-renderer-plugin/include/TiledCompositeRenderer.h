@@ -1,20 +1,8 @@
-#include "VulkanOperations.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "graphics/renderer/IRenderer.h"
 
 #ifndef TILEDCOMPOSITERENDERER_H
 #define TILEDCOMPOSITERENDERER_H
-
-/**
- * @brief A renderer that divides the overall render surface into tiles and uses
- * provided rendering services to render the necessary tiles.
- */
-
-struct CameraInfo {
-  vsg::dvec3 position{0, -2, 0};
-  vsg::dvec3 direction{0, 0, 0};
-  vsg::dvec3 up{0, 0, 1};
-};
 
 struct Tile {
   int x;
@@ -22,15 +10,21 @@ struct Tile {
   int width;
   int height;
   int image_index;
+  vsg::ref_ptr<vsg::ProjectionMatrix> projection;
+  vsg::ref_ptr<vsg::ViewMatrix> relative_view_matrix;
 };
 
+/**
+ * @brief A renderer that divides the overall render surface into tiles and uses
+ * provided rendering services to render the necessary tiles.
+ */
 class TiledCompositeRenderer
     : public graphics::IRenderer,
       public std::enable_shared_from_this<TiledCompositeRenderer> {
 private:
   graphics::SharedRenderer m_output_renderer;
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
-  std::shared_ptr<CameraInfo> m_camera_info = std::make_shared<CameraInfo>();
+
   vsg::ref_ptr<vsg::Camera> m_camera;
 
   size_t m_current_service_count;
@@ -43,7 +37,7 @@ private:
 #endif
 
   void UpdateTilingInfo(int tile_count);
-  void UpdateSceneTiling();
+  void CreateSceneWithTilingQuads();
 
 public:
   TiledCompositeRenderer(

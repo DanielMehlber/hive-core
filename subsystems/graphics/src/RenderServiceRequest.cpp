@@ -26,9 +26,42 @@ vsg::dvec3 toVec3(const std::string &serialized_vector) {
   return vec;
 }
 
+vsg::dmat4 toMat4(const std::string &serialized_vector) {
+  // split components
+  std::istringstream iss(serialized_vector);
+  std::vector<std::string> components;
+  std::string token;
+  while (std::getline(iss, token, ' ')) {
+    components.push_back(token);
+  }
+
+  if (components.size() != 16) {
+    THROW_EXCEPTION(VectorConversionException,
+                    "string provides " << components.size()
+                                       << " components, but 3 required")
+  }
+
+  vsg::dmat4 vec;
+
+  for (int i = 0; i < 16; i++) {
+    vec.data()[i] = std::stof(components.at(i));
+  }
+
+  return vec;
+}
+
 std::string toString(const vsg::dvec3 &vec) {
   std::stringstream ss;
   ss << vec.x << " " << vec.y << " " << vec.z;
+  return ss.str();
+}
+
+std::string toString(const vsg::dmat4 &mat) {
+  std::stringstream ss;
+  ss << mat.data()[0];
+  for (int i = 1; i < 16; i++) {
+    ss << " " << mat.data()[i];
+  }
   return ss.str();
 }
 
@@ -50,30 +83,6 @@ std::optional<Extend> RenderServiceRequest::GetExtend() const {
   }
 
   return {};
-}
-
-std::optional<CameraData> RenderServiceRequest::GetCameraData() const {
-  auto opt_camera_pos = m_request->GetParameter("camera-pos");
-  auto opt_camera_direction = m_request->GetParameter("camera-direction");
-  auto opt_camera_up = m_request->GetParameter("camera-up");
-
-  if (opt_camera_up.has_value() || opt_camera_direction.has_value() ||
-      opt_camera_pos.has_value()) {
-    vsg::dvec3 eye = toVec3(opt_camera_pos.value_or("0.0 0.0 0.0"));
-    vsg::dvec3 direction = toVec3(opt_camera_direction.value_or("1.0 0.0 0.0"));
-    vsg::dvec3 up = toVec3(opt_camera_up.value_or("0.0 0.0 1.0"));
-
-    return CameraData{up, eye, direction};
-  }
-
-  return {};
-}
-
-void RenderServiceRequest::SetCameraData(const CameraData &camera_data) {
-  m_request->SetParameter("camera-pos", toString(camera_data.camera_position));
-  m_request->SetParameter("camera-direction",
-                          toString(camera_data.camera_direction));
-  m_request->SetParameter("camera-up", toString(camera_data.camera_up));
 }
 
 std::optional<ProjectionType> RenderServiceRequest::GetProjectionType() const {
@@ -111,4 +120,19 @@ RenderServiceRequest::GetPerspectiveProjection() const {
 
 services::SharedServiceRequest RenderServiceRequest::GetRequest() const {
   return m_request;
+}
+
+void RenderServiceRequest::SetViewMatrix(std::optional<vsg::dmat4> matrix) {
+  if (matrix.has_value()) {
+    m_request->SetParameter("view-matrix", toString(matrix.value()));
+  }
+}
+
+std::optional<vsg::dmat4> RenderServiceRequest::GetViewMatrix() const {
+  auto param = m_request->GetParameter("view-matrix");
+  if (param.has_value()) {
+    return toMat4(param.value());
+  } else {
+    return {};
+  }
 }

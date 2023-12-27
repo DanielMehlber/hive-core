@@ -84,7 +84,14 @@ public:
 
   graphics::SharedRenderer GetRenderer() const;
   void SetRenderer(const graphics::SharedRenderer &renderer);
+
+  common::subsystems::SharedSubsystemManager GetSubsystemsManager() const;
 };
+
+inline common::subsystems::SharedSubsystemManager
+Kernel::GetSubsystemsManager() const {
+  return m_subsystems;
+}
 
 inline jobsystem::SharedJobManager Kernel::GetJobManager() const {
   return m_subsystems->GetSubsystem<jobsystem::JobManager>().value();

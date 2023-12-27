@@ -1,5 +1,7 @@
 #include "TiledCompositeRenderer.h"
+#include "common/assert/Assert.h"
 #include "graphics/service/RenderServiceRequest.h"
+#include "graphics/service/SimpleViewMatrix.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "jobsystem/manager/JobManager.h"
 #include "services/registry/IServiceRegistry.h"
@@ -11,13 +13,19 @@ TiledCompositeRenderer::TiledCompositeRenderer(
     graphics::SharedRenderer output_renderer)
     : m_subsystems(subsystems), m_output_renderer(std::move(output_renderer)) {
 
-  auto projection_matrix = vsg::Orthographic::create(0, 1, 0, 1, 0.1, 10);
-  auto view_matrix = vsg::LookAt::create(
-      vsg::dvec3{0, 0, 1}, vsg::dvec3{0, 0, -1}, vsg::dvec3{0, 1, 0});
-  m_camera = vsg::Camera::create(projection_matrix, view_matrix);
+  /* INITIALIZE SCENE CAMERA */
+  auto [width, height] = m_output_renderer->GetCurrentSize();
+  auto perspective =
+      vsg::Perspective::create(60, (double)width / (double)height, 0.01, 1000);
+  auto look_at = vsg::LookAt::create(vsg::dvec3{0, 1, 0}, vsg::dvec3{0, 0, 0},
+                                     vsg::dvec3{0, 0, 1});
+  m_camera = vsg::Camera::create(perspective, look_at);
 
-  m_output_renderer->SetCameraProjectionMatrix(projection_matrix);
-  m_output_renderer->SetCameraViewMatrix(view_matrix);
+  /* ADJUST CAMERA FOR CAPTURING TILED QUADS */
+  m_output_renderer->SetCameraProjectionMatrix(
+      vsg::Orthographic::create(0, 1, 0, 1, 0.1, 10));
+  m_output_renderer->SetCameraViewMatrix(vsg::LookAt::create(
+      vsg::dvec3{0, 0, 1}, vsg::dvec3{0, 0, -1}, vsg::dvec3{0, 1, 0}));
 
 #ifndef NDEBUG
   m_frames_per_second = std::make_shared<std::atomic<int>>(0);
@@ -42,9 +50,9 @@ TiledCompositeRenderer::TiledCompositeRenderer(
   job_system->KickJob(job);
 
   auto camera_move_job = std::make_shared<TimerJob>(
-      [camera_info = std::weak_ptr<CameraInfo>(m_camera_info)](
+      [weak_camera_ptr = vsg::observer_ptr<vsg::Camera>(m_camera)](
           jobsystem::JobContext *context) {
-        if (camera_info.expired()) {
+        if (!weak_camera_ptr) {
           return JobContinuation::DISPOSE;
         }
         auto time = std::chrono::high_resolution_clock::now();
@@ -56,9 +64,11 @@ TiledCompositeRenderer::TiledCompositeRenderer(
         double x_pos = cos(x);
 
         double distance = 10;
-        camera_info.lock()->position.y = distance * y_pos;
-        camera_info.lock()->position.x = distance * x_pos;
-        camera_info.lock()->position.z = 0;
+        auto camera = weak_camera_ptr.ref_ptr();
+        auto look_at = camera->viewMatrix.cast<vsg::LookAt>();
+        look_at->eye.y = distance * y_pos;
+        look_at->eye.x = distance * x_pos;
+        look_at->eye.z = 0;
 
         return JobContinuation::REQUEUE;
       },
@@ -126,16 +136,28 @@ bool TiledCompositeRenderer::Render() {
   auto service_caller = opt_caller->get();
 
   auto counter = std::make_shared<jobsystem::job::JobCounter>();
-  for (int i = 0; i < m_current_service_count; i++) {
+  for (int i = 0; i < m_tile_infos.size(); i++) {
 
     Tile current_tile = m_tile_infos[i];
+
+    ASSERT(current_tile.projection.valid(),
+           "tile information must contain valid projection")
+    ASSERT(current_tile.relative_view_matrix.valid(),
+           "tile information must contain valid relative view matrix")
+
+    auto perspective = current_tile.projection.cast<vsg::Perspective>();
+    ASSERT(perspective.valid(), "tile must have valid perspective")
+
+    auto view_matrix = current_tile.relative_view_matrix->transform() *
+                       m_camera->viewMatrix->transform();
 
     // build render service request
     graphics::RenderServiceRequest request;
     request.SetExtend({current_tile.width, current_tile.height});
-    request.SetCameraData(graphics::CameraData{
-        m_camera_info->up, m_camera_info->position, m_camera_info->direction});
-    request.SetPerspectiveProjection(graphics::Perspective{0.01, 2000, 30});
+    request.SetViewMatrix(view_matrix);
+    request.SetPerspectiveProjection(graphics::Perspective{
+        perspective->nearDistance, perspective->farDistance,
+        perspective->fieldOfViewY});
 
     auto rendering_service_request = request.GetRequest();
 
@@ -184,7 +206,6 @@ bool TiledCompositeRenderer::Render() {
   }
 
   job_system->WaitForCompletion(counter);
-
   m_output_renderer->Render();
 
 #ifndef NDEBUG
@@ -197,7 +218,43 @@ bool TiledCompositeRenderer::Render() {
 void TiledCompositeRenderer::SetServiceCount(int services) {
   std::unique_lock lock(m_image_buffers_and_tiling_mutex);
   UpdateTilingInfo(services);
-  UpdateSceneTiling();
+  CreateSceneWithTilingQuads();
+}
+
+inline vsg::dvec3 rotateAroundAxis(vsg::dvec3 axis, vsg::dvec3 vec,
+                                   double degree) {
+  /* USING THE RODRIGUEZ FORMULA */
+  return vec * cos(degree) + vsg::cross(axis, vec) * sin(degree) +
+         axis * (axis * vec) * (1 - cos(degree));
+}
+
+void subdividePerspectiveFrustum(
+    int width, int height,
+    const vsg::ref_ptr<vsg::ProjectionMatrix> &projection, Tile &tile) {
+
+  ASSERT(projection.valid(), "projection matrix should not be null")
+
+  float width_percentage = (float)tile.width / (float)width;
+
+  /* CALCULATE NEW PROJECTION MATRIX */
+  auto perspective = projection.cast<vsg::Perspective>();
+  tile.projection = perspective;
+
+  /* CALCULATE NEW VIEW MATRIX */
+
+  double tile_center_x = tile.x + (double)tile.width / 2;
+  // vertical distance between image center and tile center for rotation
+  double delta_x = tile_center_x - (double)width / 2;
+  // degree to rotate view to point to towards tile center
+  double degree_x = (delta_x / (double)width) * perspective->fieldOfViewY;
+
+  double radians_x = (degree_x * M_PI) / 180.0;
+  vsg::dmat4 relative_rotation_matrix = vsg::rotate(radians_x, 0.0, 1.0, 0.0);
+
+  // TODO: Support horizontal tiling
+
+  tile.relative_view_matrix =
+      graphics::SimpleViewMatrix::create(relative_rotation_matrix);
 }
 
 void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
@@ -227,21 +284,29 @@ void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
       m_image_buffers[i] = image_buffer;
 
       Tile tile{i * tile_width, 0, tile_width, tile_height, i};
+
+      subdividePerspectiveFrustum(width, height, m_camera->projectionMatrix,
+                                  tile);
+
       m_tile_infos[i] = tile;
     }
   }
 }
 
-void TiledCompositeRenderer::UpdateSceneTiling() {
+void TiledCompositeRenderer::CreateSceneWithTilingQuads() {
   auto scene = std::make_shared<scene::SceneManager>();
   auto root = scene->GetRoot();
 
   float width, height;
   std::tie(width, height) = GetCurrentSize();
 
-  vsg::Builder builder;
   float i = 0;
   for (const auto &tile_info : m_tile_infos) {
+    /*
+     * Use a fresh builder for every quad. It maintains some weird internal
+     * state that causes unwanted behavior otherwise.
+     */
+    vsg::Builder builder;
     vsg::GeometryInfo geomInfo;
     i++;
     float x = static_cast<float>(tile_info.x) / width;

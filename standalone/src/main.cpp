@@ -8,7 +8,7 @@
 namespace po = boost::program_options;
 
 int main(int argc, const char **argv) {
-
+  /* PARSE COMMAND LINE OPTIONS */
   std::string renderer_type;
   std::string plugin_path;
   bool enable_rendering_service;
@@ -16,6 +16,9 @@ int main(int argc, const char **argv) {
   int service_port;
   int width, height;
   int max_update_rate;
+  unsigned int threads;
+  std::vector<std::string> connections_to_establish;
+  std::vector<std::string> scene_objects_to_load;
 
   po::options_description options("Allowed options");
   options.add_options()("help", "Shows this help message")(
@@ -37,7 +40,18 @@ int main(int argc, const char **argv) {
       "height,h", po::value<int>(&height)->default_value(500),
       "Initial height of the renderer")(
       "update,u", po::value<int>(&max_update_rate)->default_value(-1),
-      "Rate limit of update operations");
+      "Rate limit of update operations")(
+      "threads,t",
+      po::value<unsigned int>(&threads)->default_value(
+          std::thread::hardware_concurrency()),
+      "amount of threads used in the job system")(
+      "connect,c",
+      po::value<std::vector<std::string>>(&connections_to_establish)
+          ->multitoken(),
+      "connection(s) to establish given in the format <host>:<port>")(
+      "scene,s",
+      po::value<std::vector<std::string>>(&scene_objects_to_load)->multitoken(),
+      "Object(s) to load into the scene");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, options), vm);
@@ -48,25 +62,38 @@ int main(int argc, const char **argv) {
     return 1;
   }
 
+  /* APPLY OPTIONS TO SUBSYSTEM CONFIGURATION */
   auto config = std::make_shared<common::config::Configuration>();
+  config->Set("net.port", service_port);
+  config->Set("jobs.concurrency", threads);
   bool local_only = service_port < 0;
+
+  /* START KERNEL AND ALL ITS SUBSYSTEMS */
   kernel::Kernel kernel(config, local_only);
 
+  /* LOAD SCENE FILES (IF ANY WERE SPECIFIED) */
   auto vsg_options = vsg::Options::create();
   vsg_options->sharedObjects = vsg::SharedObjects::create();
   vsg_options->fileCache = vsg::getEnv("VSG_FILE_CACHE");
   vsg_options->paths = vsg::getEnvPaths("VSG_FILE_PATH");
 
   auto scene = std::make_shared<scene::SceneManager>();
-  auto node = vsg::read_cast<vsg::Node>("models/teapot.vsgt", vsg_options);
-  auto skybox = vsg::read_cast<vsg::Node>("models/skybox.vsgt", vsg_options);
 
-  if (!node || !skybox) {
-    LOG_WARN("Demo scene not created: models not found")
+  bool objects_loaded{false};
+  for (const auto &scene_object_file_path : scene_objects_to_load) {
+    auto node = vsg::read_cast<vsg::Node>(scene_object_file_path, vsg_options);
+    if (node) {
+      scene->GetRoot()->addChild(node);
+      objects_loaded = true;
+    } else {
+      LOG_ERR("Cannot load scene " << scene_object_file_path)
+      return -1;
+    }
+  }
+
+  if (!objects_loaded) {
+    LOG_WARN("The scene is empty")
   } else {
-    scene->GetRoot()->addChild(node);
-    scene->GetRoot()->addChild(skybox);
-
     auto light = vsg::DirectionalLight::create();
     light->color = {1, 1, 1};
     light->intensity = 20;
@@ -74,6 +101,7 @@ int main(int argc, const char **argv) {
     scene->GetRoot()->addChild(light);
   }
 
+  /* SETUP REQUESTED RENDERER AND ADD IT AS SUBSYSTEM TO KERNEL */
   if (renderer_type == "onscreen") {
     auto renderer =
         std::make_shared<graphics::OnscreenRenderer>(scene, width, height);
@@ -106,15 +134,25 @@ int main(int argc, const char **argv) {
     }
   }
 
+  /* LOAD PLUGINS (IF ANY WERE SPECIFIED) */
   if (!plugin_path.empty()) {
     kernel.GetPluginManager()->InstallPlugins(plugin_path);
   }
 
+  /* CONNECT TO OTHER PEERS (IF ANY WERE SPECIFIED AND SUBSYSTEM IS PROVIDED) */
+  if (kernel.GetSubsystemsManager()->ProvidesSubsystem<IPeer>()) {
+    auto peer_networking_subsystem =
+        kernel.GetSubsystemsManager()->RequireSubsystem<IPeer>();
+    for (const auto &connection_url : connections_to_establish) {
+      peer_networking_subsystem->EstablishConnectionTo(connection_url);
+    }
+  }
+
   auto targetInterval = std::chrono::duration_cast<std::chrono::nanoseconds>(
       1000ms / max_update_rate);
-
   auto lastIterationTime = std::chrono::steady_clock::now();
 
+  /* MAIN PROCESSING LOOP */
   while (!kernel.ShouldShutdown()) {
 
     auto currentTime = std::chrono::steady_clock::now();

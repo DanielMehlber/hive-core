@@ -10,15 +10,9 @@ namespace graphics {
 DECLARE_EXCEPTION(VectorConversionException);
 
 struct Perspective {
-  float near_plane;
-  float far_plane;
-  float fov;
-};
-
-struct CameraData {
-  vsg::dvec3 camera_up;
-  vsg::dvec3 camera_position;
-  vsg::dvec3 camera_direction;
+  double near_plane;
+  double far_plane;
+  double fov;
 };
 
 struct Extend {
@@ -44,8 +38,8 @@ public:
   void SetPerspectiveProjection(const Perspective &perspective);
   std::optional<Perspective> GetPerspectiveProjection() const;
 
-  std::optional<CameraData> GetCameraData() const;
-  void SetCameraData(const CameraData &camera_data);
+  std::optional<vsg::dmat4> GetViewMatrix() const;
+  void SetViewMatrix(std::optional<vsg::dmat4> matrix);
 
   services::SharedServiceRequest GetRequest() const;
 };
