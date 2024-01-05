@@ -79,7 +79,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
 
           response = std::make_shared<ServiceResponse>(
               request->GetTransactionId(),
-              ServiceResponseStatus::INTERNAL_ERROR, "internal error occurred");
+              ServiceResponseStatus::INTERNAL_ERROR, exception.what());
         }
 
         SharedWebSocketMessage response_message =

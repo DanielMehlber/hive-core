@@ -79,10 +79,9 @@ RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
     m_last_index = next_index;
 
     if (stub->IsCallable()) {
-      if (only_local) {
-        if (!stub->IsLocal()) {
-          return {};
-        }
+      bool not_local_but_required_to_be = only_local && !stub->IsLocal();
+      if (not_local_but_required_to_be) {
+        continue;
       }
       return stub;
     }

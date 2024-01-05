@@ -11,7 +11,8 @@ using namespace std::chrono_literals;
 TiledCompositeRenderer::TiledCompositeRenderer(
     const common::subsystems::SharedSubsystemManager &subsystems,
     graphics::SharedRenderer output_renderer)
-    : m_subsystems(subsystems), m_output_renderer(std::move(output_renderer)) {
+    : m_subsystems(subsystems), m_output_renderer(std::move(output_renderer)),
+      m_current_service_count{0} {
 
   /* INITIALIZE SCENE CAMERA */
   auto [width, height] = m_output_renderer->GetCurrentSize();
