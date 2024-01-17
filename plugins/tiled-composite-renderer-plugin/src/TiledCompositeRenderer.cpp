@@ -73,7 +73,7 @@ TiledCompositeRenderer::TiledCompositeRenderer(
 
         return JobContinuation::REQUEUE;
       },
-      "test-camera-mover", 1s / 20, MAIN);
+      "eval-camera-mover", 1s / 20, MAIN);
 
   job_system->KickJob(camera_move_job);
 
@@ -216,17 +216,10 @@ bool TiledCompositeRenderer::Render() {
   return true;
 }
 
-void TiledCompositeRenderer::SetServiceCount(int services) {
+void TiledCompositeRenderer::SetServiceCount(size_t services) {
   std::unique_lock lock(m_image_buffers_and_tiling_mutex);
   UpdateTilingInfo(services);
   CreateSceneWithTilingQuads();
-}
-
-inline vsg::dvec3 rotateAroundAxis(vsg::dvec3 axis, vsg::dvec3 vec,
-                                   double degree) {
-  /* USING THE RODRIGUEZ FORMULA */
-  return vec * cos(degree) + vsg::cross(axis, vec) * sin(degree) +
-         axis * (axis * vec) * (1 - cos(degree));
 }
 
 void subdividePerspectiveFrustum(
@@ -258,7 +251,7 @@ void subdividePerspectiveFrustum(
       graphics::SimpleViewMatrix::create(relative_rotation_matrix);
 }
 
-void TiledCompositeRenderer::UpdateTilingInfo(int tile_count) {
+void TiledCompositeRenderer::UpdateTilingInfo(size_t tile_count) {
   m_current_service_count = tile_count;
 
   auto extend = GetCurrentSize();

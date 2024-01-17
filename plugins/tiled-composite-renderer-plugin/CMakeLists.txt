@@ -4,7 +4,6 @@ project(tiled-composite-renderer-plugin)
 find_package(Boost REQUIRED)
 
 add_subdirectory(src)
-# add_subdirectory(test)
 
 find_package(Doxygen QUIET)
 

@@ -36,7 +36,7 @@ private:
   std::shared_ptr<std::atomic<int>> m_frames_per_second;
 #endif
 
-  void UpdateTilingInfo(int tile_count);
+  void UpdateTilingInfo(size_t tile_count);
   void CreateSceneWithTilingQuads();
 
 public:
@@ -49,7 +49,7 @@ public:
    */
   bool Render() override;
 
-  void SetServiceCount(int services);
+  void SetServiceCount(size_t services);
 
   /**
    * @return Last RenderResult (if one exists)
