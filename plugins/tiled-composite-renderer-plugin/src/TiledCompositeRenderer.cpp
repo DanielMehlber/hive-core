@@ -28,7 +28,6 @@ TiledCompositeRenderer::TiledCompositeRenderer(
   m_output_renderer->SetCameraViewMatrix(vsg::LookAt::create(
       vsg::dvec3{0, 0, 1}, vsg::dvec3{0, 0, -1}, vsg::dvec3{0, 1, 0}));
 
-#ifndef NDEBUG
   m_frames_per_second = std::make_shared<std::atomic<int>>(0);
   auto job = std::make_shared<TimerJob>(
       [frames_per_second = std::weak_ptr<std::atomic<int>>(
@@ -76,8 +75,6 @@ TiledCompositeRenderer::TiledCompositeRenderer(
       "eval-camera-mover", 1s / 20, MAIN);
 
   job_system->KickJob(camera_move_job);
-
-#endif
 }
 
 std::optional<graphics::SharedRenderResult>

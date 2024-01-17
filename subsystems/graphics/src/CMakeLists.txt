@@ -8,12 +8,12 @@ set(GRAPHICS_SOURCES OffscreenRenderer.cpp
 
 set(GRAPHICS_DEPENDENCIES logging jobsystem common scene vsg::vsg services)
 
-if(ZLIB_FOUND)
+if (ZLIB_FOUND)
     list(APPEND GRAPHICS_SOURCES GzipRenderResultEncoder.cpp)
-    list(APPEND GRAPHICS_DEPENDENCIES ZLIB:ZLIB)
-else()
+    list(APPEND GRAPHICS_DEPENDENCIES ZLIB::ZLIB)
+else ()
     message("Graphics module does not support Gzip encoder because ZLIB is missing")
-endif()
+endif ()
 
 add_library(graphics STATIC
         ${GRAPHICS_SOURCES}
