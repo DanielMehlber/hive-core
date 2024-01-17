@@ -1,7 +1,6 @@
 #ifndef ROUNDROBINSERVICECALLER_H
 #define ROUNDROBINSERVICECALLER_H
 
-#include "services/Services.h"
 #include "services/caller/IServiceCaller.h"
 #include <vector>
 
@@ -10,7 +9,7 @@ namespace services::impl {
 /**
  * Calls service stubs in sequential order every time a call is requested.
  */
-class SERVICES_API RoundRobinServiceCaller
+class RoundRobinServiceCaller
     : public IServiceCaller,
       public std::enable_shared_from_this<RoundRobinServiceCaller> {
 private:

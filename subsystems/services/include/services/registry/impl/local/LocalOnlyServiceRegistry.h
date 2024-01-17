@@ -1,12 +1,10 @@
 #ifndef LOCALONLYSERVICEREGISTRY_H
 #define LOCALONLYSERVICEREGISTRY_H
 
-#include "services/Services.h"
 #include "services/registry/IServiceRegistry.h"
 #include <future>
 #include <map>
 
-using namespace services;
 
 namespace services::impl {
 
@@ -16,16 +14,16 @@ namespace services::impl {
  * implementations for remote service calls. It is only meant for local
  * services.
  */
-class SERVICES_API LocalOnlyServiceRegistry : public IServiceRegistry {
+class LocalOnlyServiceRegistry : public services::IServiceRegistry {
 protected:
-  std::map<std::string, SharedServiceCaller> m_registered_services;
+  std::map<std::string, services::SharedServiceCaller> m_registered_services;
 
 public:
-  void Register(const SharedServiceExecutor &stub) override;
+  void Register(const services::SharedServiceExecutor &stub) override;
 
   void Unregister(const std::string &name) override;
 
-  std::future<std::optional<SharedServiceCaller>>
+  std::future<std::optional<services::SharedServiceCaller>>
   Find(const std::string &name, bool only_local) noexcept override;
 };
 } // namespace services::impl

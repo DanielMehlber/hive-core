@@ -17,6 +17,18 @@ if (CMAKE_BUILD_TYPE MATCHES DEBUG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 endif ()
 
+# *** required for Windows ***
+# MSVC would define a marco called 'max' in windows.h otherwise,
+# clashing with some boost variable & function names.
+add_compile_definitions(NOMINMAX)
+
+# *** required for Windows ***
+# else the error "WinSock has already been included" occurs when using boost asio.
+add_compile_definitions(WIN32_LEAN_AND_MEAN)
+
+# activate mathematical constants on older compilers
+add_compile_definitions(_USE_MATH_DEFINES)
+
 add_subdirectory(subsystems)
 add_subdirectory(kernel)
 add_subdirectory(plugins)

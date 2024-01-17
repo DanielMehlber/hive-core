@@ -1,11 +1,14 @@
 build
 bin
 dist
+out
+CMakeSettings.json
 
 CMakeUserPresets.json
 CMakeFiles
 
 .vscode
+.vs
 .kdev4
 .idea
 .VSCodeCounter

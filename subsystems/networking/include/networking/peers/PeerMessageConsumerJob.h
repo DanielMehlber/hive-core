@@ -2,7 +2,6 @@
 #define WEBSOCKETMESSAGECONSUMERJOB_H
 
 #include "IPeerMessageConsumer.h"
-#include "networking/Networking.h"
 #include <jobsystem/job/Job.h>
 
 namespace networking::websockets {
@@ -11,7 +10,7 @@ namespace networking::websockets {
  * @brief A job that, when scheduled, makes a message consumer process a message
  * of a certain type.
  */
-class NETWORKING_API PeerMessageConsumerJob : public jobsystem::job::Job {
+class PeerMessageConsumerJob : public jobsystem::job::Job {
 protected:
   const SharedWebSocketMessage m_message;
   const SharedPeerMessageConsumer m_consumer;

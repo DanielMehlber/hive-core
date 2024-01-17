@@ -62,9 +62,9 @@ OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene, int width,
     return;
   }
 
-  m_window->clearColor().float32[0] = 0.0;
-  m_window->clearColor().float32[1] = 0.0;
-  m_window->clearColor().float32[2] = 0.0;
+  m_window->clearColor().r = 0.0;
+  m_window->clearColor().g = 0.0;
+  m_window->clearColor().b = 0.0;
 
   m_viewer = vsg::Viewer::create();
   m_viewer->addWindow(m_window);

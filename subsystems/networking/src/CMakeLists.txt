@@ -1,4 +1,4 @@
-add_library(networking
+add_library(networking STATIC
         UrlParser.cpp
         PeerMessage.cpp
         PeerMessageConsumerJob.cpp

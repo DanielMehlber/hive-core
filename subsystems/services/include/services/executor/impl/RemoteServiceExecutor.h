@@ -2,7 +2,6 @@
 #define WEBSOCKETSERVICEEXECUTOR_H
 
 #include "networking/peers/IPeer.h"
-#include "services/Services.h"
 #include "services/executor/IServiceExecutor.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 #include <memory>
@@ -16,7 +15,7 @@ DECLARE_EXCEPTION(CallFailedException);
 /**
  * Executes remote services using web-socket events.
  */
-class SERVICES_API RemoteServiceExecutor
+class RemoteServiceExecutor
     : public IServiceExecutor,
       public std::enable_shared_from_this<RemoteServiceExecutor> {
 private:

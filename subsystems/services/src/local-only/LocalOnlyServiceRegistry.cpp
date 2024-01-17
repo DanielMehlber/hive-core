@@ -2,6 +2,7 @@
 #include "logging/LogManager.h"
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 
+using namespace services;
 using namespace services::impl;
 
 void LocalOnlyServiceRegistry::Register(const SharedServiceExecutor &stub) {

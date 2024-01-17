@@ -1,7 +1,6 @@
 #ifndef MESSAGEBROKERFACTORY_H
 #define MESSAGEBROKERFACTORY_H
 
-#include "events/Eventing.h"
 #include "events/broker/IEventBroker.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "events/listener/IEventListener.h"
@@ -9,10 +8,10 @@
 
 namespace events {
 
-typedef impl::JobBasedEventBroker DefaultBrokerImpl;
+typedef brokers::JobBasedEventBroker DefaultBrokerImpl;
 typedef FunctionalEventListener DefaultSubscriberImpl;
 
-class EVENT_API EventFactory {
+class EventFactory {
 public:
   template <typename BrokerImpl = DefaultBrokerImpl, typename... Args>
   static SharedEventBroker CreateBroker(Args... arguments);

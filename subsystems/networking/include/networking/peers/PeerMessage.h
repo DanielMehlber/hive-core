@@ -1,7 +1,6 @@
 #ifndef WEBSOCKETMESSAGE_H
 #define WEBSOCKETMESSAGE_H
 
-#include "networking/Networking.h"
 #include <map>
 #include <memory>
 #include <optional>
@@ -17,7 +16,7 @@ namespace networking::websockets {
  * renders events extendable because new types with custom attributes can be
  * defined anytime.
  */
-class NETWORKING_API PeerMessage {
+class PeerMessage {
 protected:
   /**
    * @brief Type of this message

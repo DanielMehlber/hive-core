@@ -1,7 +1,6 @@
 #ifndef LOGGINGAPI_H
 #define LOGGINGAPI_H
 
-#include "Logging.h"
 #include "logger/ILogger.h"
 #include "logger/impl/BoostLogger.h"
 #include <memory>

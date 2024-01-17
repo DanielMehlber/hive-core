@@ -1,7 +1,6 @@
 #ifndef SERVICERESPONSE_H
 #define SERVICERESPONSE_H
 
-#include "services/Services.h"
 #include <map>
 #include <memory>
 #include <optional>
@@ -28,7 +27,7 @@ enum ServiceResponseStatus {
 /**
  * Data object containing the response from a service
  */
-class SERVICES_API ServiceResponse {
+class ServiceResponse {
 protected:
   /**
    * Transaction ID that binds request and response together

@@ -3,7 +3,6 @@
 
 #include "networking/peers/IPeer.h"
 #include "networking/peers/IPeerMessageConsumer.h"
-#include "services/Services.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistrationMessage.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
@@ -16,7 +15,7 @@ namespace services::impl {
  * Consumer for web-socket events that register remote services on the current
  * host.
  */
-class SERVICES_API RemoteServiceRegistrationConsumer
+class RemoteServiceRegistrationConsumer
     : public IPeerMessageConsumer {
 private:
   std::function<void(SharedServiceExecutor)> m_consumer;

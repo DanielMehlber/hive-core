@@ -1,11 +1,10 @@
 #ifndef ONSCREENRENDERER_H
 #define ONSCREENRENDERER_H
 
-#include "graphics/Graphics.h"
 #include "graphics/renderer/IRenderer.h"
 
 namespace graphics {
-class GRAPHICS_API OnscreenRenderer : public IRenderer {
+class OnscreenRenderer : public IRenderer {
 protected:
   scene::SharedScene m_scene;
   vsg::ref_ptr<vsg::Window> m_window;

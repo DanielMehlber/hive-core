@@ -3,7 +3,6 @@
 
 #include "events/listener/IEventListener.h"
 #include "logging/LogManager.h"
-#include "properties/Properties.h"
 #include <memory>
 
 namespace props {
@@ -15,7 +14,7 @@ namespace props {
  * the property system is founded on the events system and makes heavy use of
  * it.
  */
-class PROPERTIES_API PropertyChangeListener : public events::IEventListener {
+class PropertyChangeListener : public events::IEventListener {
 protected:
   const std::string m_property_listener_id;
 

@@ -4,8 +4,6 @@
 #include "NetworkingFactory.h"
 #include "common/config/Configuration.h"
 #include "common/subsystems/SubsystemManager.h"
-#include "jobsystem/JobSystem.h"
-#include "networking/Networking.h"
 #include <memory>
 
 namespace networking {
@@ -13,7 +11,7 @@ namespace networking {
 /**
  * @brief Central networking manager that provides connectivity.
  */
-class NETWORKING_API NetworkingManager {
+class NetworkingManager {
 private:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
   common::config::SharedConfiguration m_config;

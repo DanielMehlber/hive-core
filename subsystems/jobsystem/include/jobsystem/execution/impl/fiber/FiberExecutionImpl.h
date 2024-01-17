@@ -1,15 +1,16 @@
 #ifndef FIBEREXECUTIONIMPL_H
 #define FIBEREXECUTIONIMPL_H
 
-#include "boost/fiber/all.hpp"
 #include "common/config/Configuration.h"
 #include "jobsystem/execution/IJobExecution.h"
 #include <condition_variable>
 #include <memory>
 #include <thread>
 #include <vector>
+#include <future>
 
-using namespace jobsystem::execution;
+// include order matters here
+#include "boost/fiber/all.hpp"
 
 namespace jobsystem::execution::impl {
 
@@ -22,10 +23,10 @@ namespace jobsystem::execution::impl {
  * share their work. When a job yields, the fiber it's running on might be
  * executed on a different thread after it has been revoked as last time.
  */
-class FiberExecutionImpl : IJobExecution<FiberExecutionImpl> {
+class FiberExecutionImpl : jobsystem::execution::IJobExecution<FiberExecutionImpl> {
 private:
   common::config::SharedConfiguration m_config;
-  JobExecutionState m_current_state{STOPPED};
+  jobsystem::execution::JobExecutionState m_current_state{STOPPED};
 
   int m_worker_thread_count;
 
@@ -120,7 +121,7 @@ FiberExecutionImpl::WaitForCompletion(const std::future<FutureType> &future) {
   }
 }
 
-inline JobExecutionState FiberExecutionImpl::GetState() {
+inline jobsystem::execution::JobExecutionState FiberExecutionImpl::GetState() {
   return m_current_state;
 }
 

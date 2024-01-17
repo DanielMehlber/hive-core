@@ -4,7 +4,6 @@
 #include "jobsystem/manager/JobManager.h"
 #include "networking/peers/IPeer.h"
 #include "networking/peers/IPeerMessageConsumer.h"
-#include "services/Services.h"
 #include "services/caller/IServiceCaller.h"
 
 using namespace networking::websockets;
@@ -15,7 +14,7 @@ namespace services::impl {
  * Processes service calls coming from remote remote hosts. It executes the
  * service and sends its response back to the caller.
  */
-class SERVICES_API RemoteServiceRequestConsumer : public IPeerMessageConsumer {
+class RemoteServiceRequestConsumer : public IPeerMessageConsumer {
 private:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 

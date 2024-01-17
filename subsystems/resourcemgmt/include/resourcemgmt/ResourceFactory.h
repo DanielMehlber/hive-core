@@ -3,7 +3,6 @@
 
 #include "memory"
 #include "resourcemgmt/Resource.h"
-#include "resourcemgmt/ResourceManagement.h"
 #include "resourcemgmt/manager/IResourceManager.h"
 #include "resourcemgmt/manager/impl/ThreadPoolResourceManager.h"
 
@@ -11,7 +10,7 @@
 
 namespace resourcemgmt {
 
-class RESOURCE_API ResourceFactory {
+class ResourceFactory {
 public:
   template <typename ResourceType>
   static SharedResource

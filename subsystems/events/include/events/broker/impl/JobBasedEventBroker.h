@@ -2,7 +2,6 @@
 #define JOBBASEDMESSAGEBROKER_H
 
 #include "common/subsystems/SubsystemManager.h"
-#include "events/Eventing.h"
 #include "events/broker/IEventBroker.h"
 #include "events/listener/IEventListener.h"
 #include "jobsystem/manager/JobManager.h"
@@ -14,8 +13,8 @@
 using namespace jobsystem;
 using namespace events;
 
-namespace events::impl {
-class EVENT_API JobBasedEventBroker final : public events::IEventBroker {
+namespace events::brokers {
+class JobBasedEventBroker final : public events::IEventBroker {
 private:
   /**
    * @brief Maps the topic name (as string) to all of its subscribers.

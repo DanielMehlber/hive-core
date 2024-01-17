@@ -12,7 +12,7 @@ std::string generateRandomBinaryData(size_t size) {
   // Use a random_device to seed the random number generator
   std::random_device rd;
   std::default_random_engine generator(rd());
-  std::uniform_int_distribution<uint8_t> distribution(0, 255);
+  std::uniform_int_distribution<unsigned int> distribution(0, 255);
 
   // Generate random bytes and construct the binary string
   std::string binaryData;

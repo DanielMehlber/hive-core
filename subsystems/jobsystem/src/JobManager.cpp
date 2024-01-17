@@ -1,6 +1,6 @@
 #include "jobsystem/manager/JobManager.h"
-#include "boost/core/demangle.hpp"
 #include <sstream>
+#include "boost/core/demangle.hpp"
 
 using namespace jobsystem;
 using namespace jobsystem::job;

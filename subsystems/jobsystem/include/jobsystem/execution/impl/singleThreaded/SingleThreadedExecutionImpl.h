@@ -10,8 +10,6 @@
 #include <queue>
 #include <thread>
 
-using namespace jobsystem::execution;
-using namespace jobsystem::job;
 
 namespace jobsystem::execution::impl {
 
@@ -22,7 +20,7 @@ namespace jobsystem::execution::impl {
  * job because this would block the one and only worker thread.
  */
 class SingleThreadedExecutionImpl
-    : public IJobExecution<SingleThreadedExecutionImpl> {
+    : public jobsystem::execution::IJobExecution<SingleThreadedExecutionImpl> {
 private:
   std::queue<std::shared_ptr<Job>> m_execution_queue;
   std::mutex m_execution_queue_mutex;
@@ -31,7 +29,7 @@ private:
   std::condition_variable m_execution_queue_condition;
   std::atomic_bool m_termination_flag;
 
-  JobExecutionState m_current_state{STOPPED};
+  jobsystem::execution::JobExecutionState m_current_state{STOPPED};
 
   void ExecuteJobs(const std::weak_ptr<JobManager> &manager);
 
@@ -43,7 +41,7 @@ public:
   void WaitForCompletion(const std::shared_ptr<IJobWaitable> &waitable);
   void Start(const std::weak_ptr<JobManager> &manager);
   void Stop();
-  JobExecutionState GetState();
+  jobsystem::execution::JobExecutionState GetState();
 
   template <typename FutureType>
   void WaitForCompletion(const std::future<FutureType> &future);

@@ -4,7 +4,6 @@
 #include "PropertyChangeListener.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "events/broker/IEventBroker.h"
-#include "properties/Properties.h"
 #include <boost/property_tree/ptree.hpp>
 #include <memory>
 #include <optional>
@@ -18,7 +17,7 @@ namespace props {
  * every property has a path in the hierarchy. This enables grouping and
  * listening to subsets of properties.
  */
-class PROPERTIES_API PropertyProvider
+class PropertyProvider
     : std::enable_shared_from_this<PropertyProvider> {
 protected:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;

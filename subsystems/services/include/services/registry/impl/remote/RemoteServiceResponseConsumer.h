@@ -3,7 +3,6 @@
 
 #include "networking/peers/IPeerMessageConsumer.h"
 #include "services/ServiceResponse.h"
-#include "services/Services.h"
 #include <future>
 
 using namespace networking::websockets;
@@ -13,7 +12,7 @@ namespace services::impl {
 /**
  * Processes incoming service responses of recently called remote services.
  */
-class SERVICES_API RemoteServiceResponseConsumer : public IPeerMessageConsumer {
+class RemoteServiceResponseConsumer : public IPeerMessageConsumer {
 private:
   mutable std::mutex m_promises_mutex;
   std::map<std::string, std::promise<SharedServiceResponse>> m_promises;

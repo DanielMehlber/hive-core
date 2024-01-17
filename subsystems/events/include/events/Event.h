@@ -2,14 +2,13 @@
 #define MESSAGE_H
 
 #include "common/uuid/UuidGenerator.h"
-#include "events/Eventing.h"
 #include <any>
 #include <map>
 #include <memory>
 #include <optional>
 
 namespace events {
-class EVENT_API Event {
+class Event {
 protected:
   /**
    * @brief Event topic name used to differentiate different kinds of events
@@ -53,7 +52,7 @@ inline void Event::SetPayload(const std::string &key, T value) {
 template <typename T>
 inline std::optional<T> Event::GetPayload(const std::string &key) const {
   if (m_payload.contains(key)) {
-    auto any_container = m_payload.at(key);
+    auto& any_container = m_payload.at(key);
     return std::any_cast<T>(any_container);
   } else {
     return {};

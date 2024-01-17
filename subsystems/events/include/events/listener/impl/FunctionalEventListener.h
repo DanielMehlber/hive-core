@@ -3,13 +3,12 @@
 
 #include "common/uuid/UuidGenerator.h"
 #include "events/Event.h"
-#include "events/Eventing.h"
 #include "events/listener/IEventListener.h"
 #include <functional>
 #include <string>
 
 namespace events {
-class EVENT_API FunctionalEventListener : public IEventListener {
+class FunctionalEventListener : public IEventListener {
 protected:
   const std::function<void(const SharedEvent)> m_function;
   const std::string m_id;

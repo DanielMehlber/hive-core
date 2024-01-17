@@ -4,7 +4,6 @@
 #include "networking/peers/PeerMessage.h"
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
-#include "services/Services.h"
 
 using namespace networking::websockets;
 
@@ -13,7 +12,7 @@ namespace services::impl {
 /**
  * Converts web-socket message objects to service objects
  */
-class SERVICES_API RemoteServiceMessagesConverter {
+class RemoteServiceMessagesConverter {
 public:
   /**
    * Consumes and converts a received web-socket message to a service response

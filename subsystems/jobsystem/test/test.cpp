@@ -1,4 +1,3 @@
-#include "jobsystem/JobSystem.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
 #include <future>
@@ -9,7 +8,7 @@ using namespace std::chrono_literals;
 
 TEST(JobSystem, allPhases) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = std::make_shared<jobsystem::JobManager>(config);
   manager->StartExecution();
 
   std::vector<short> vec;

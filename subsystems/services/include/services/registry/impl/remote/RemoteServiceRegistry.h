@@ -3,7 +3,6 @@
 
 #include "events/listener/impl/FunctionalEventListener.h"
 #include "networking/peers/IPeer.h"
-#include "services/Services.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistrationConsumer.h"
 #include "services/registry/impl/remote/RemoteServiceRequestConsumer.h"
@@ -14,7 +13,7 @@ namespace services::impl {
 /**
  * A registry for both local and remote web-socket services.
  */
-class SERVICES_API RemoteServiceRegistry : public IServiceRegistry {
+class RemoteServiceRegistry : public IServiceRegistry {
 protected:
   mutable std::mutex m_registered_callers_mutex;
   std::map<std::string, SharedServiceCaller> m_registered_callers;

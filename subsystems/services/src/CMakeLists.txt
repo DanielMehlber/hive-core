@@ -1,4 +1,4 @@
-add_library(services
+add_library(services STATIC
         ServiceRequest.cpp
         ServiceResponse.cpp
         LocalServiceExecutor.cpp

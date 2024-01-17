@@ -1,6 +1,11 @@
 #ifndef JOBMANAGER_H
 #define JOBMANAGER_H
 
+// *** required for windows ***
+#undef max
+// MSVC defines a macro called 'max' in windows.h,
+// clashing with method names in the boost library. 
+
 #include "JobManagerState.h"
 #include "common/config/Configuration.h"
 #include "jobsystem/JobSystemFactory.h"
@@ -10,19 +15,13 @@
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/TimerJob.h"
 #include "logging/LogManager.h"
-#include <future>
-#include <memory>
-#include <queue>
 #include <set>
 #include <utility>
-
-using namespace jobsystem::job;
-using namespace jobsystem::execution;
 
 #ifdef JOB_SYSTEM_SINGLE_THREAD
 typedef impl::SingleThreadedExecutionImpl JobExecutionImpl;
 #else
-typedef impl::FiberExecutionImpl JobExecutionImpl;
+typedef jobsystem::execution::impl::FiberExecutionImpl JobExecutionImpl;
 #endif
 
 namespace jobsystem {
@@ -32,7 +31,7 @@ namespace jobsystem {
  * holds all job instances that must be executed in the current or following
  * execution cycles.
  */
-class JOBSYSTEM_API JobManager
+class JobManager
     : public std::enable_shared_from_this<JobManager> {
 private:
   common::config::SharedConfiguration m_config;

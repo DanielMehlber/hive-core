@@ -1,7 +1,6 @@
 #ifndef SCENEMANAGER_H
 #define SCENEMANAGER_H
 
-#include "Scene.h"
 #include "vsg/all.h"
 
 namespace scene {
@@ -9,7 +8,7 @@ namespace scene {
 /**
  * Holds a scene and offers util functionality.
  */
-class SCENE_API SceneManager {
+class SceneManager {
 protected:
   vsg::ref_ptr<vsg::StateGroup> m_scene;
 

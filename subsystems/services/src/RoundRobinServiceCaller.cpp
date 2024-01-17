@@ -1,3 +1,4 @@
+#undef min
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "jobsystem/manager/JobManager.h"
 #include <cmath>

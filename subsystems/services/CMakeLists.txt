@@ -3,6 +3,11 @@ project(services)
 
 find_package(Boost REQUIRED COMPONENTS log)
 
+# *** required for Windows ***
+# MSVC would define a marco called 'max' in windows.h otherwise,
+# clashing with some boost variable & function names.
+add_compile_definitions(NOMINMAX)
+
 add_subdirectory(src)
 add_subdirectory(test)
 

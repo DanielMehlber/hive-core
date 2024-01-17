@@ -2,7 +2,6 @@
 #define BOOSTWEBSOCKETCONNECTION_H
 
 #include "common/exceptions/ExceptionsBase.h"
-#include "networking/Networking.h"
 #include "networking/peers/PeerConnectionInfo.h"
 #include "networking/peers/PeerMessage.h"
 #include <boost/beast/core.hpp>
@@ -17,7 +16,7 @@ typedef boost::beast::websocket::stream<boost::beast::tcp_stream> stream_type;
 DECLARE_EXCEPTION(ConnectionClosedException);
 DECLARE_EXCEPTION(MessageSendingException);
 
-class NETWORKING_API BoostWebSocketConnection
+class BoostWebSocketConnection
     : public std::enable_shared_from_this<BoostWebSocketConnection> {
 private:
   /**

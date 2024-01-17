@@ -1,5 +1,5 @@
-add_library(logging logging/logger/impl/BoostLogger.cpp logging/LogManager.cpp
-        ../include/logging/Logging.h
+add_library(logging STATIC logging/logger/impl/BoostLogger.cpp logging/LogManager.cpp
+        
 )
 
 target_include_directories(logging PUBLIC ../include ${Boost_INCLUDE_DIRS})

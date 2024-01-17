@@ -1,7 +1,7 @@
 #include "events/broker/impl/JobBasedEventBroker.h"
 
 using namespace events;
-using namespace events::impl;
+using namespace events::brokers;
 using namespace std::chrono_literals;
 
 JobBasedEventBroker::JobBasedEventBroker(
@@ -67,7 +67,7 @@ void JobBasedEventBroker::FireEvent(SharedEvent event) {
   }
 }
 
-bool events::impl::JobBasedEventBroker::HasListener(
+bool JobBasedEventBroker::HasListener(
     const std::string &subscriber_id, const std::string &topic) const {
   if (m_topic_subscribers.contains(topic)) {
     const auto &subscriber_list = m_topic_subscribers.at(topic);

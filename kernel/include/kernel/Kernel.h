@@ -11,6 +11,20 @@
 #include "resourcemgmt/manager/IResourceManager.h"
 #include "scene/SceneManager.h"
 #include "services/registry/IServiceRegistry.h"
+#include "common/config/Configuration.h"
+#include <memory>
+
+#ifdef _WIN32
+// Windows specific
+#ifdef kernel_EXPORT
+#define KERNEL_API __declspec(dllexport)
+#error es hat geklappt
+#else
+#define KERNEL_API __declspec(dllimport)
+#endif
+#else
+#define KERNEL_API
+#endif
 
 using namespace std::chrono_literals;
 
@@ -19,7 +33,7 @@ namespace kernel {
 /**
  * Encapsulates all components belonging to the kernel and allows easy setup.
  */
-class Kernel : public std::enable_shared_from_this<Kernel> {
+class KERNEL_API Kernel {
 protected:
   std::shared_ptr<common::subsystems::SubsystemManager> m_subsystems;
   bool m_should_shutdown{false};
@@ -28,6 +42,8 @@ public:
   Kernel(common::config::SharedConfiguration config =
              std::make_shared<common::config::Configuration>(),
          bool only_local = true);
+
+  ~Kernel();
 
   /**
    * Checks if the kernel is supposed to shut down
@@ -87,83 +103,6 @@ public:
 
   common::subsystems::SharedSubsystemManager GetSubsystemsManager() const;
 };
-
-inline common::subsystems::SharedSubsystemManager
-Kernel::GetSubsystemsManager() const {
-  return m_subsystems;
-}
-
-inline jobsystem::SharedJobManager Kernel::GetJobManager() const {
-  return m_subsystems->GetSubsystem<jobsystem::JobManager>().value();
-}
-
-inline props::SharedPropertyProvider Kernel::GetPropertyProvider() const {
-  return m_subsystems->GetSubsystem<props::PropertyProvider>().value();
-}
-
-inline resourcemgmt::SharedResourceManager Kernel::GetResourceManager() const {
-  return m_subsystems->GetSubsystem<resourcemgmt::IResourceManager>().value();
-}
-
-inline events::SharedEventBroker Kernel::GetMessageBroker() const {
-  return m_subsystems->GetSubsystem<events::IEventBroker>().value();
-}
-
-inline void Kernel::SetResourceManager(
-    const resourcemgmt::SharedResourceManager &resourceManager) {
-  m_subsystems->AddOrReplaceSubsystem<resourcemgmt::IResourceManager>(
-      resourceManager);
-}
-
-inline services::SharedServiceRegistry Kernel::GetServiceRegistry() const {
-  return m_subsystems->GetSubsystem<services::IServiceRegistry>().value();
-}
-
-inline void Kernel::SetServiceRegistry(
-    const services::SharedServiceRegistry &serviceRegistry) {
-  m_subsystems->GetSubsystem<services::IServiceRegistry>().value();
-}
-
-inline networking::SharedNetworkingManager
-Kernel::GetNetworkingManager() const {
-  return m_subsystems->GetSubsystem<networking::NetworkingManager>().value();
-}
-
-inline void Kernel::SetNetworkingManager(
-    const networking::SharedNetworkingManager &networkingManager) {
-  m_subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
-      networkingManager);
-}
-
-inline plugins::SharedPluginManager Kernel::GetPluginManager() const {
-  return m_subsystems->GetSubsystem<plugins::IPluginManager>().value();
-}
-
-inline void
-Kernel::SetPluginManager(const plugins::SharedPluginManager &pluginManager) {
-  m_subsystems->AddOrReplaceSubsystem<plugins::IPluginManager>(pluginManager);
-}
-
-inline scene::SharedScene Kernel::GetScene() const {
-  return m_subsystems->GetSubsystem<scene::SceneManager>().value();
-}
-
-inline void Kernel::SetScene(const scene::SharedScene &scene) {
-  m_subsystems->AddOrReplaceSubsystem<scene::SceneManager>(scene);
-}
-
-inline graphics::SharedRenderer Kernel::GetRenderer() const {
-  return m_subsystems->GetSubsystem<graphics::IRenderer>().value();
-}
-
-inline void Kernel::SetRenderer(const graphics::SharedRenderer &renderer) {
-  m_subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(renderer);
-}
-
-inline bool Kernel::ShouldShutdown() const { return m_should_shutdown; }
-
-inline void Kernel::Shutdown(bool value) { m_should_shutdown = value; }
-
 } // namespace kernel
 
 #endif // KERNEL_H

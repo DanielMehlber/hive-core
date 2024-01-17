@@ -2,7 +2,6 @@
 #define JOBCOUNTER_H
 
 #include "IJobWaitable.h"
-#include "jobsystem/JobSystem.h"
 #include <atomic>
 #include <memory>
 
@@ -15,7 +14,7 @@ namespace jobsystem::job {
  * jobs decrement it. A counter of value 0 means that all of its jobs have
  * finished, while a counter of value 3 means that 3 jobs are still running.
  */
-class JOBSYSTEM_API JobCounter : public IJobWaitable {
+class JobCounter : public IJobWaitable {
 private:
   std::atomic<size_t> m_count{0};
 

@@ -1,18 +1,17 @@
 #ifndef BOOSTWEBSOCKETPEER_H
 #define BOOSTWEBSOCKETPEER_H
 
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
 #include "BoostWebSocketConnection.h"
 #include "BoostWebSocketConnectionEstablisher.h"
 #include "BoostWebSocketConnectionListener.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
-#include "networking/Networking.h"
 #include "networking/peers/IPeer.h"
 #include "properties/PropertyProvider.h"
 #include <atomic>
-#include <boost/beast/core.hpp>
-#include <boost/beast/websocket.hpp>
 #include <list>
 #include <map>
 
@@ -24,7 +23,7 @@ DECLARE_EXCEPTION(NoSuchPeerException);
  * @brief This implementation of IWebSocketServer uses WebSocket++ to provide
  * a web-socket communication peer.
  */
-class NETWORKING_API BoostWebSocketPeer
+class BoostWebSocketPeer
     : public IPeer,
       public std::enable_shared_from_this<BoostWebSocketPeer> {
 private:

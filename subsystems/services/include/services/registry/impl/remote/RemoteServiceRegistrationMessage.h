@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "networking/peers/PeerMessage.h"
-#include "services/Services.h"
 
 using namespace networking::websockets;
 
@@ -16,7 +15,7 @@ namespace services::impl {
  * Web-Socket message sent, when a peer wants to offer some if its services to
  * another one.
  */
-class SERVICES_API RemoteServiceRegistrationMessage {
+class RemoteServiceRegistrationMessage {
 private:
   SharedWebSocketMessage m_message;
 

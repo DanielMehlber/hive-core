@@ -27,7 +27,7 @@ void FiberExecutionImpl::Init() {
 void FiberExecutionImpl::ShutDown() { Stop(); }
 
 void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
-  auto weak_manager = m_managing_instance;
+  auto& weak_manager = m_managing_instance;
   auto runner = [weak_manager, job]() {
     if (weak_manager.expired()) {
       LOG_ERR("Cannot execute job "

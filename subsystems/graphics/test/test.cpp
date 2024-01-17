@@ -3,6 +3,7 @@
 #include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
 #include <gtest/gtest.h>
+#include <numeric>
 
 #ifdef INCLUDE_ENCODER_EVALUATION
 #include "EncoderEvaluation.h"

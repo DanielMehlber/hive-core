@@ -55,6 +55,8 @@ Kernel::Kernel(common::config::SharedConfiguration config, bool only_local)
   m_subsystems->AddOrReplaceSubsystem<IPluginManager>(plugin_manager);
 }
 
+Kernel::~Kernel() {}
+
 void Kernel::EnableRenderingJob() {
   auto job_manager = m_subsystems->RequireSubsystem<jobsystem::JobManager>();
 
@@ -104,3 +106,79 @@ void Kernel::EnableRenderingService(graphics::SharedRenderer serivce_renderer) {
   auto service_registry = m_subsystems->RequireSubsystem<IServiceRegistry>();
   service_registry->Register(render_service);
 }
+
+common::subsystems::SharedSubsystemManager
+Kernel::GetSubsystemsManager() const {
+  return m_subsystems;
+}
+
+jobsystem::SharedJobManager Kernel::GetJobManager() const {
+  return m_subsystems->GetSubsystem<jobsystem::JobManager>().value();
+}
+
+props::SharedPropertyProvider Kernel::GetPropertyProvider() const {
+  return m_subsystems->GetSubsystem<props::PropertyProvider>().value();
+}
+
+resourcemgmt::SharedResourceManager Kernel::GetResourceManager() const {
+  return m_subsystems->GetSubsystem<resourcemgmt::IResourceManager>().value();
+}
+
+events::SharedEventBroker Kernel::GetMessageBroker() const {
+  return m_subsystems->GetSubsystem<events::IEventBroker>().value();
+}
+
+void Kernel::SetResourceManager(
+    const resourcemgmt::SharedResourceManager &resourceManager) {
+  m_subsystems->AddOrReplaceSubsystem<resourcemgmt::IResourceManager>(
+      resourceManager);
+}
+
+services::SharedServiceRegistry Kernel::GetServiceRegistry() const {
+  return m_subsystems->GetSubsystem<services::IServiceRegistry>().value();
+}
+
+void Kernel::SetServiceRegistry(
+    const services::SharedServiceRegistry &serviceRegistry) {
+  m_subsystems->GetSubsystem<services::IServiceRegistry>().value();
+}
+
+networking::SharedNetworkingManager
+Kernel::GetNetworkingManager() const {
+  return m_subsystems->GetSubsystem<networking::NetworkingManager>().value();
+}
+
+void Kernel::SetNetworkingManager(
+    const networking::SharedNetworkingManager &networkingManager) {
+  m_subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
+      networkingManager);
+}
+
+plugins::SharedPluginManager Kernel::GetPluginManager() const {
+  return m_subsystems->GetSubsystem<plugins::IPluginManager>().value();
+}
+
+void
+Kernel::SetPluginManager(const plugins::SharedPluginManager &pluginManager) {
+  m_subsystems->AddOrReplaceSubsystem<plugins::IPluginManager>(pluginManager);
+}
+
+scene::SharedScene Kernel::GetScene() const {
+  return m_subsystems->GetSubsystem<scene::SceneManager>().value();
+}
+
+void Kernel::SetScene(const scene::SharedScene &scene) {
+  m_subsystems->AddOrReplaceSubsystem<scene::SceneManager>(scene);
+}
+
+graphics::SharedRenderer Kernel::GetRenderer() const {
+  return m_subsystems->GetSubsystem<graphics::IRenderer>().value();
+}
+
+void Kernel::SetRenderer(const graphics::SharedRenderer &renderer) {
+  m_subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(renderer);
+}
+
+bool Kernel::ShouldShutdown() const { return m_should_shutdown; }
+
+void Kernel::Shutdown(bool value) { m_should_shutdown = value; }

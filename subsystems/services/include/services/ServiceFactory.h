@@ -3,14 +3,13 @@
 
 #include "ServiceRequest.h"
 #include "ServiceResponse.h"
-#include "Services.h"
 
 namespace services {
 
 /**
  * @brief Builds frequently used instances and objects of the services
  */
-class SERVICES_API ServiceFactory {
+class ServiceFactory {
 public:
   SharedServiceResponse CreateResponse(const SharedServiceRequest &request);
 };

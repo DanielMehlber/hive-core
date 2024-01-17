@@ -1,7 +1,6 @@
 #ifndef JOBCONTEXT_H
 #define JOBCONTEXT_H
 
-#include "jobsystem/JobSystem.h"
 #include <chrono>
 #include <memory>
 #include <utility>
@@ -15,7 +14,7 @@ class JobManager;
  * @brief Contains data that could be relevant during the job execution cycle
  * and enables running jobs to communicate with the job manager.
  */
-class JOBSYSTEM_API JobContext {
+class JobContext {
 protected:
   size_t m_cycle_number;
   std::weak_ptr<JobManager> m_job_manager;

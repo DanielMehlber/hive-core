@@ -3,7 +3,6 @@
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "logging/LogManager.h"
-#include "resourcemgmt/ResourceManagement.h"
 #include <memory>
 #include <typeinfo>
 
@@ -11,7 +10,7 @@ namespace resourcemgmt {
 
 DECLARE_EXCEPTION(WrongResourceTypeRequestedException);
 
-class RESOURCE_API Resource {
+class Resource {
 private:
   const std::shared_ptr<void> m_value;
   const std::string m_type_name;

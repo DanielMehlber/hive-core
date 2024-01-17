@@ -5,7 +5,7 @@
 using namespace resourcemgmt;
 using namespace resourcemgmt::loaders;
 
-inline SharedResource FileLoader::Load(const std::string &uri) {
+SharedResource FileLoader::Load(const std::string &uri) {
 
   std::ifstream ifs(uri, std::ios::binary | std::ios::ate);
   std::ifstream::pos_type pos = ifs.tellg();

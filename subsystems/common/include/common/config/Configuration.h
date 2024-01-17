@@ -3,7 +3,7 @@
 
 #include <map>
 #include <memory>
-#include <utility>
+#include <string>
 
 namespace common::config {
 
@@ -49,7 +49,7 @@ inline float Configuration::GetAsFloat(const std::string &name,
 
 inline bool Configuration::GetBool(const std::string &name, bool alternative) {
   if (m_values.contains(name)) {
-    auto value = m_values.at(name);
+    const auto& value = m_values.at(name);
     if (value == "true" || value == "1") {
       return true;
     } else {

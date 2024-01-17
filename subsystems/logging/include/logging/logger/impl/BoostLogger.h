@@ -1,4 +1,3 @@
-#include "logging/Logging.h"
 #include "logging/logger/ILogger.h"
 
 namespace logging::logger::impl {

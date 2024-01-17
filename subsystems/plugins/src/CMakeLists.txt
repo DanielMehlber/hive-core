@@ -1,4 +1,4 @@
-add_library(plugins
+add_library(plugins STATIC
         BoostPluginManager.cpp
 )
 

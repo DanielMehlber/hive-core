@@ -3,7 +3,6 @@
 
 #include "PeerMessage.h"
 #include "common/exceptions/ExceptionsBase.h"
-#include "networking/Networking.h"
 
 namespace networking::websockets {
 
@@ -12,7 +11,7 @@ DECLARE_EXCEPTION(MessagePayloadInvalidException);
 /**
  * Converts the payload of web-socket events to data objects and vice versa.
  */
-class NETWORKING_API PeerMessageConverter {
+class PeerMessageConverter {
 public:
   /**
    * Generates a web-socket data object from json payload

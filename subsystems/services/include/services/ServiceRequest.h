@@ -1,7 +1,6 @@
 #ifndef SERVICEREQUEST_H
 #define SERVICEREQUEST_H
 
-#include "services/Services.h"
 #include <map>
 #include <memory>
 #include <optional>
@@ -15,7 +14,7 @@ namespace services {
  * Request for a specific service containing parameters that the service
  * requires to do its work.
  */
-class SERVICES_API ServiceRequest {
+class ServiceRequest {
 protected:
   /**
    * unique name of the requested service
