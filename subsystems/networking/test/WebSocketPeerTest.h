@@ -16,7 +16,7 @@ using namespace common::test;
 
 SharedWebSocketPeer
 SetupWebSocketPeer(const common::subsystems::SharedSubsystemManager &subsystems,
-                   int port) {
+                   size_t port) {
   auto config = std::make_shared<common::config::Configuration>();
   config->Set("net.port", port);
   auto message_broker = EventFactory::CreateBroker(subsystems);

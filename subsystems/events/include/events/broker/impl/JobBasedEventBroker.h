@@ -33,6 +33,7 @@ private:
    * still valid and if they still exist.
    */
   void CleanUpSubscribers();
+  std::shared_ptr<bool> m_this_alive_checker;
 
 public:
   explicit JobBasedEventBroker(

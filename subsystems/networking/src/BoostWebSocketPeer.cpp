@@ -189,7 +189,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   } catch (const MessagePayloadInvalidException &ex) {
     LOG_WARN("message received from host "
              << over_connection->GetRemoteHostAddress()
-             << " contained invalid payload")
+             << " contained invalid payload: " << ex.what())
     return;
   }
 
@@ -365,7 +365,7 @@ BoostWebSocketPeer::Broadcast(const SharedWebSocketMessage &message) {
           count++;
           try {
             future.get();
-          } catch (std::exception &exception) {
+          } catch (...) {
             count--;
           }
         }
