@@ -27,7 +27,7 @@ void FiberExecutionImpl::Init() {
 void FiberExecutionImpl::ShutDown() { Stop(); }
 
 void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
-  auto& weak_manager = m_managing_instance;
+  auto &weak_manager = m_managing_instance;
   auto runner = [weak_manager, job]() {
     if (weak_manager.expired()) {
       LOG_ERR("Cannot execute job "
@@ -47,7 +47,21 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
     }
   };
 
-  m_job_channel->push(std::move(runner));
+  auto status = m_job_channel->push(std::move(runner));
+
+  // check other status codes than 'success'
+  if (status != boost::fibers::channel_op_status::success) {
+    switch (status) {
+    case boost::fibers::channel_op_status::closed:
+      LOG_ERR("cannot schedule job " << job->GetId()
+                                     << " because channel to fibers is closed")
+      break;
+    case boost::fibers::channel_op_status::full:
+      LOG_WARN("job execution channel to fibers was full and blocked "
+               "execution; inceasing its buffer size is recommended")
+      break;
+    }
+  }
 }
 
 void FiberExecutionImpl::WaitForCompletion(

@@ -7,7 +7,7 @@
 #include "JobExitBehavior.h"
 #include "JobState.h"
 #include <functional>
-#include <list>
+#include <queue>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -46,7 +46,7 @@ protected:
   /**
    * @brief All counters that track the progress of this job.
    */
-  std::list<std::shared_ptr<JobCounter>> m_counters;
+  std::queue<std::shared_ptr<JobCounter>> m_counters;
   std::mutex m_counters_mutex;
 
   /**

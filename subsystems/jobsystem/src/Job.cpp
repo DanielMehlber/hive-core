@@ -1,7 +1,6 @@
 #include "jobsystem/job/Job.h"
 #include "common/uuid/UuidGenerator.h"
 #include "logging/LogManager.h"
-#include <utility>
 
 using namespace jobsystem::job;
 
@@ -17,7 +16,7 @@ JobContinuation Job::Execute(JobContext *context) {
 void Job::AddCounter(const std::shared_ptr<JobCounter> &counter) {
   std::unique_lock counter_lock(m_counters_mutex);
   counter->Increase();
-  m_counters.push_back(counter);
+  m_counters.push(counter);
 }
 
 Job::Job(std::function<JobContinuation(JobContext *)> workload, std::string id,
@@ -32,8 +31,8 @@ Job::Job(std::function<JobContinuation(JobContext *)> workload,
 void Job::FinishJob() {
   std::unique_lock counter_lock(m_counters_mutex);
   while (!m_counters.empty()) {
-    auto counter = m_counters.back();
-    m_counters.pop_back();
+    auto counter = m_counters.front();
+    m_counters.pop();
     counter->Decrease();
   }
 }

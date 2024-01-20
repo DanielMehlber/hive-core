@@ -2,8 +2,9 @@
 #define JOBCOUNTER_H
 
 #include "IJobWaitable.h"
-#include <atomic>
+#include "common/assert/Assert.h"
 #include <memory>
+#include <mutex>
 
 namespace jobsystem::job {
 
@@ -16,7 +17,8 @@ namespace jobsystem::job {
  */
 class JobCounter : public IJobWaitable {
 private:
-  std::atomic<size_t> m_count{0};
+  size_t m_count{0};
+  mutable std::mutex m_count_mutex;
 
 public:
   /**
@@ -38,9 +40,21 @@ public:
   bool IsFinished() override;
 };
 
-inline void JobCounter::Increase() { m_count.fetch_add(1); }
-inline void JobCounter::Decrease() { m_count.fetch_sub(1); }
-inline bool JobCounter::IsFinished() { return m_count < 1; }
+inline void JobCounter::Increase() {
+  std::unique_lock lock(m_count_mutex);
+  m_count++;
+}
+
+inline void JobCounter::Decrease() {
+  std::unique_lock lock(m_count_mutex);
+  ASSERT(m_count > 0, "job counter must not be decreased below zero.")
+  m_count--;
+}
+
+inline bool JobCounter::IsFinished() {
+  std::unique_lock lock(m_count_mutex);
+  return m_count < 1;
+}
 
 typedef std::shared_ptr<jobsystem::job::JobCounter> SharedJobCounter;
 
