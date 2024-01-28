@@ -2,7 +2,7 @@
 #define WEBSOCKETSERVICEREGISTRY_H
 
 #include "events/listener/impl/FunctionalEventListener.h"
-#include "networking/peers/IPeer.h"
+#include "networking/peers/IMessageEndpoint.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistrationConsumer.h"
 #include "services/registry/impl/remote/RemoteServiceRequestConsumer.h"
@@ -20,15 +20,16 @@ protected:
 
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
-  SharedPeerMessageConsumer m_registration_consumer;
-  SharedPeerMessageConsumer m_response_consumer;
-  SharedPeerMessageConsumer m_request_consumer;
+  SharedMessageConsumer m_registration_consumer;
+  SharedMessageConsumer m_response_consumer;
+  SharedMessageConsumer m_request_consumer;
 
   events::SharedEventListener m_new_peer_connection_listener;
 
   static SharedJob CreateRemoteServiceRegistrationJob(
       const std::string &peer_id, const std::string &service_name,
-      const std::weak_ptr<networking::websockets::IPeer> &sending_peer);
+      const std::weak_ptr<networking::websockets::IMessageEndpoint>
+          &sending_peer);
 
 public:
   explicit RemoteServiceRegistry(

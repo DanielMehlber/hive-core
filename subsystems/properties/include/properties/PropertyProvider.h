@@ -12,13 +12,12 @@
 namespace props {
 
 /**
- * @brief Provides read and write access to properties, as well as notification
+ * Provides read and write access to properties, as well as notification
  * to their changes. Properties are onganized in a property tree, meaning that
  * every property has a path in the hierarchy. This enables grouping and
  * listening to subsets of properties.
  */
-class PropertyProvider
-    : std::enable_shared_from_this<PropertyProvider> {
+class PropertyProvider : std::enable_shared_from_this<PropertyProvider> {
 protected:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
@@ -32,7 +31,7 @@ public:
   virtual ~PropertyProvider();
 
   /**
-   * @brief Sets an existing property's value or creates a new one.
+   * Sets an existing property's value or creates a new one.
    * @tparam PropType type of the property's value
    * @param key uniquely identifies the property using its path in the property
    * tree
@@ -42,7 +41,7 @@ public:
   template <typename PropType> void Set(const std::string &key, PropType value);
 
   /**
-   * @brief GetAsInt value of some property (if it exists)
+   * GetAsInt value of some property (if it exists)
    * @tparam PropType type of the property's value
    * @param key path to some leaf in the property tree
    * @return value of property if it exists
@@ -54,7 +53,7 @@ public:
   std::optional<PropType> Get(const std::string &key);
 
   /**
-   * @brief GetAsInt value of some property or a alternative value if this
+   * GetAsInt value of some property or a alternative value if this
    * property does not exist
    * @tparam PropType type of the property's value
    * @param key path to some leaf in the property tree
@@ -67,7 +66,7 @@ public:
   PropType GetOrElse(const std::string &key, PropType value);
 
   /**
-   * @brief Registeres a property listener for a concrete property (if the path
+   * Registeres a property listener for a concrete property (if the path
    * leads to a leaf in the property tree) or to a subset of properties (if the
    * path leads to a node containing more leafs). Example: Listening to
    * 'example.property' also notifies on changes in property
@@ -80,7 +79,7 @@ public:
                         const SharedPropertyListener &listener);
 
   /**
-   * @brief Unregisters a property listener from all paths in the property tree.
+   * Unregisters a property listener from all paths in the property tree.
    * @param listener listener that will be unregistered.
    */
   void UnregisterListener(const SharedPropertyListener &listener);

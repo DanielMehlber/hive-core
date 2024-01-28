@@ -5,7 +5,7 @@ using namespace services::impl;
 using namespace services;
 
 std::optional<SharedServiceResponse>
-RemoteServiceMessagesConverter::ToServiceResponse(PeerMessage &&message) {
+RemoteServiceMessagesConverter::ToServiceResponse(Message &&message) {
 
   auto opt_transaction_id = message.GetAttribute("transaction-id");
   if (!opt_transaction_id.has_value()) {
@@ -46,11 +46,10 @@ RemoteServiceMessagesConverter::ToServiceResponse(PeerMessage &&message) {
   return response;
 }
 
-SharedWebSocketMessage RemoteServiceMessagesConverter::FromServiceRequest(
+SharedMessage RemoteServiceMessagesConverter::FromServiceRequest(
     const services::ServiceRequest &request) {
 
-  SharedWebSocketMessage message =
-      std::make_shared<PeerMessage>("service-request");
+  SharedMessage message = std::make_shared<Message>("service-request");
 
   for (const auto &result_name : request.GetParameterNames()) {
     message->SetAttribute(result_name,
@@ -64,8 +63,7 @@ SharedWebSocketMessage RemoteServiceMessagesConverter::FromServiceRequest(
 }
 
 std::optional<SharedServiceRequest>
-RemoteServiceMessagesConverter::ToServiceRequest(
-    const SharedWebSocketMessage &message) {
+RemoteServiceMessagesConverter::ToServiceRequest(const SharedMessage &message) {
 
   auto opt_transaction_id = message->GetAttribute("transaction-id");
   if (!opt_transaction_id.has_value()) {
@@ -91,11 +89,10 @@ RemoteServiceMessagesConverter::ToServiceRequest(
   return request;
 }
 
-SharedWebSocketMessage RemoteServiceMessagesConverter::FromServiceResponse(
+SharedMessage RemoteServiceMessagesConverter::FromServiceResponse(
     ServiceResponse &&response) {
 
-  SharedWebSocketMessage message =
-      std::make_shared<PeerMessage>("service-response");
+  SharedMessage message = std::make_shared<Message>("service-response");
 
   for (const auto &result_name : response.GetResultNames()) {
     message->SetAttribute(result_name,

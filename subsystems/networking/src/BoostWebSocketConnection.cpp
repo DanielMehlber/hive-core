@@ -1,6 +1,6 @@
 #include "networking/peers/impl/websockets/boost/BoostWebSocketConnection.h"
 #include "logging/LogManager.h"
-#include "networking/peers/PeerMessageConverter.h"
+#include "networking/peers/MessageConverter.h"
 #include <boost/asio.hpp>
 #include <utility>
 
@@ -99,14 +99,12 @@ void BoostWebSocketConnection::Close() {
 
 BoostWebSocketConnection::~BoostWebSocketConnection() { Close(); }
 
-std::future<void>
-BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
+std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
   std::promise<void> sending_promise;
   std::future<void> sending_future = sending_promise.get_future();
 
   std::shared_ptr<std::string> payload = std::make_shared<std::string>(
-      networking::websockets::PeerMessageConverter::ToMultipartFormData(
-          message));
+      networking::websockets::MessageConverter::ToMultipartFormData(message));
 
   /*
    * The async_write must finish before another one can be called. This lock
@@ -148,7 +146,7 @@ BoostWebSocketConnection::Send(const SharedWebSocketMessage &message) {
 }
 
 void BoostWebSocketConnection::OnMessageSent(
-    std::promise<void> &&promise, SharedWebSocketMessage message,
+    std::promise<void> &&promise, SharedMessage message,
     std::shared_ptr<std::string> sent_data, std::unique_lock<std::mutex> lock,
     boost::beast::error_code error_code,
     [[maybe_unused]] std::size_t bytes_transferred) {
@@ -179,8 +177,8 @@ void BoostWebSocketConnection::OnMessageSent(
             << m_remote_endpoint_data.port())
 }
 
-PeerConnectionInfo BoostWebSocketConnection::GetConnectionInfo() const {
-  PeerConnectionInfo info;
+ConnectionInfo BoostWebSocketConnection::GetConnectionInfo() const {
+  ConnectionInfo info;
   info.SetHostname(GetRemoteHostAddress());
   return info;
 }

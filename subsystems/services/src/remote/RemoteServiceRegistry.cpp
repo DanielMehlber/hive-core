@@ -10,7 +10,8 @@ using namespace services::impl;
 using namespace std::placeholders;
 
 void broadcastServiceRegistration(
-    const std::weak_ptr<IPeer> &sender, const SharedServiceExecutor &stub,
+    const std::weak_ptr<IMessageEndpoint> &sender,
+    const SharedServiceExecutor &stub,
     const jobsystem::SharedJobManager &job_manager) {
 
   ASSERT(!sender.expired(), "sender should exist")
@@ -59,7 +60,8 @@ void RemoteServiceRegistry::Register(const SharedServiceExecutor &stub) {
 
   auto job_manager =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
-  auto web_socket_peer = m_subsystems.lock()->RequireSubsystem<IPeer>();
+  auto web_socket_peer =
+      m_subsystems.lock()->RequireSubsystem<IMessageEndpoint>();
 
   std::string name = stub->GetServiceName();
 
@@ -172,10 +174,11 @@ void RemoteServiceRegistry::SetupEventSubscribers() {
 void RemoteServiceRegistry::SetupMessageConsumers() {
 
   ASSERT(!m_subsystems.expired(), "subsystems should still exist")
-  ASSERT(m_subsystems.lock()->ProvidesSubsystem<IPeer>(),
+  ASSERT(m_subsystems.lock()->ProvidesSubsystem<IMessageEndpoint>(),
          "peer networking subsystem should exist")
 
-  auto web_socket_peer = m_subsystems.lock()->RequireSubsystem<IPeer>();
+  auto web_socket_peer =
+      m_subsystems.lock()->RequireSubsystem<IMessageEndpoint>();
 
   auto response_consumer = std::make_shared<RemoteServiceResponseConsumer>();
   m_response_consumer = response_consumer;
@@ -195,20 +198,21 @@ void RemoteServiceRegistry::SendServicePortfolioToPeer(
     const std::string &peer_id) const {
 
   ASSERT(!m_subsystems.expired(), "subsystems should still exist")
-  ASSERT(m_subsystems.lock()->ProvidesSubsystem<IPeer>(),
+  ASSERT(m_subsystems.lock()->ProvidesSubsystem<IMessageEndpoint>(),
          "peer networking subsystem should exist")
   ASSERT(m_subsystems.lock()->ProvidesSubsystem<jobsystem::JobManager>(),
          "job system should exist")
 
   if (!m_subsystems.lock()
-           ->ProvidesSubsystem<networking::websockets::IPeer>()) {
+           ->ProvidesSubsystem<networking::websockets::IMessageEndpoint>()) {
     LOG_ERR("Cannot transmit service portfolio to remote peer "
             << peer_id << ": this peer cannot be found as subsystem");
     return;
   }
 
-  std::weak_ptr<networking::websockets::IPeer> this_peer_weak =
-      m_subsystems.lock()->RequireSubsystem<networking::websockets::IPeer>();
+  std::weak_ptr<networking::websockets::IMessageEndpoint> this_peer_weak =
+      m_subsystems.lock()
+          ->RequireSubsystem<networking::websockets::IMessageEndpoint>();
 
   auto job_manager =
       m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
@@ -224,7 +228,8 @@ void RemoteServiceRegistry::SendServicePortfolioToPeer(
 
 SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
     const std::string &peer_id, const std::string &service_name,
-    const std::weak_ptr<networking::websockets::IPeer> &sending_peer) {
+    const std::weak_ptr<networking::websockets::IMessageEndpoint>
+        &sending_peer) {
 
   ASSERT(!sending_peer.expired(), "sending peer should exist")
 

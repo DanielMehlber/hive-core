@@ -6,8 +6,7 @@
 namespace common::uuid {
 
 /**
- * Interface layer for generating UUIDs used to separate usage and
- * implementation details, rendering the underlying UUID generator exchangeable.
+ * Generates UUIDs randomly.
  */
 class UuidGenerator {
 public:

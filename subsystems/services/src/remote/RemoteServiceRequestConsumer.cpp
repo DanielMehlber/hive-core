@@ -6,13 +6,12 @@ using namespace services::impl;
 RemoteServiceRequestConsumer::RemoteServiceRequestConsumer(
     const common::subsystems::SharedSubsystemManager &subsystems,
     RemoteServiceRequestConsumer::query_func_type query_func,
-    const SharedWebSocketPeer &web_socket_peer)
+    const SharedMessageEndpoint &web_socket_peer)
     : m_subsystems(subsystems), m_service_query_func(std::move(query_func)),
       m_web_socket_peer(web_socket_peer) {}
 
 void RemoteServiceRequestConsumer::ProcessReceivedMessage(
-    SharedWebSocketMessage received_message,
-    PeerConnectionInfo connection_info) noexcept {
+    SharedMessage received_message, ConnectionInfo connection_info) noexcept {
 
   if (m_subsystems.expired()) {
     LOG_ERR("Cannot process received message because subsystems have already "
@@ -82,7 +81,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
               ServiceResponseStatus::INTERNAL_ERROR, exception.what());
         }
 
-        SharedWebSocketMessage response_message =
+        SharedMessage response_message =
             RemoteServiceMessagesConverter::FromServiceResponse(
                 std::move(*response));
 

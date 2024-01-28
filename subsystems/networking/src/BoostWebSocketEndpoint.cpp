@@ -1,6 +1,6 @@
-#include "networking/peers/impl/websockets/boost/BoostWebSocketPeer.h"
-#include "networking/peers/PeerMessageConsumerJob.h"
-#include "networking/peers/PeerMessageConverter.h"
+#include "networking/peers/impl/websockets/boost/BoostWebSocketEndpoint.h"
+#include "networking/peers/MessageConsumerJob.h"
+#include "networking/peers/MessageConverter.h"
 #include "networking/peers/events/ConnectionClosedEvent.h"
 #include "networking/peers/events/ConnectionEstablishedEvent.h"
 #include "networking/util/UrlParser.h"
@@ -16,7 +16,7 @@ namespace asio = boost::asio;           // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 using namespace std::chrono_literals;
 
-BoostWebSocketPeer::BoostWebSocketPeer(
+BoostWebSocketEndpoint::BoostWebSocketEndpoint(
     const common::subsystems::SharedSubsystemManager &subsystems,
     const common::config::SharedConfiguration &config)
     : m_subsystems(subsystems), m_config(config) {
@@ -46,7 +46,7 @@ BoostWebSocketPeer::BoostWebSocketPeer(
   SetupCleanUpJob();
 }
 
-void BoostWebSocketPeer::SetupCleanUpJob() {
+void BoostWebSocketEndpoint::SetupCleanUpJob() {
   SharedJob clean_up_job = jobsystem::JobSystemFactory::CreateJob<TimerJob>(
       [weak_this = weak_from_this()](jobsystem::JobContext *context) {
         if (weak_this.expired()) {
@@ -90,7 +90,7 @@ void BoostWebSocketPeer::SetupCleanUpJob() {
   job_manager->KickJob(clean_up_job);
 }
 
-BoostWebSocketPeer::~BoostWebSocketPeer() {
+BoostWebSocketEndpoint::~BoostWebSocketEndpoint() {
   std::unique_lock running_lock(m_running_mutex);
   m_running = false;
   running_lock.unlock();
@@ -111,11 +111,11 @@ BoostWebSocketPeer::~BoostWebSocketPeer() {
   LOG_DEBUG("local web-socket peer has been shut down")
 }
 
-void BoostWebSocketPeer::AddMessageConsumer(
-    std::weak_ptr<IPeerMessageConsumer> consumer) {
+void BoostWebSocketEndpoint::AddMessageConsumer(
+    std::weak_ptr<IMessageConsumer> consumer) {
   bool is_valid_consumer = !consumer.expired();
   if (is_valid_consumer) {
-    SharedPeerMessageConsumer shared_consumer = consumer.lock();
+    SharedMessageConsumer shared_consumer = consumer.lock();
     const auto &consumer_message_type = shared_consumer->GetMessageType();
     std::unique_lock consumers_lock(m_consumers_mutex);
     m_consumers[consumer_message_type].push_back(consumer);
@@ -127,10 +127,10 @@ void BoostWebSocketPeer::AddMessageConsumer(
   }
 }
 
-std::list<SharedPeerMessageConsumer>
-BoostWebSocketPeer::GetConsumersOfMessageType(
+std::list<SharedMessageConsumer>
+BoostWebSocketEndpoint::GetConsumersOfMessageType(
     const std::string &type_name) noexcept {
-  std::list<SharedPeerMessageConsumer> ret_consumer_list;
+  std::list<SharedMessageConsumer> ret_consumer_list;
 
   std::unique_lock consumers_lock(m_consumers_mutex);
   if (m_consumers.contains(type_name)) {
@@ -152,18 +152,18 @@ BoostWebSocketPeer::GetConsumersOfMessageType(
   return ret_consumer_list;
 }
 
-void BoostWebSocketPeer::CleanUpConsumersOfMessageType(
+void BoostWebSocketEndpoint::CleanUpConsumersOfMessageType(
     const std::string &type) noexcept {
   if (m_consumers.contains(type)) {
     std::unique_lock consumers_lock(m_consumers_mutex);
     auto &consumer_list = m_consumers[type];
-    consumer_list.remove_if([](const std::weak_ptr<IPeerMessageConsumer> &con) {
+    consumer_list.remove_if([](const std::weak_ptr<IMessageConsumer> &con) {
       return con.expired();
     });
   }
 }
 
-void BoostWebSocketPeer::ProcessReceivedMessage(
+void BoostWebSocketEndpoint::ProcessReceivedMessage(
     std::string data, SharedBoostWebSocketConnection over_connection) {
 
   if (m_subsystems.expired()) {
@@ -181,11 +181,10 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   }
 
   // convert payload into message
-  SharedWebSocketMessage message;
+  SharedMessage message;
   try {
     message =
-        networking::websockets::PeerMessageConverter::FromMultipartFormData(
-            data);
+        networking::websockets::MessageConverter::FromMultipartFormData(data);
   } catch (const MessagePayloadInvalidException &ex) {
     LOG_WARN("message received from host "
              << over_connection->GetRemoteHostAddress()
@@ -196,7 +195,7 @@ void BoostWebSocketPeer::ProcessReceivedMessage(
   std::string message_type = message->GetType();
   auto consumer_list = GetConsumersOfMessageType(message_type);
   for (auto consumer : consumer_list) {
-    auto job = std::make_shared<PeerMessageConsumerJob>(
+    auto job = std::make_shared<MessageConsumerJob>(
         consumer, message, over_connection->GetConnectionInfo());
     job_manager->KickJob(job);
   }
@@ -214,7 +213,8 @@ std::optional<std::string> connectionIdFromUrl(const std::string &url) {
   }
 }
 
-void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
+void BoostWebSocketEndpoint::AddConnection(std::string url,
+                                           stream_type &&stream) {
   std::unique_lock running_lock(m_running_mutex);
   if (!m_running) {
     return;
@@ -223,9 +223,9 @@ void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
   SharedBoostWebSocketConnection connection =
       std::make_shared<BoostWebSocketConnection>(
           std::move(stream),
-          std::bind(&BoostWebSocketPeer::ProcessReceivedMessage, this,
+          std::bind(&BoostWebSocketEndpoint::ProcessReceivedMessage, this,
                     std::placeholders::_1, std::placeholders::_2),
-          std::bind(&BoostWebSocketPeer::OnConnectionClose, this,
+          std::bind(&BoostWebSocketEndpoint::OnConnectionClose, this,
                     std::placeholders::_1));
   connection->StartReceivingMessages();
 
@@ -246,7 +246,7 @@ void BoostWebSocketPeer::AddConnection(std::string url, stream_type &&stream) {
 }
 
 std::optional<SharedBoostWebSocketConnection>
-networking::websockets::BoostWebSocketPeer::GetConnection(
+networking::websockets::BoostWebSocketEndpoint::GetConnection(
     const std::string &uri) {
 
   const std::string connection_id = connectionIdFromUrl(uri).value();
@@ -263,29 +263,29 @@ networking::websockets::BoostWebSocketPeer::GetConnection(
   }
 }
 
-void BoostWebSocketPeer::InitAndStartConnectionListener() {
+void BoostWebSocketEndpoint::InitAndStartConnectionListener() {
   if (!m_connection_listener) {
     m_connection_listener = std::make_shared<BoostWebSocketConnectionListener>(
         m_execution_context, m_config, m_local_endpoint,
-        std::bind(&BoostWebSocketPeer::AddConnection, this,
+        std::bind(&BoostWebSocketEndpoint::AddConnection, this,
                   std::placeholders::_1, std::placeholders::_2));
     m_connection_listener->Init();
     m_connection_listener->StartAcceptingAnotherConnection();
   }
 }
 
-void BoostWebSocketPeer::InitConnectionEstablisher() {
+void BoostWebSocketEndpoint::InitConnectionEstablisher() {
   if (!m_connection_establisher) {
     m_connection_establisher =
         std::make_shared<BoostWebSocketConnectionEstablisher>(
             m_execution_context,
-            std::bind(&BoostWebSocketPeer::AddConnection, this,
+            std::bind(&BoostWebSocketEndpoint::AddConnection, this,
                       std::placeholders::_1, std::placeholders::_2));
   }
 }
 
-std::future<void> BoostWebSocketPeer::Send(const std::string &uri,
-                                           SharedWebSocketMessage message) {
+std::future<void> BoostWebSocketEndpoint::Send(const std::string &uri,
+                                               SharedMessage message) {
   auto opt_connection = GetConnection(uri);
   if (opt_connection.has_value()) {
     return opt_connection.value()->Send(message);
@@ -295,7 +295,7 @@ std::future<void> BoostWebSocketPeer::Send(const std::string &uri,
 }
 
 std::future<void>
-BoostWebSocketPeer::EstablishConnectionTo(const std::string &uri) noexcept {
+BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
   auto opt_connection = GetConnection(uri);
 
   // if connection has already been established
@@ -313,7 +313,8 @@ BoostWebSocketPeer::EstablishConnectionTo(const std::string &uri) noexcept {
   return m_connection_establisher->EstablishConnectionTo(uri);
 }
 
-void BoostWebSocketPeer::CloseConnectionTo(const std::string &uri) noexcept {
+void BoostWebSocketEndpoint::CloseConnectionTo(
+    const std::string &uri) noexcept {
   auto opt_connection_id = connectionIdFromUrl(uri);
   if (opt_connection_id.has_value()) {
     auto connection_id = opt_connection_id.value();
@@ -325,7 +326,7 @@ void BoostWebSocketPeer::CloseConnectionTo(const std::string &uri) noexcept {
   }
 }
 
-bool BoostWebSocketPeer::HasConnectionTo(
+bool BoostWebSocketEndpoint::HasConnectionTo(
     const std::string &uri) const noexcept {
   std::unique_lock lock(m_connections_mutex);
   if (m_connections.contains(uri)) {
@@ -336,7 +337,7 @@ bool BoostWebSocketPeer::HasConnectionTo(
 }
 
 std::future<size_t>
-BoostWebSocketPeer::Broadcast(const SharedWebSocketMessage &message) {
+BoostWebSocketEndpoint::Broadcast(const SharedMessage &message) {
 
   std::shared_ptr<std::promise<size_t>> promise =
       std::make_shared<std::promise<size_t>>();
@@ -380,7 +381,7 @@ BoostWebSocketPeer::Broadcast(const SharedWebSocketMessage &message) {
   return future;
 }
 
-size_t BoostWebSocketPeer::GetActiveConnectionCount() const {
+size_t BoostWebSocketEndpoint::GetActiveConnectionCount() const {
   std::unique_lock lock(m_connections_mutex);
   size_t count = 0;
   for (auto &connection : m_connections) {
@@ -392,7 +393,7 @@ size_t BoostWebSocketPeer::GetActiveConnectionCount() const {
   return count;
 }
 
-void BoostWebSocketPeer::OnConnectionClose(const std::string &id) {
+void BoostWebSocketEndpoint::OnConnectionClose(const std::string &id) {
   if (!m_subsystems.expired() &&
       m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>()) {
     auto event_broker =

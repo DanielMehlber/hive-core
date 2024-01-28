@@ -4,7 +4,7 @@
 // *** required for windows ***
 #undef max
 // MSVC defines a macro called 'max' in windows.h,
-// clashing with method names in the boost library. 
+// clashing with method names in the boost library.
 
 #include "JobManagerState.h"
 #include "common/config/Configuration.h"
@@ -27,17 +27,16 @@ typedef jobsystem::execution::impl::FiberExecutionImpl JobExecutionImpl;
 namespace jobsystem {
 
 /**
- * @brief Manages the job processing order, controls the progress of cycles and
+ * Manages the job processing order, controls the progress of cycles and
  * holds all job instances that must be executed in the current or following
  * execution cycles.
  */
-class JobManager
-    : public std::enable_shared_from_this<JobManager> {
+class JobManager : public std::enable_shared_from_this<JobManager> {
 private:
   common::config::SharedConfiguration m_config;
 
   /**
-   * @brief All jobs for the initialization phase of the cycle are collected
+   * All jobs for the initialization phase of the cycle are collected
    * here.
    */
   std::queue<SharedJob> m_init_queue;
@@ -45,7 +44,7 @@ private:
   SharedJobCounter m_init_phase_counter;
 
   /**
-   * @brief All jobs for the main processing phase of the cycle are collected
+   * All jobs for the main processing phase of the cycle are collected
    * here.
    */
   std::queue<SharedJob> m_main_queue;
@@ -53,14 +52,14 @@ private:
   SharedJobCounter m_main_phase_counter;
 
   /**
-   * @brief All jobs for the clean-up phase of the cycle are collected here.
+   * All jobs for the clean-up phase of the cycle are collected here.
    */
   std::queue<SharedJob> m_clean_up_queue;
   mutable std::mutex m_clean_up_queue_mutex;
   SharedJobCounter m_clean_up_phase_counter;
 
   /**
-   * @brief All jobs that should not be kicked for the following cycles instead
+   * All jobs that should not be kicked for the following cycles instead
    * for the currently running cycles will be collected here. This is the case,
    * when a job is automatically rescheduled for future cycles (e.g.
    * time-interval jobs).
@@ -69,7 +68,7 @@ private:
   mutable std::mutex m_next_cycle_queue_mutex;
 
   /**
-   * @brief Some jobs must be prevented from being rescheduled for the next
+   * Some jobs must be prevented from being rescheduled for the next
    * cycle. This is often the case when trying to detach jobs which are
    * currently in the execution and must therefore be prevented from requeueing.
    */
@@ -88,7 +87,7 @@ private:
 #endif
 
   /**
-   * @brief Pushes all job instances contained in the passed queue to the
+   * Pushes all job instances contained in the passed queue to the
    * execution and waits until all have been executed.
    * @param queue queue containing all jobs that should be executed
    * @param queue_mutex mutex of the queue enabling concurrent access and
@@ -101,7 +100,7 @@ private:
                            const SharedJobCounter &counter);
 
   /**
-   * @brief Pushes all job instances contained in the passed queue to the
+   * Pushes all job instances contained in the passed queue to the
    * execution for scheduling.
    * @param queue queue containing all job instances that should be executed
    * @param queue_mutex mutex of the passed queue enabling concurrent access and
@@ -114,7 +113,7 @@ private:
                               const SharedJobCounter &counter);
 
   /**
-   * @brief The continuation requeue blacklist is used when cancelling jobs by
+   * The continuation requeue blacklist is used when cancelling jobs by
    * preventing their re-queueing. This operation clears the blacklist.
    */
   void ResetContinuationRequeueBlacklist();
@@ -126,23 +125,23 @@ public:
   JobManager(JobManager &other) = delete;
 
   /**
-   * @brief Starts the job system execution cycle.
+   * Starts the job system execution cycle.
    * @note This must be called after the job system has been initialized.
    */
   void StartExecution();
 
   /**
-   * @brief Stops the job system execution cycle.
+   * Stops the job system execution cycle.
    */
   void StopExecution();
 
   /**
-   * @brief Logs runtime information and statistics.
+   * Logs runtime information and statistics.
    */
   void PrintStatusLog();
 
   /**
-   * @brief Pass detached job instance to manager in order to be executed in the
+   * Pass detached job instance to manager in order to be executed in the
    * current cycle or the next one, if none is currently running.
    * @param job job that should be executed
    * @note The job will be executed when the execution cycle has been invoked
@@ -150,14 +149,14 @@ public:
   void KickJob(const SharedJob &job);
 
   /**
-   * @brief Ensures that a job which is not yet in execution will not be
+   * Ensures that a job which is not yet in execution will not be
    * executed (again)
    * @param job_id id of this job
    */
   void DetachJob(const std::string &job_id);
 
   /**
-   * @brief Pass detached job instance to manager in order to be exected in the
+   * Pass detached job instance to manager in order to be exected in the
    * next cycle (not the current one).
    * @param job job that should be executed
    * @note This is useful for re-queueing jobs for later execution
@@ -165,13 +164,13 @@ public:
   void KickJobForNextCycle(const SharedJob &job);
 
   /**
-   * @brief Starts a new execution cycle and passes queued jobs to the
+   * Starts a new execution cycle and passes queued jobs to the
    * execution. The calling thread will be blocked until the cycle has finished.
    */
   void InvokeCycleAndWait();
 
   /**
-   * @brief Execution will wait (or will be deferred, depending on the execution
+   * Execution will wait (or will be deferred, depending on the execution
    * environment) until the waitable object has been finished.
    * @param waitable process that needs finish for the current calling party to
    * continue.
@@ -181,7 +180,7 @@ public:
   void WaitForCompletion(std::shared_ptr<IJobWaitable> counter);
 
   /**
-   * @brief Execution of the calling party will wait (or will be deferred,
+   * Execution of the calling party will wait (or will be deferred,
    * depending on the execution environment) until the passed future has been
    * resolved.
    * @tparam FutureType type of the future object

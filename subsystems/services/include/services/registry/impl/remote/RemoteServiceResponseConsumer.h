@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETSERVICERESPONSECONSUMER_H
 #define WEBSOCKETSERVICERESPONSECONSUMER_H
 
-#include "networking/peers/IPeerMessageConsumer.h"
+#include "networking/peers/IMessageConsumer.h"
 #include "services/ServiceResponse.h"
 #include <future>
 
@@ -12,7 +12,7 @@ namespace services::impl {
 /**
  * Processes incoming service responses of recently called remote services.
  */
-class RemoteServiceResponseConsumer : public IPeerMessageConsumer {
+class RemoteServiceResponseConsumer : public IMessageConsumer {
 private:
   mutable std::mutex m_promises_mutex;
   std::map<std::string, std::promise<SharedServiceResponse>> m_promises;
@@ -20,9 +20,8 @@ private:
 public:
   std::string GetMessageType() const noexcept override;
 
-  void
-  ProcessReceivedMessage(SharedWebSocketMessage received_message,
-                         PeerConnectionInfo connection_info) noexcept override;
+  void ProcessReceivedMessage(SharedMessage received_message,
+                              ConnectionInfo connection_info) noexcept override;
 
   /**
    * Adds response promise to this consumer. The consumer will resolve this

@@ -8,6 +8,11 @@
 #include <string>
 
 namespace events {
+
+/**
+ * Allows handling events using a simple lambda functions instead of
+ * implementing the interface.
+ */
 class FunctionalEventListener : public IEventListener {
 protected:
   const std::function<void(const SharedEvent)> m_function;

@@ -10,7 +10,8 @@ namespace graphics {
 typedef std::vector<unsigned char> data_type;
 
 /**
- * Contains the result of a rendering process as byte array.
+ * Allows access to the image generated in a rendering pass for further
+ * processing.
  */
 class RenderResult {
 protected:

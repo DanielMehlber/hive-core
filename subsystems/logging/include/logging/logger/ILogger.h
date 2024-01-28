@@ -6,7 +6,7 @@
 namespace logging::logger {
 
 /**
- * @brief Generic interface for logging
+ * Generic interface for logging
  */
 class ILogger {
 public:

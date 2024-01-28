@@ -9,7 +9,7 @@
 namespace logging {
 
 /**
- * @brief Provides a logger implementations
+ * Provides a logger implementations
  */
 class LogManager {
 private:
@@ -17,7 +17,7 @@ private:
 
 public:
   /**
-   * @brief Constructs the default logger implementation (if logger does not
+   * Constructs the default logger implementation (if logger does not
    * exist yet).
    * @return the default logger implementation
    */

@@ -1,9 +1,9 @@
 #include "boost/program_options/options_description.hpp"
 #include "boost/program_options/parsers.hpp"
 #include "boost/program_options/variables_map.hpp"
+#include "core/Core.h"
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "graphics/renderer/impl/OnscreenRenderer.h"
-#include "kernel/Kernel.h"
 
 namespace po = boost::program_options;
 
@@ -69,7 +69,7 @@ int main(int argc, const char **argv) {
   bool local_only = service_port < 0;
 
   /* START KERNEL AND ALL ITS SUBSYSTEMS */
-  kernel::Kernel kernel(config, local_only);
+  kernel::Core kernel(config, local_only);
 
   /* LOAD SCENE FILES (IF ANY WERE SPECIFIED) */
   auto vsg_options = vsg::Options::create();
@@ -140,9 +140,9 @@ int main(int argc, const char **argv) {
   }
 
   /* CONNECT TO OTHER PEERS (IF ANY WERE SPECIFIED AND SUBSYSTEM IS PROVIDED) */
-  if (kernel.GetSubsystemsManager()->ProvidesSubsystem<IPeer>()) {
+  if (kernel.GetSubsystemsManager()->ProvidesSubsystem<IMessageEndpoint>()) {
     auto peer_networking_subsystem =
-        kernel.GetSubsystemsManager()->RequireSubsystem<IPeer>();
+        kernel.GetSubsystemsManager()->RequireSubsystem<IMessageEndpoint>();
     for (const auto &connection_url : connections_to_establish) {
       peer_networking_subsystem->EstablishConnectionTo(connection_url);
     }

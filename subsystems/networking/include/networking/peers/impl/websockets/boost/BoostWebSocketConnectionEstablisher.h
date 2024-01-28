@@ -14,7 +14,7 @@ DECLARE_EXCEPTION(CannotResolveHostException);
 DECLARE_EXCEPTION(ConnectionFailedException);
 
 /**
- * @brief Tries to establish web-socket connections with servers or other
+ * Tries to establish web-socket connections with servers or other
  * endpoints
  * @note This is basically the client-role
  */
@@ -24,12 +24,12 @@ private:
   std::shared_ptr<boost::asio::io_context> m_execution_context;
 
   /**
-   * @brief Resolves IP addresses from given hostnames
+   * Resolves IP addresses from given hostnames
    */
   boost::asio::ip::tcp::resolver m_resolver;
 
   /**
-   * @brief This is used as a callback function: A successfully established
+   * This is used as a callback function: A successfully established
    * connection will be passed into this function for further use.
    */
   std::function<void(std::string uri, stream_type &&stream)>
@@ -57,7 +57,7 @@ public:
       std::function<void(std::string, stream_type &&)> connection_consumer);
 
   /**
-   * @brief Tries to establish connection to another endpoint host. This
+   * Tries to establish connection to another endpoint host. This
    * triggers the overall connection process of the client.
    * @param uri URL of the remote endpoint
    * @return a future resolving when the overall connection-establishment

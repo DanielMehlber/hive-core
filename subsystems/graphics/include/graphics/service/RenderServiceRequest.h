@@ -7,6 +7,9 @@
 
 namespace graphics {
 
+/**
+ * Conversion between string and vector failed.
+ */
 DECLARE_EXCEPTION(VectorConversionException);
 
 struct Perspective {
@@ -22,6 +25,9 @@ struct Extend {
 
 enum ProjectionType { PERSPECTIVE, ORTHOGRAPHIC };
 
+/**
+ * Utility for creating and processing valid rendering service requests.
+ */
 class RenderServiceRequest {
 private:
   services::SharedServiceRequest m_request;

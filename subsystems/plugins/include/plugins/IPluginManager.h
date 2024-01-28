@@ -6,6 +6,9 @@
 
 namespace plugins {
 
+/**
+ * Loads plugins and manages their life-cycle.
+ */
 class IPluginManager {
 public:
   /**

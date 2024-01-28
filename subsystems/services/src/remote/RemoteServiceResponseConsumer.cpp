@@ -5,8 +5,7 @@
 using namespace services::impl;
 
 void RemoteServiceResponseConsumer::ProcessReceivedMessage(
-    SharedWebSocketMessage received_message,
-    PeerConnectionInfo connection_info) noexcept {
+    SharedMessage received_message, ConnectionInfo connection_info) noexcept {
 
   auto opt_response = RemoteServiceMessagesConverter::ToServiceResponse(
       std::move(*received_message));

@@ -11,10 +11,15 @@
 
 namespace common::subsystems {
 
+/**
+ * Thrown when a subsystem cannot be found and wasn't requested optionally.
+ */
 DECLARE_EXCEPTION(SubsystemNotFoundException);
 
 /**
- * Manages various subsystems
+ * Maintains implementations of subsystems and makes them accessible to
+ * each other. This is important because the presence of a subsystem is not
+ * guaranteed and must be queried before use.
  */
 class SubsystemManager : public std::enable_shared_from_this<SubsystemManager> {
 private:
@@ -23,28 +28,38 @@ private:
 public:
   /**
    * Registers subsystem or replaces its implementation if already registered.
-   * @tparam subsystem_t type of subsystem
-   * @param subsystem subsystem that should be registered for that type
+   * @tparam subsystem_t type of subsystem. This exact type must be used to
+   * retrieve it later. Usually this is an interface type.
+   * @param subsystem subsystem that should be registered for that type. Usually
+   * this is an interface implementation.
    */
   template <typename subsystem_t>
   void AddOrReplaceSubsystem(const std::shared_ptr<subsystem_t> &subsystem);
 
   /**
-   * GetAsInt subsystem if it is registered
-   * @tparam subsystem_t type of subsystem
-   * @return optional subsystem
+   * Tries to find a registered subsystem of the requested type and returns it.
+   * @tparam subsystem_t type of subsystem. Usually this is an interface type.
+   * @return subsystem implementation if it has been registered before.
    */
   template <typename subsystem_t>
   std::optional<std::shared_ptr<subsystem_t>> GetSubsystem() const;
 
   /**
-   * GetAsInt subsystem, but throw exception if it is not provided
-   * @tparam subsystem_t type of subsystem
-   * @return subsystem
+   * Tries to find a registered subsystem of the requested type, but throws an
+   * exception if it cannot be found.
+   * @tparam subsystem_t type of subsystem. Usually this is an interface type.
+   * @return subsystem implementation.
+   * @throws SubsystemNotFoundException if subsystem has not been registered
+   * before.
    */
   template <typename subsystem_t>
   std::shared_ptr<subsystem_t> RequireSubsystem() const;
 
+  /**
+   * Checks if a subsystem of the requested type is registered.
+   * @tparam subsystem_t type of subsystem. Usually this is an interface type.
+   * @return true, if subsystem can be provided by this manager.
+   */
   template <typename subsystem_t> bool ProvidesSubsystem() const;
 };
 

@@ -3,7 +3,7 @@
 
 #include <utility>
 
-#include "networking/peers/PeerMessage.h"
+#include "networking/peers/Message.h"
 
 using namespace networking::websockets;
 
@@ -17,14 +17,14 @@ namespace services::impl {
  */
 class RemoteServiceRegistrationMessage {
 private:
-  SharedWebSocketMessage m_message;
+  SharedMessage m_message;
 
 public:
   explicit RemoteServiceRegistrationMessage(
-      SharedWebSocketMessage message = std::make_shared<PeerMessage>(
-          MESSAGE_TYPE_REMOTE_SERVICE_REGISTRATION));
+      SharedMessage message =
+          std::make_shared<Message>(MESSAGE_TYPE_REMOTE_SERVICE_REGISTRATION));
 
-  SharedWebSocketMessage GetMessage() const noexcept;
+  SharedMessage GetMessage() const noexcept;
 
   void SetServiceName(const std::string &service_name) noexcept;
   std::string GetServiceName() noexcept;
@@ -40,10 +40,10 @@ inline std::string RemoteServiceRegistrationMessage::GetServiceName() noexcept {
 }
 
 inline RemoteServiceRegistrationMessage::RemoteServiceRegistrationMessage(
-    SharedWebSocketMessage message)
+    SharedMessage message)
     : m_message(std::move(message)) {}
 
-inline SharedWebSocketMessage
+inline SharedMessage
 RemoteServiceRegistrationMessage::GetMessage() const noexcept {
   return m_message;
 }

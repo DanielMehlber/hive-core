@@ -9,16 +9,18 @@
 namespace networking {
 
 /**
- * @brief Central networking manager that provides connectivity.
+ * Central networking manager that provides connectivity for higher level
+ * subsystems.
  */
 class NetworkingManager {
 private:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
   common::config::SharedConfiguration m_config;
 
-  SharedWebSocketPeer m_networking_peer;
+  /** Local message-oriented endpoint for communication with other nodes */
+  SharedMessageEndpoint m_message_endpoint;
 
-  void InitPeerNetworkingServer();
+  void StartMessageEndpointServer();
 
 public:
   NetworkingManager(

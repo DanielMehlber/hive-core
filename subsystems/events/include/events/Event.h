@@ -8,24 +8,26 @@
 #include <optional>
 
 namespace events {
+
+/**
+ * Encapsulates an event, its meta-data, and payload.
+ */
 class Event {
 protected:
   /**
-   * @brief Event topic name used to differentiate different kinds of events
+   * Event topic name used to differentiate different kinds of events
    * and direct them to their listener.
    * @note This string will be compared often
    */
   const std::string topic;
 
   /**
-   * @brief Payload of the thrown event that can be used by listeners to perform
+   * Payload of the thrown event that can be used by listeners to perform
    * actions based on context-information of the event.
    */
   std::map<std::string, std::any> m_payload;
 
-  /**
-   * @brief Unique id of this event instance.
-   */
+  /** Unique id of this event instance.*/
   std::string m_id;
 
 public:
@@ -35,7 +37,6 @@ public:
   virtual ~Event() = default;
 
   std::string GetId() const noexcept;
-
   template <typename T> void SetPayload(const std::string &key, T value);
   template <typename T>
   std::optional<T> GetPayload(const std::string &key) const;
@@ -52,7 +53,7 @@ inline void Event::SetPayload(const std::string &key, T value) {
 template <typename T>
 inline std::optional<T> Event::GetPayload(const std::string &key) const {
   if (m_payload.contains(key)) {
-    auto& any_container = m_payload.at(key);
+    auto &any_container = m_payload.at(key);
     return std::any_cast<T>(any_container);
   } else {
     return {};

@@ -2,8 +2,8 @@
 #define WEBSOCKETSERVICEREQUESTCONSUMER_H
 
 #include "jobsystem/manager/JobManager.h"
-#include "networking/peers/IPeer.h"
-#include "networking/peers/IPeerMessageConsumer.h"
+#include "networking/peers/IMessageConsumer.h"
+#include "networking/peers/IMessageEndpoint.h"
 #include "services/caller/IServiceCaller.h"
 
 using namespace networking::websockets;
@@ -14,7 +14,7 @@ namespace services::impl {
  * Processes service calls coming from remote remote hosts. It executes the
  * service and sends its response back to the caller.
  */
-class RemoteServiceRequestConsumer : public IPeerMessageConsumer {
+class RemoteServiceRequestConsumer : public IMessageConsumer {
 private:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
@@ -26,19 +26,18 @@ private:
   query_func_type m_service_query_func;
 
   /** Used to send responses */
-  std::weak_ptr<IPeer> m_web_socket_peer;
+  std::weak_ptr<IMessageEndpoint> m_web_socket_peer;
 
 public:
   RemoteServiceRequestConsumer(
       const common::subsystems::SharedSubsystemManager &subsystems,
       RemoteServiceRequestConsumer::query_func_type query_func,
-      const SharedWebSocketPeer &web_socket_peer);
+      const SharedMessageEndpoint &web_socket_peer);
 
   std::string GetMessageType() const noexcept override;
 
-  void
-  ProcessReceivedMessage(SharedWebSocketMessage received_message,
-                         PeerConnectionInfo connection_info) noexcept override;
+  void ProcessReceivedMessage(SharedMessage received_message,
+                              ConnectionInfo connection_info) noexcept override;
 };
 
 inline std::string

@@ -11,7 +11,7 @@ namespace jobsystem {
 class JobManager;
 
 /**
- * @brief Contains data that could be relevant during the job execution cycle
+ * Contains data that could be relevant during the job execution cycle
  * and enables running jobs to communicate with the job manager.
  */
 class JobContext {
@@ -24,13 +24,13 @@ public:
       : m_cycle_number{frame_number}, m_job_manager{manager} {}
 
   /**
-   * @brief GetAsInt number of current job cycle
+   * GetAsInt number of current job cycle
    * @return current job cycle number
    */
   size_t GetCycleNumber() const noexcept;
 
   /**
-   * @brief GetAsInt the managing instance of the current job execution
+   * GetAsInt the managing instance of the current job execution
    * @return managing instance of the current job execution
    */
   std::shared_ptr<JobManager> GetJobManager() noexcept;

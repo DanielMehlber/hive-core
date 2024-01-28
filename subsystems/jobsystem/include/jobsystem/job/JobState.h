@@ -2,39 +2,39 @@
 #define JOBSTATE_H
 
 namespace jobsystem::job {
+
 /**
- * @brief Current state of a job instance.
+ * Current state of a job instance.
  */
 enum JobState {
   /**
-   * @brief The job instance is detached from any job system and therfore
-   * unmanaged. It must be passed to the job system to be used. This can be the
-   * case, if the job has been sucessfully executed and was therefore disposed
+   * The job is not managed by any job system. This can be the
+   * case, if the job has been successfully executed and was therefore disposed
    * by the job system.
    */
   DETACHED,
 
   /**
-   * @brief The job instance is handled by the job system and in the job queue,
-   * but is not yet processed by the job execution. This is the case, if the job
-   * has been passed to the job manager, but it is not included in the current
-   * cycle or it hasn't been started yet.
+   * The job is managed by some job system and currently waits for execution
+   * inside a queue. This is the case after it has been kicked but hasn't been
+   * executed yet.
    */
   QUEUED,
 
   /**
-   * @brief The job instance has been passed to the job execution and will be
-   * processed every moment.
+   * The job instance has been passed to the job execution and will be
+   * processed shortly.
    */
   AWAITING_EXECUTION,
 
   /**
-   * @brief The job is currently beeing executed by the job execution.
+   * The job is currently executing its workload. It could also be in a waiting
+   * state.
    */
   IN_EXECUTION,
 
   /**
-   * @brief The job has been executed.
+   * The job has been executed successfully.
    */
   EXECUTION_FINISHED
 };

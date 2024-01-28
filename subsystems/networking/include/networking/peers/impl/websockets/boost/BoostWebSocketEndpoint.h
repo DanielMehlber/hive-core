@@ -1,17 +1,17 @@
 #ifndef BOOSTWEBSOCKETPEER_H
 #define BOOSTWEBSOCKETPEER_H
 
-#include <boost/beast/core.hpp>
-#include <boost/beast/websocket.hpp>
 #include "BoostWebSocketConnection.h"
 #include "BoostWebSocketConnectionEstablisher.h"
 #include "BoostWebSocketConnectionListener.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
-#include "networking/peers/IPeer.h"
+#include "networking/peers/IMessageEndpoint.h"
 #include "properties/PropertyProvider.h"
 #include <atomic>
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
 #include <list>
 #include <map>
 
@@ -20,15 +20,15 @@ namespace networking::websockets {
 DECLARE_EXCEPTION(NoSuchPeerException);
 
 /**
- * @brief This implementation of IWebSocketServer uses WebSocket++ to provide
+ * This implementation of IWebSocketServer uses WebSocket++ to provide
  * a web-socket communication peer.
  */
-class BoostWebSocketPeer
-    : public IPeer,
-      public std::enable_shared_from_this<BoostWebSocketPeer> {
+class BoostWebSocketEndpoint
+    : public IMessageEndpoint,
+      public std::enable_shared_from_this<BoostWebSocketEndpoint> {
 private:
   /**
-   * @brief Indicates if the web socket peer is currently running
+   * Indicates if the web socket peer is currently running
    */
   bool m_running{false};
   mutable std::mutex m_running_mutex;
@@ -38,20 +38,19 @@ private:
   common::config::SharedConfiguration m_config;
 
   /**
-   * @brief maps message type names to their consumers
+   * maps message type names to their consumers
    */
-  std::map<std::string, std::list<std::weak_ptr<IPeerMessageConsumer>>>
-      m_consumers;
+  std::map<std::string, std::list<std::weak_ptr<IMessageConsumer>>> m_consumers;
   mutable std::mutex m_consumers_mutex;
 
   /**
-   * @brief Acts as execution environment for asynchronous operations, such as
+   * Acts as execution environment for asynchronous operations, such as
    * receiving events
    */
   std::shared_ptr<boost::asio::io_context> m_execution_context;
 
   /**
-   * @brief Maps host addresses to the connection established with the host.
+   * Maps host addresses to the connection established with the host.
    */
   std::map<std::string, SharedBoostWebSocketConnection> m_connections;
   mutable std::mutex m_connections_mutex;
@@ -60,13 +59,13 @@ private:
   std::shared_ptr<BoostWebSocketConnectionListener> m_connection_listener;
 
   /**
-   * @brief Thread pool that executes asynchronous callbacks certain websocket
+   * Thread pool that executes asynchronous callbacks certain websocket
    * events
    */
   std::vector<std::thread> m_execution_threads;
 
   /**
-   * @brief This is the local endpoint over which the peer should communicate
+   * This is the local endpoint over which the peer should communicate
    * with others (receive & send events).
    * @note This is important for the connection establishing and listening
    * process.
@@ -74,7 +73,7 @@ private:
   std::shared_ptr<boost::asio::ip::tcp::endpoint> m_local_endpoint;
 
   /**
-   * @brief Consumers are stored as expireable weak-pointers. When the actual
+   * Consumers are stored as expireable weak-pointers. When the actual
    * referenced consumer is destroyed, the list of consumers holds expired
    * pointers that can be removed.
    * @param type message type name of consumers to clean up
@@ -82,7 +81,7 @@ private:
   void CleanUpConsumersOfMessageType(const std::string &type) noexcept;
 
   /**
-   * @brief Constructs a new connection object from a stream
+   * Constructs a new connection object from a stream
    * @param url id of connection
    * @param stream web-socket stream
    */
@@ -102,26 +101,25 @@ private:
   void OnConnectionClose(const std::string &id);
 
 public:
-  BoostWebSocketPeer(
+  BoostWebSocketEndpoint(
       const common::subsystems::SharedSubsystemManager &subsystems,
       const common::config::SharedConfiguration &config);
-  virtual ~BoostWebSocketPeer();
+  virtual ~BoostWebSocketEndpoint();
 
-  void
-  AddMessageConsumer(std::weak_ptr<IPeerMessageConsumer> consumer) override;
+  void AddMessageConsumer(std::weak_ptr<IMessageConsumer> consumer) override;
 
-  std::list<SharedPeerMessageConsumer>
+  std::list<SharedMessageConsumer>
   GetConsumersOfMessageType(const std::string &type_name) noexcept override;
 
   std::future<void> Send(const std::string &uri,
-                         SharedWebSocketMessage message) override;
+                         SharedMessage message) override;
 
   std::future<void>
   EstablishConnectionTo(const std::string &uri) noexcept override;
 
   void CloseConnectionTo(const std::string &uri) noexcept override;
 
-  std::future<size_t> Broadcast(const SharedWebSocketMessage &message) override;
+  std::future<size_t> Broadcast(const SharedMessage &message) override;
 
   bool HasConnectionTo(const std::string &uri) const noexcept override;
 

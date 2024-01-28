@@ -14,16 +14,16 @@ NetworkingManager::NetworkingManager(
   bool auto_init_websocket_server = config->GetAsInt("net.autoInit", true);
 
   if (auto_init_websocket_server) {
-    InitPeerNetworkingServer();
+    StartMessageEndpointServer();
   }
 }
 
-void NetworkingManager::InitPeerNetworkingServer() {
-  if (!m_networking_peer) {
+void NetworkingManager::StartMessageEndpointServer() {
+  if (!m_message_endpoint) {
 
-    m_networking_peer =
+    m_message_endpoint =
         NetworkingFactory::CreateNetworkingPeer(m_subsystems.lock(), m_config);
 
-    m_subsystems.lock()->AddOrReplaceSubsystem(m_networking_peer);
+    m_subsystems.lock()->AddOrReplaceSubsystem(m_message_endpoint);
   }
 }
