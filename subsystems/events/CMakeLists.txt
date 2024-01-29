@@ -3,15 +3,31 @@ project(events)
 
 find_package(Boost REQUIRED COMPONENTS fiber context)
 
-add_subdirectory(src)
+# build sources
+add_library(events STATIC
+        src/JobBasedEventBroker.cpp
+)
+
+target_include_directories(events PUBLIC
+        include
+        ${Boost_INCLUDE_DIRS}
+)
+
+target_link_libraries(events PUBLIC
+        ${Boost_LIBRARIES}
+        logging
+        jobsystem
+)
+
+# build tests
 add_subdirectory(test)
 
+# create documentation using doxygen (if doxygen is installed and documentation is requested)
 find_package(Doxygen QUIET)
-
 if (GENERATE_DOCS)
     if (DOXYGEN_FOUND)
         doxygen_add_docs(eventsdocs "include" "src" ALL)
     else (DOXYGEN_FOUND)
-        message("Doxygen need to be installed to generate the doxygen documentation")
+        message(WARNING "Doxygen need to be installed to generate the doxygen documentation of ${PROJECT_NAME}.")
     endif (DOXYGEN_FOUND)
 endif (GENERATE_DOCS)

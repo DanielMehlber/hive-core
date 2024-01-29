@@ -3,15 +3,34 @@ project(properties)
 
 find_package(Boost REQUIRED COMPONENTS)
 
-add_subdirectory(src)
+# build sources
+add_library(properties STATIC
+        src/PropertyChangeListener.cpp
+        src/PropertyProvider.cpp
+)
+
+target_include_directories(properties PUBLIC
+        include
+        ${Boost_INCLUDE_DIRS}
+)
+
+target_link_libraries(properties PUBLIC
+        ${Boost_LIBRARIES}
+        logging
+        jobsystem
+        events
+        common
+)
+
+# build tests
 add_subdirectory(test)
 
+# create documentation using doxygen (if doxygen is installed and documentation is requested)
 find_package(Doxygen QUIET)
-
-if(GENERATE_DOCS)
-    if(DOXYGEN_FOUND)
+if (GENERATE_DOCS)
+    if (DOXYGEN_FOUND)
         doxygen_add_docs(propertiesdocs "include" "src" ALL)
     else (DOXYGEN_FOUND)
-        message("Doxygen need to be installed to generate the doxygen documentation")
+        message(WARNING "Doxygen need to be installed to generate the doxygen documentation of ${PROJECT_NAME}.")
     endif (DOXYGEN_FOUND)
-endif(GENERATE_DOCS)
+endif (GENERATE_DOCS)
