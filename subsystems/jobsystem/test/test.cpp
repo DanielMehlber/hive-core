@@ -68,9 +68,9 @@ TEST(JobSystem, auto_requeue) {
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = std::make_shared<JobManager>(config);
   manager->StartExecution();
-  int executions = 0;
+  std::atomic<int> executions = 0;
 
-  auto job = JobSystemFactory::CreateJob([&](JobContext *) {
+  auto job = JobSystemFactory::CreateJob([&executions](JobContext *) {
     executions++;
     return JobContinuation::REQUEUE;
   });
@@ -191,10 +191,8 @@ TEST(JobSystem, job_bulk) {
   }
 
   manager->InvokeCycleAndWait();
-  if (!absolute_counter->IsFinished()) {
-    throw "";
-  }
-  ASSERT_TRUE(absolute_counter->IsFinished());
+  bool all_finished = absolute_counter->IsFinished();
+  ASSERT_TRUE(all_finished);
 
   manager->StopExecution();
 }

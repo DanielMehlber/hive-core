@@ -15,7 +15,7 @@ struct Tile {
 };
 
 /**
- * @brief A renderer that divides the overall render surface into tiles and uses
+ * A renderer that divides the overall render surface into tiles and uses
  * provided rendering services to render the necessary tiles.
  */
 class TiledCompositeRenderer

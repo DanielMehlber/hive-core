@@ -9,7 +9,7 @@ using namespace services;
 using namespace jobsystem;
 
 RemoteServiceExecutor::RemoteServiceExecutor(
-    std::string service_name, std::weak_ptr<IPeer> peer,
+    std::string service_name, std::weak_ptr<IMessageEndpoint> peer,
     std::string remote_host_name,
     std::weak_ptr<RemoteServiceResponseConsumer> response_consumer)
     : m_web_socket_peer(std::move(peer)),
@@ -53,7 +53,7 @@ RemoteServiceExecutor::Call(SharedServiceRequest request,
             promise->set_exception(std::make_exception_ptr(exception));
           }
 
-          SharedWebSocketMessage message =
+          SharedMessage message =
               RemoteServiceMessagesConverter::FromServiceRequest(*request);
 
           std::future<void> sending_future =

@@ -50,7 +50,8 @@ TEST(ServiceTests, run_single_remote_service) {
   auto peer_2 = setupPeerNode(job_manager, config, 9006);
 
   // first establish connection in order to broadcast the connection
-  auto peer_1_networking_subsystem = peer_1->RequireSubsystem<IPeer>();
+  auto peer_1_networking_subsystem =
+      peer_1->RequireSubsystem<IMessageEndpoint>();
   auto connection_progress =
       peer_1_networking_subsystem->EstablishConnectionTo("127.0.0.1:9006");
 
@@ -90,7 +91,8 @@ TEST(ServiceTests, remote_service_load_balancing) {
   auto main_peer = setupPeerNode(job_manager, config, 9004);
 
   auto main_peer_registry = main_peer->RequireSubsystem<IServiceRegistry>();
-  auto main_peer_networking_subsystem = main_peer->RequireSubsystem<IPeer>();
+  auto main_peer_networking_subsystem =
+      main_peer->RequireSubsystem<IMessageEndpoint>();
 
   std::vector<std::pair<common::subsystems::SharedSubsystemManager,
                         std::shared_ptr<AddingServiceExecutor>>>
@@ -101,7 +103,8 @@ TEST(ServiceTests, remote_service_load_balancing) {
     auto ith_peer = setupPeerNode(job_manager, config, i);
 
     auto ith_peer_registry = ith_peer->RequireSubsystem<IServiceRegistry>();
-    auto ith_peer_networking_subsystem = ith_peer->RequireSubsystem<IPeer>();
+    auto ith_peer_networking_subsystem =
+        ith_peer->RequireSubsystem<IMessageEndpoint>();
 
     // first establish connection in order to broadcast the connection
     auto connection_progress =
@@ -171,11 +174,13 @@ TEST(ServiceTests, web_socket_peer_destroyed) {
 
   auto peer_1 = setupPeerNode(job_manager, config, 9005);
   auto peer_1_service_registry = peer_1->RequireSubsystem<IServiceRegistry>();
-  auto peer_1_networking_subsystem = peer_1->RequireSubsystem<IPeer>();
+  auto peer_1_networking_subsystem =
+      peer_1->RequireSubsystem<IMessageEndpoint>();
 
   {
     auto peer_2 = setupPeerNode(job_manager, config, 9006);
-    auto peer_2_networking_subsystem = peer_2->RequireSubsystem<IPeer>();
+    auto peer_2_networking_subsystem =
+        peer_2->RequireSubsystem<IMessageEndpoint>();
     auto peer_2_service_registry = peer_2->RequireSubsystem<IServiceRegistry>();
 
     auto progress =

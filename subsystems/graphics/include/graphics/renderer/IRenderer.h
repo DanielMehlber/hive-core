@@ -17,7 +17,10 @@ struct RendererSetup {
 };
 
 /**
- * Generic interface for some renderer
+ * Renderer which renders some scene with some camera setup and allows callers
+ * to retrieve rendering results.
+ * @note This is used to realize both on-screen and off-screen implementations
+ * for rendering use cases.
  */
 class IRenderer {
 public:
@@ -41,6 +44,12 @@ public:
   SetCameraProjectionMatrix(vsg::ref_ptr<vsg::ProjectionMatrix> matrix) = 0;
   virtual void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) = 0;
 
+  /**
+   * Retrieve this renderer's setup for creating another renderer.
+   * @note To make multiple renderers use the same Vulkan device and instance,
+   * this information can be extracted and used for other renderers.
+   * @return current Vulkan setup (instance, device, ...)
+   */
   virtual RendererSetup GetSetup() const = 0;
 };
 

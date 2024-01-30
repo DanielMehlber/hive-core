@@ -1,13 +1,13 @@
-#include "networking/peers/PeerMessageConverter.h"
 #include "logging/LogManager.h"
+#include "networking/peers/MessageConverter.h"
 #include "networking/util/MultipartFormdata.h"
 #include <boost/json.hpp>
 
 using namespace networking::websockets;
 using namespace boost;
 
-SharedWebSocketMessage networking::websockets::PeerMessageConverter::FromJson(
-    const std::string &json) {
+SharedMessage
+networking::websockets::MessageConverter::FromJson(const std::string &json) {
   json::error_code err;
   json::value message_body = boost::json::parse(json, err);
 
@@ -24,8 +24,7 @@ SharedWebSocketMessage networking::websockets::PeerMessageConverter::FromJson(
     std::string id = message_body.at("id").as_string().c_str();
     std::string type = message_body.at("type").as_string().c_str();
 
-    SharedWebSocketMessage parsed_message =
-        std::make_shared<PeerMessage>(type, id);
+    SharedMessage parsed_message = std::make_shared<Message>(type, id);
 
     // Extract 'attributes' as a map
     std::map<std::string, std::string> attributes;
@@ -42,8 +41,7 @@ SharedWebSocketMessage networking::websockets::PeerMessageConverter::FromJson(
   }
 }
 
-std::string
-PeerMessageConverter::ToJson(const SharedWebSocketMessage &message) {
+std::string MessageConverter::ToJson(const SharedMessage &message) {
   auto id = message->GetId();
   json::object message_body;
   message_body["id"] = message->GetId();
@@ -61,8 +59,8 @@ PeerMessageConverter::ToJson(const SharedWebSocketMessage &message) {
   return json::serialize(message_body);
 }
 
-std::string PeerMessageConverter::ToMultipartFormData(
-    const SharedWebSocketMessage &message) {
+std::string
+MessageConverter::ToMultipartFormData(const SharedMessage &message) {
 
   networking::util::Multipart multipart;
 
@@ -100,12 +98,12 @@ std::string extractPartContent(networking::util::Multipart &multipart,
   }
 }
 
-SharedWebSocketMessage PeerMessageConverter::FromMultipartFormData(
-    const std::string &multipart_string) {
+SharedMessage
+MessageConverter::FromMultipartFormData(const std::string &multipart_string) {
 
   auto multipart = networking::util::parseMultipartFormData(multipart_string);
 
-  SharedWebSocketMessage parsed_message;
+  SharedMessage parsed_message;
 
   // extract and parse json message meta information
   auto meta_part_content = extractPartContent(multipart, "meta");
@@ -127,7 +125,7 @@ SharedWebSocketMessage PeerMessageConverter::FromMultipartFormData(
       std::string id = message_body.at("id").as_string().c_str();
       std::string type = message_body.at("type").as_string().c_str();
 
-      parsed_message = std::make_shared<PeerMessage>(type, id);
+      parsed_message = std::make_shared<Message>(type, id);
     }
   }
 

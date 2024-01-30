@@ -1,24 +1,24 @@
-#include "networking/peers/PeerMessage.h"
 #include "common/uuid/UuidGenerator.h"
+#include "networking/peers/Message.h"
 
 using namespace networking::websockets;
 
-PeerMessage::PeerMessage(std::string message_type)
+Message::Message(std::string message_type)
     : m_type{std::move(message_type)},
       m_uuid{common::uuid::UuidGenerator::Random()} {}
 
-PeerMessage::PeerMessage(std::string message_type, std::string id)
+Message::Message(std::string message_type, std::string id)
     : m_type{std::move(message_type)}, m_uuid{std::move(id)} {}
 
-PeerMessage::~PeerMessage() = default;
+Message::~Message() = default;
 
-void PeerMessage::SetAttribute(const std::string &attribute_key,
-                               std::string attribute_value) {
+void Message::SetAttribute(const std::string &attribute_key,
+                           std::string attribute_value) {
   m_attributes[attribute_key] = std::move(attribute_value);
 }
 
 std::optional<std::string>
-PeerMessage::GetAttribute(const std::string &attribute_key) {
+Message::GetAttribute(const std::string &attribute_key) {
   if (m_attributes.contains(attribute_key)) {
     return m_attributes.at(attribute_key);
   } else {
@@ -26,7 +26,7 @@ PeerMessage::GetAttribute(const std::string &attribute_key) {
   }
 }
 
-std::set<std::string> PeerMessage::GetAttributeNames() const noexcept {
+std::set<std::string> Message::GetAttributeNames() const noexcept {
   std::set<std::string> attribute_names;
   std::map<std::string, std::string>::const_iterator it;
 
@@ -37,7 +37,7 @@ std::set<std::string> PeerMessage::GetAttributeNames() const noexcept {
   return attribute_names;
 }
 
-bool PeerMessage::EqualsTo(std::shared_ptr<PeerMessage> other) const noexcept {
+bool Message::EqualsTo(std::shared_ptr<Message> other) const noexcept {
   if (m_uuid != other->m_uuid) {
     return false;
   } else if (m_type != other->m_type) {

@@ -1,4 +1,4 @@
-#include "kernel/Kernel.h"
+#include "core/Core.h"
 #include "events/EventFactory.h"
 #include "graphics/service/RenderService.h"
 #include "plugins/impl/BoostPluginManager.h"
@@ -15,7 +15,7 @@ using namespace resourcemgmt;
 using namespace services;
 using namespace plugins;
 
-Kernel::Kernel(common::config::SharedConfiguration config, bool only_local)
+Core::Core(common::config::SharedConfiguration config, bool only_local)
     : m_subsystems(std::make_shared<common::subsystems::SubsystemManager>()) {
 
   auto job_manager = std::make_shared<JobManager>(config);
@@ -55,9 +55,9 @@ Kernel::Kernel(common::config::SharedConfiguration config, bool only_local)
   m_subsystems->AddOrReplaceSubsystem<IPluginManager>(plugin_manager);
 }
 
-Kernel::~Kernel() {}
+Core::~Core() {}
 
-void Kernel::EnableRenderingJob() {
+void Core::EnableRenderingJob() {
   auto job_manager = m_subsystems->RequireSubsystem<jobsystem::JobManager>();
 
   // enabling the renderer is a job: this results in a job-in-job creation
@@ -94,7 +94,7 @@ void Kernel::EnableRenderingJob() {
   job_manager->KickJob(enable_rendering_job_job);
 }
 
-void Kernel::EnableRenderingService(graphics::SharedRenderer serivce_renderer) {
+void Core::EnableRenderingService(graphics::SharedRenderer serivce_renderer) {
   graphics::SharedRenderer renderer;
   if (serivce_renderer) {
     renderer = serivce_renderer;
@@ -107,78 +107,75 @@ void Kernel::EnableRenderingService(graphics::SharedRenderer serivce_renderer) {
   service_registry->Register(render_service);
 }
 
-common::subsystems::SharedSubsystemManager
-Kernel::GetSubsystemsManager() const {
+common::subsystems::SharedSubsystemManager Core::GetSubsystemsManager() const {
   return m_subsystems;
 }
 
-jobsystem::SharedJobManager Kernel::GetJobManager() const {
+jobsystem::SharedJobManager Core::GetJobManager() const {
   return m_subsystems->GetSubsystem<jobsystem::JobManager>().value();
 }
 
-props::SharedPropertyProvider Kernel::GetPropertyProvider() const {
+props::SharedPropertyProvider Core::GetPropertyProvider() const {
   return m_subsystems->GetSubsystem<props::PropertyProvider>().value();
 }
 
-resourcemgmt::SharedResourceManager Kernel::GetResourceManager() const {
+resourcemgmt::SharedResourceManager Core::GetResourceManager() const {
   return m_subsystems->GetSubsystem<resourcemgmt::IResourceManager>().value();
 }
 
-events::SharedEventBroker Kernel::GetMessageBroker() const {
+events::SharedEventBroker Core::GetMessageBroker() const {
   return m_subsystems->GetSubsystem<events::IEventBroker>().value();
 }
 
-void Kernel::SetResourceManager(
+void Core::SetResourceManager(
     const resourcemgmt::SharedResourceManager &resourceManager) {
   m_subsystems->AddOrReplaceSubsystem<resourcemgmt::IResourceManager>(
       resourceManager);
 }
 
-services::SharedServiceRegistry Kernel::GetServiceRegistry() const {
+services::SharedServiceRegistry Core::GetServiceRegistry() const {
   return m_subsystems->GetSubsystem<services::IServiceRegistry>().value();
 }
 
-void Kernel::SetServiceRegistry(
+void Core::SetServiceRegistry(
     const services::SharedServiceRegistry &serviceRegistry) {
   m_subsystems->GetSubsystem<services::IServiceRegistry>().value();
 }
 
-networking::SharedNetworkingManager
-Kernel::GetNetworkingManager() const {
+networking::SharedNetworkingManager Core::GetNetworkingManager() const {
   return m_subsystems->GetSubsystem<networking::NetworkingManager>().value();
 }
 
-void Kernel::SetNetworkingManager(
+void Core::SetNetworkingManager(
     const networking::SharedNetworkingManager &networkingManager) {
   m_subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
       networkingManager);
 }
 
-plugins::SharedPluginManager Kernel::GetPluginManager() const {
+plugins::SharedPluginManager Core::GetPluginManager() const {
   return m_subsystems->GetSubsystem<plugins::IPluginManager>().value();
 }
 
-void
-Kernel::SetPluginManager(const plugins::SharedPluginManager &pluginManager) {
+void Core::SetPluginManager(const plugins::SharedPluginManager &pluginManager) {
   m_subsystems->AddOrReplaceSubsystem<plugins::IPluginManager>(pluginManager);
 }
 
-scene::SharedScene Kernel::GetScene() const {
+scene::SharedScene Core::GetScene() const {
   return m_subsystems->GetSubsystem<scene::SceneManager>().value();
 }
 
-void Kernel::SetScene(const scene::SharedScene &scene) {
+void Core::SetScene(const scene::SharedScene &scene) {
   m_subsystems->AddOrReplaceSubsystem<scene::SceneManager>(scene);
 }
 
-graphics::SharedRenderer Kernel::GetRenderer() const {
+graphics::SharedRenderer Core::GetRenderer() const {
   return m_subsystems->GetSubsystem<graphics::IRenderer>().value();
 }
 
-void Kernel::SetRenderer(const graphics::SharedRenderer &renderer) {
+void Core::SetRenderer(const graphics::SharedRenderer &renderer) {
   m_subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(renderer);
 }
 
-bool Kernel::ShouldShutdown() const { return m_should_shutdown; }
+bool Core::ShouldShutdown() const { return m_should_shutdown; }
 
-void Kernel::Shutdown(bool value) { m_should_shutdown = value; }
+void Core::Shutdown(bool value) { m_should_shutdown = value; }

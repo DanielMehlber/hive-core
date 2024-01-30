@@ -12,20 +12,21 @@ using namespace jobsystem::job;
 
 namespace jobsystem::execution {
 
-/*
- * This interface has been written using the CRTP Pattern to avoid runtime cost
- * of v-tables in the hot path. Virtual function calls are avoided.
+/**
+ * Executes jobs passed by the job manager.
+ * @note This interface has been written using the CRTP Pattern to avoid runtime
+ * cost of v-tables in the hot path. Virtual function calls are avoided.
  */
 template <typename Impl> class IJobExecution {
 public:
   /**
-   * @brief Schedules the job for execution
+   * Schedules the job for execution
    * @param job job to be executed.
    */
   void Schedule(std::shared_ptr<Job> job);
 
   /**
-   * @brief Wait for the waitable object to finish before execution is
+   * Wait for the waitable object to finish before execution is
    * continued. The implementation can vary depending on the underlying
    * synchronization primitives.
    * @attention Some implementations do not support this call from inside a
@@ -37,7 +38,7 @@ public:
   void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
 
   /**
-   * @brief Execution of the calling party will wait (or will be deferred,
+   * Execution of the calling party will wait (or will be deferred,
    * depending on the execution environment) until the passed future has been
    * resolved.
    * @tparam FutureType type of the future object
@@ -48,13 +49,13 @@ public:
   void WaitForCompletion(const std::future<FutureType> &future);
 
   /**
-   * @brief Starts processing scheduled jobs and invoke the execution
+   * Starts processing scheduled jobs and invoke the execution
    * @param manager managing instance that started the execution
    */
   void Start(std::weak_ptr<JobManager> manager);
 
   /**
-   * @brief Stops processing scheduled jobs and pauses the execution
+   * Stops processing scheduled jobs and pauses the execution
    * @note Already scheduled jobs will remain scheduled until the execution is
    * resumed.
    */

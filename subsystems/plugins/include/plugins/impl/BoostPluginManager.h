@@ -15,6 +15,9 @@
 
 namespace plugins {
 
+/**
+ * Uses Boost.DLL to load plugins from a dynamic shared library.
+ */
 class BoostPluginManager
     : public IPluginManager,
       public std::enable_shared_from_this<BoostPluginManager> {

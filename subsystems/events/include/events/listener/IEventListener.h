@@ -5,17 +5,20 @@
 
 namespace events {
 
+/**
+ * Handles events propagated and managed by an event broker.
+ */
 class IEventListener {
 public:
   /**
-   * @brief Handles incoming event of some type that this listener has
+   * Handles incoming event of some type that this listener has
    * registered its interest in.
    * @param event event that must be handled
    */
   virtual void HandleMessage(SharedEvent event) = 0;
 
   /**
-   * @brief GetAsInt id of this listener instance
+   * GetAsInt id of this listener instance
    * @return id (preferably uuid of this listener)
    */
   virtual std::string GetId() const = 0;

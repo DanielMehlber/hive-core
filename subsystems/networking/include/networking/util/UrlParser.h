@@ -8,7 +8,7 @@
 namespace networking::util {
 
 /**
- * @brief Extracted tokens of an URL
+ * Extracted tokens of an URL
  */
 struct ParsedUrl {
   std::string scheme;
@@ -19,12 +19,12 @@ struct ParsedUrl {
 };
 
 /**
- * @brief Parses URLs used in the network module
+ * Parses URLs used in the network module
  */
 class UrlParser {
 public:
   /**
-   * @brief Parses url string if valid
+   * Parses url string if valid
    * @param url url string that will be parsed
    * @return an object containing parsed url tokens if the given url is valid
    */

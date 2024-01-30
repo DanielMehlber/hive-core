@@ -8,7 +8,7 @@
 namespace props {
 
 /**
- * @brief Listens to changes of a specific property or a subset of properties
+ * Listens to changes of a specific property or a subset of properties
  * based on their path in the property tree. Under the hood, updating properties
  * emits events to topics that instances of this class subscribed. Therefore,
  * the property system is founded on the events system and makes heavy use of
@@ -26,7 +26,7 @@ public:
   virtual ~PropertyChangeListener();
 
   /**
-   * @brief Called when the listened to property or other subsequent properties
+   * Called when the listened to property or other subsequent properties
    * have changed. Each listener can implement its own handling operations.
    * @param key absolute path in the property tree of the property that has been
    * changed.

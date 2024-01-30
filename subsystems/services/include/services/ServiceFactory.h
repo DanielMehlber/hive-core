@@ -7,7 +7,7 @@
 namespace services {
 
 /**
- * @brief Builds frequently used instances and objects of the services
+ * Builds frequently used instances and objects of the services
  */
 class ServiceFactory {
 public:

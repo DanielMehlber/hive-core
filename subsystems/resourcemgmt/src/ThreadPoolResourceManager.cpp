@@ -105,7 +105,7 @@ ThreadPoolResourceManager::LoadResource(const std::string &uri) {
     try {
       SharedResource result_resource = resource_loader->Load(resource_url);
       loading_promise->set_value(result_resource);
-    } catch (std::exception &e) {
+    } catch (...) {
       loading_promise->set_exception(std::current_exception());
     }
   };

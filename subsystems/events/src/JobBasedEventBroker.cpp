@@ -4,14 +4,23 @@ using namespace events;
 using namespace events::brokers;
 using namespace std::chrono_literals;
 
+
+
 JobBasedEventBroker::JobBasedEventBroker(
     const common::subsystems::SharedSubsystemManager &subsystems)
-    : m_subsystems(subsystems) {
+    : m_subsystems(subsystems), m_this_alive_checker{std::make_shared<bool>()} {
+
+  // when this shared pointer expired, this has been destroyed
+  std::weak_ptr<bool> alive_checker = m_this_alive_checker;
 
   SharedJob clean_up_job = std::make_shared<TimerJob>(
-      [&](JobContext *) {
-        this->CleanUpSubscribers();
-        return JobContinuation::REQUEUE;
+      [&, alive_checker](JobContext *) {
+        if (!alive_checker.expired()) {
+          this->CleanUpSubscribers();
+          return JobContinuation::REQUEUE;
+        } else {
+          return JobContinuation::DISPOSE;
+        }
       },
       "events-listener-clean-up", 5s, JobExecutionPhase::INIT);
 
@@ -67,8 +76,8 @@ void JobBasedEventBroker::FireEvent(SharedEvent event) {
   }
 }
 
-bool JobBasedEventBroker::HasListener(
-    const std::string &subscriber_id, const std::string &topic) const {
+bool JobBasedEventBroker::HasListener(const std::string &subscriber_id,
+                                      const std::string &topic) const {
   if (m_topic_subscribers.contains(topic)) {
     const auto &subscriber_list = m_topic_subscribers.at(topic);
     for (const auto &subscriber : subscriber_list) {

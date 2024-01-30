@@ -30,6 +30,6 @@ add_compile_definitions(WIN32_LEAN_AND_MEAN)
 add_compile_definitions(_USE_MATH_DEFINES)
 
 add_subdirectory(subsystems)
-add_subdirectory(kernel)
+add_subdirectory(core)
 add_subdirectory(plugins)
 add_subdirectory(standalone)

@@ -9,7 +9,7 @@
 namespace services {
 
 /**
- * @brief Generic interface for service executors which represent a single
+ * Generic interface for service executors which represent a single
  * service implementation
  * @note services can be executed locally or remotely on another machine.
  */

@@ -4,6 +4,10 @@
 #include "graphics/renderer/IRenderer.h"
 
 namespace graphics {
+
+/**
+ * Renderer creating a window and displaying its image results on it.
+ */
 class OnscreenRenderer : public IRenderer {
 protected:
   scene::SharedScene m_scene;

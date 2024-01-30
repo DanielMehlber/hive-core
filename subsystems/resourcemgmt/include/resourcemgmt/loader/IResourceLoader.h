@@ -10,13 +10,13 @@
 namespace resourcemgmt {
 
 /**
- * @brief Interface for a variety of resource loaders that will be used by the
+ * Interface for a variety of resource loaders that will be used by the
  * resource manager.
  */
 class IResourceLoader {
 public:
   /**
-   * @brief GetAsInt id of this resource loader. This id will be used to
+   * GetAsInt id of this resource loader. This id will be used to
    * determine the resource loader when the resource manager receives a resource
    * request.
    * @return id of this loader
@@ -24,7 +24,7 @@ public:
   virtual const std::string &GetId() const noexcept = 0;
 
   /**
-   * @brief Loads some resource of arbitrary type (e.g. from filesystem or
+   * Loads some resource of arbitrary type (e.g. from filesystem or
    * network) using the URI of the resource.
    * @note The implementation of this function may be blocking because it will
    * be wrapped in an asynchronous function.

@@ -24,7 +24,8 @@ TEST(GraphicsTests, remote_render_service) {
   job_manager->StartExecution();
 
   auto peer_1 = setupPeerNode(job_manager, config, 9005);
-  auto peer_1_networking_subsystem = peer_1->RequireSubsystem<IPeer>();
+  auto peer_1_networking_subsystem =
+      peer_1->RequireSubsystem<IMessageEndpoint>();
   auto peer_1_service_registry = peer_1->RequireSubsystem<IServiceRegistry>();
 
   auto peer_2 = setupPeerNode(job_manager, config, 9006);

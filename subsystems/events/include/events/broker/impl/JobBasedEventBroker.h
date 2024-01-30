@@ -14,10 +14,15 @@ using namespace jobsystem;
 using namespace events;
 
 namespace events::brokers {
+
+/**
+ * Using the jobsystem queue by wrapping the task of notifying events into jobs
+ * instead of employing its own event queue.
+ */
 class JobBasedEventBroker final : public events::IEventBroker {
 private:
   /**
-   * @brief Maps the topic name (as string) to all of its subscribers.
+   * Maps the topic name (as string) to all of its subscribers.
    * @note Subscribers are kept as weak references (in case the listener is
    * destroyed).
    */
@@ -29,10 +34,11 @@ private:
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
   /**
-   * @brief Goes through all subscribers of all topics and checks if they are
+   * Goes through all subscribers of all topics and checks if they are
    * still valid and if they still exist.
    */
   void CleanUpSubscribers();
+  std::shared_ptr<bool> m_this_alive_checker;
 
 public:
   explicit JobBasedEventBroker(
@@ -49,6 +55,6 @@ public:
                                const std::string &topic) override;
   void RemoveAllListeners() override;
 };
-} // namespace events::impl
+} // namespace events::brokers
 
 #endif /* JOBBASEDMESSAGEBROKER_H */

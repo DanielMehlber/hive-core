@@ -4,6 +4,12 @@
 #include "vsg/all.h"
 
 namespace graphics {
+
+/**
+ * Contains the view matrix as plain matrix.
+ * @note This simple implementation was missing in Vulkan Scene Graph and was
+ * therefore added.
+ */
 class SimpleViewMatrix
     : public vsg::Inherit<vsg::ViewMatrix, SimpleViewMatrix> {
 public:

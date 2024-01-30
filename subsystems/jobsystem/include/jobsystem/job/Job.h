@@ -7,50 +7,41 @@
 #include "JobExitBehavior.h"
 #include "JobState.h"
 #include <functional>
-#include <list>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <string>
 
 namespace jobsystem::job {
 
 /**
- * @brief A job is the central data structure of the job system. It contains
+ * A job is the central data structure of the job system. It contains
  * work that must be executed for the job to complete and metadata used in this
  * process.
  */
 class Job {
 protected:
-  /**
-   * @brief ID of this job
-   */
+  /** ID of this job */
   const std::string m_id;
 
   /**
-   * @brief Workload encapsulated in a function that will be executed by the job
+   * Workload encapsulated in a function that will be executed by the job
    * execution.
    */
   std::function<JobContinuation(JobContext *)> m_workload;
 
-  /**
-   * @brief Tracks progress and current state of this job
-   */
+  /** Tracks progress and current state of this job. */
   JobState m_current_state{DETACHED};
 
-  /**
-   * @brief The workload will be executed in the given phase of the execution
-   * cycle.
-   */
+  /** Workload will be executed in the given phase of the execution cycle. */
   JobExecutionPhase m_phase;
 
-  /**
-   * @brief All counters that track the progress of this job.
-   */
-  std::list<std::shared_ptr<JobCounter>> m_counters;
+  /** All counters that track the progress of this job. */
+  std::queue<std::shared_ptr<JobCounter>> m_counters;
   std::mutex m_counters_mutex;
 
   /**
-   * @brief Notifies all counters that this job has finished and removes them
+   * Notifies all counters that this job has finished and removes them
    * from the counters list.
    */
   void FinishJob();
@@ -63,12 +54,13 @@ public:
   virtual ~Job() { FinishJob(); };
 
   /**
-   * @brief Executes the jobs workload in the calling thread.
+   * Executes the workload in the calling thread and adjusts state variables of
+   * this job.
    */
   JobContinuation Execute(JobContext *);
 
   /**
-   * @brief Checks if this job can be scheduled (typically in the next cycle)
+   * Checks if this job can be scheduled (typically in the next cycle)
    * considering the current context. If not, this job should be skipped and
    * asked again before the next cycle.
    * @param context context information that may be relevant for the scheduling
@@ -78,7 +70,7 @@ public:
   virtual bool IsReadyForExecution(const JobContext &context) { return true; };
 
   /**
-   * @brief Adds counter for this job to the counter list.
+   * Adds counter for this job to the counter list, incrementing the counter.
    * @param counter additional counter
    */
   void AddCounter(const std::shared_ptr<JobCounter> &counter);

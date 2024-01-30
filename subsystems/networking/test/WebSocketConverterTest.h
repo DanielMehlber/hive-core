@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETCONVERTERTEST_H
 #define WEBSOCKETCONVERTERTEST_H
 
-#include "networking/peers/PeerMessageConverter.h"
+#include "networking/peers/MessageConverter.h"
 #include <gtest/gtest.h>
 #include <memory>
 
@@ -9,30 +9,27 @@ using namespace networking::websockets;
 
 TEST(WebSockets, message_converter_serializing) {
 
-  SharedWebSocketMessage message = std::make_shared<PeerMessage>("some-type");
+  SharedMessage message = std::make_shared<Message>("some-type");
   message->SetAttribute("attr1", "value1");
   message->SetAttribute("attr2", "value2");
 
   std::string payload =
-      networking::websockets::PeerMessageConverter::ToMultipartFormData(
-          message);
-  SharedWebSocketMessage same_message =
-      networking::websockets::PeerMessageConverter::FromMultipartFormData(
-          payload);
+      networking::websockets::MessageConverter::ToMultipartFormData(message);
+  SharedMessage same_message =
+      networking::websockets::MessageConverter::FromMultipartFormData(payload);
 
   ASSERT_TRUE(message->EqualsTo(same_message));
 }
 
 TEST(WebSockets, message_converter_invalid) {
-  PeerMessageConverter converter;
+  MessageConverter converter;
 
-  SharedWebSocketMessage message = std::make_shared<PeerMessage>("some-type");
+  SharedMessage message = std::make_shared<Message>("some-type");
   message->SetAttribute("attr1", "value1");
   message->SetAttribute("attr2", "value2");
 
   std::string payload =
-      networking::websockets::PeerMessageConverter::ToMultipartFormData(
-          message);
+      networking::websockets::MessageConverter::ToMultipartFormData(message);
 
   // now half of the message gets lost
   auto invalid_payload = payload.substr(0, payload.size() / 2);

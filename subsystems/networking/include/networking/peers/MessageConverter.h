@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETMESSAGECONVERTER_H
 #define WEBSOCKETMESSAGECONVERTER_H
 
-#include "PeerMessage.h"
+#include "Message.h"
 #include "common/exceptions/ExceptionsBase.h"
 
 namespace networking::websockets {
@@ -11,7 +11,7 @@ DECLARE_EXCEPTION(MessagePayloadInvalidException);
 /**
  * Converts the payload of web-socket events to data objects and vice versa.
  */
-class PeerMessageConverter {
+class MessageConverter {
 public:
   /**
    * Generates a web-socket data object from json payload
@@ -21,7 +21,7 @@ public:
    * or is not convertible to a message object
    * @deprecated Is not capable to transport binary data without encoding
    */
-  static SharedWebSocketMessage FromJson(const std::string &json);
+  static SharedMessage FromJson(const std::string &json);
 
   /**
    * Generates the json string from a web-socket message
@@ -29,14 +29,14 @@ public:
    * @return the json string
    * @deprecated Is not capable to transport binary data without encoding
    */
-  static std::string ToJson(const SharedWebSocketMessage &message);
+  static std::string ToJson(const SharedMessage &message);
 
   /**
    * Generates a message data object from multipart-formdata content
    * @param multipart_string payload
    * @return a message data object
    */
-  static SharedWebSocketMessage
+  static SharedMessage
   FromMultipartFormData(const std::string &multipart_string);
 
   /**
@@ -44,7 +44,7 @@ public:
    * @param message message object that will be converted into json
    * @return the multipart-formdata encoded string
    */
-  static std::string ToMultipartFormData(const SharedWebSocketMessage &message);
+  static std::string ToMultipartFormData(const SharedMessage &message);
 };
 } // namespace networking::websockets
 

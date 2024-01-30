@@ -6,8 +6,7 @@
 namespace plugins {
 
 /**
- * Generic interface for plugins that can be loaded and managed by the Plugin
- * Manager.
+ * A plugin that can be loaded by the plugin manager.
  * @attention Plugin implementation are not allowed to be placed in some
  * namespace. Otherwise they cannot be loaded by their symbol.
  * @attention Plugin implementations need a default constructor.

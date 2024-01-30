@@ -1,14 +1,15 @@
 #ifndef NETWORKINGFACTORY_H
 #define NETWORKINGFACTORY_H
 
-#include "peers/IPeer.h"
-#include "peers/impl/websockets/boost/BoostWebSocketPeer.h"
+#include "peers/IMessageEndpoint.h"
+#include "peers/impl/websockets/boost/BoostWebSocketEndpoint.h"
 #include <memory>
 
 using namespace networking::websockets;
 
 #ifndef DEFAULT_WEBSOCKET_PEER_IMPL
-#define DEFAULT_WEBSOCKET_PEER_IMPL networking::websockets::BoostWebSocketPeer
+#define DEFAULT_WEBSOCKET_PEER_IMPL                                            \
+  networking::websockets::BoostWebSocketEndpoint
 #endif
 
 namespace networking {
@@ -18,7 +19,7 @@ namespace networking {
 class NetworkingFactory {
 public:
   /**
-   * @brief Create new web-socket peer implementation
+   * Create new web-socket peer implementation
    * @tparam ServerImpl Implementation type of IPeer interface
    * @tparam Args Arguments types
    * @param args Arguments that will be passed to the implementation's
@@ -26,13 +27,14 @@ public:
    * @return a shared web-socket peer implementation
    */
   template <typename ServerImpl = DEFAULT_WEBSOCKET_PEER_IMPL, typename... Args>
-  static SharedWebSocketPeer CreateNetworkingPeer(Args... args);
+  static SharedMessageEndpoint CreateNetworkingPeer(Args... args);
 };
 
 template <typename ServerImpl, typename... Args>
-inline SharedWebSocketPeer
+inline SharedMessageEndpoint
 NetworkingFactory::CreateNetworkingPeer(Args... args) {
-  return std::static_pointer_cast<IPeer>(std::make_shared<ServerImpl>(args...));
+  return std::static_pointer_cast<IMessageEndpoint>(
+      std::make_shared<ServerImpl>(args...));
 }
 
 } // namespace networking

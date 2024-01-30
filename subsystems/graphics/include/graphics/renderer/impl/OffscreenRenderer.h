@@ -6,12 +6,23 @@
 
 namespace graphics {
 
+/**
+ * Renderer that does not display its images on a window surface but instead
+ * transfers them into a buffer for further processing.
+ * @note Built for the rendering service, embedded rendering, or other
+ * applications not involving a window.
+ */
 class OffscreenRenderer : public IRenderer {
 private:
+  /** If true, the depth buffer is extracted and stored as well. */
   bool m_use_depth_buffer;
+
+  /** If true, uses multi-sampled anti-aliasing. */
   bool m_msaa;
 
+  /** Current scene that is rendered */
   scene::SharedScene m_scene;
+
   vsg::ref_ptr<vsg::Viewer> m_viewer;
   vsg::ref_ptr<vsg::Instance> m_instance;
   vsg::ref_ptr<vsg::Device> m_device;
@@ -20,7 +31,16 @@ private:
   vsg::ref_ptr<vsg::ProjectionMatrix> m_current_projection_matrix;
   vsg::ref_ptr<vsg::ViewMatrix> m_current_view_matrix;
 
+  /**
+   * Contains commands for capturing and extracting the depth image in the
+   * current frame buffer into a separate image buffer on device memory.
+   */
   vsg::ref_ptr<vsg::Commands> m_depth_buffer_capture;
+
+  /**
+   * Contains commands for capturing and extracting the color image in the
+   * current frame buffer into a separate image buffer on device memory.
+   */
   vsg::ref_ptr<vsg::Commands> m_color_buffer_capture;
 
   vsg::ref_ptr<vsg::ImageView> m_color_image_view;
@@ -42,6 +62,7 @@ private:
   vsg::ref_ptr<vsg::CommandGraph> m_command_graph;
   vsg::ref_ptr<vsg::RenderGraph> m_render_graph;
 
+  /** Render result of last rendering pass. */
   std::shared_ptr<RenderResult> m_current_render_result;
 
   void SetupCamera();
@@ -50,8 +71,8 @@ private:
   void SetupCommandGraph();
 
   /**
-   * Replaces framebuffer and image captures
-   * @note This can be used when the render size has changed.
+   * Replaces framebuffer and image captures.
+   * @note This can be used when the renderer size has changed.
    * @see Inspired by vsgExample vsgheadless
    */
   void ReplaceFramebufferAndCaptures();
