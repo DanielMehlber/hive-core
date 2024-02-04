@@ -10,12 +10,12 @@ using namespace jobsystem;
 
 RemoteServiceExecutor::RemoteServiceExecutor(
     std::string service_name, std::weak_ptr<IMessageEndpoint> peer,
-    std::string remote_host_name,
+    std::string remote_host_name, std::string id,
     std::weak_ptr<RemoteServiceResponseConsumer> response_consumer)
     : m_web_socket_peer(std::move(peer)),
       m_remote_host_name(std::move(remote_host_name)),
       m_service_name(std::move(service_name)),
-      m_response_consumer(std::move(response_consumer)) {}
+      m_response_consumer(std::move(response_consumer)), m_id(std::move(id)) {}
 
 bool RemoteServiceExecutor::IsCallable() {
   if (m_web_socket_peer.expired()) {

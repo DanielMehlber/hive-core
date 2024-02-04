@@ -8,7 +8,8 @@ LocalServiceExecutor::LocalServiceExecutor(
     std::string service_name,
     std::function<std::future<SharedServiceResponse>(SharedServiceRequest)>
         func)
-    : m_func(std::move(func)), m_service_name(std::move(service_name)) {}
+    : m_func(std::move(func)), m_service_name(std::move(service_name)),
+      m_id(common::uuid::UuidGenerator::Random()) {}
 
 std::future<SharedServiceResponse>
 LocalServiceExecutor::Call(SharedServiceRequest request,

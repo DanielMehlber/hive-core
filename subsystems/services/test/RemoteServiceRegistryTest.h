@@ -119,6 +119,9 @@ TEST(ServiceTests, remote_service_load_balancing) {
     peers.emplace_back(ith_peer, service);
   }
 
+  // process established connection before registering & broadcasting service
+  job_manager->InvokeCycleAndWait();
+
   // register service at peers
   for (auto &[peer, service] : peers) {
     auto peer_service_registry = peer->RequireSubsystem<IServiceRegistry>();

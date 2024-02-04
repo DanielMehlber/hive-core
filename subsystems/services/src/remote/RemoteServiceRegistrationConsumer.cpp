@@ -21,9 +21,12 @@ void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
            << registration_message.GetServiceName() << "' from host "
            << connection_info.GetHostname());
 
+  auto service_id = registration_message.GetId();
+  auto service_name = registration_message.GetServiceName();
+
   SharedServiceExecutor stub = std::make_shared<RemoteServiceExecutor>(
-      registration_message.GetServiceName(), m_web_socket_peer,
-      connection_info.GetHostname(), m_response_consumer);
+      service_name, m_web_socket_peer, connection_info.GetHostname(),
+      service_id, m_response_consumer);
 
   m_consumer(stub);
 }

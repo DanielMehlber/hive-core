@@ -16,6 +16,7 @@ void broadcastServiceRegistration(
 
   ASSERT(!sender.expired(), "sender should exist")
   ASSERT(stub->IsCallable(), "executor should be callable")
+  ASSERT(stub->IsLocal(), "only local services can be offered to others")
 
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
       [sender, stub](jobsystem::JobContext *context) {
@@ -25,8 +26,9 @@ void broadcastServiceRegistration(
                    << " because web-socket peer has been destroyed")
         } else {
           RemoteServiceRegistrationMessage registration;
-
           registration.SetServiceName(stub->GetServiceName());
+          registration.SetId(stub->GetId());
+
           std::future<size_t> progress =
               sender.lock()->Broadcast(registration.GetMessage());
 
@@ -220,9 +222,13 @@ void RemoteServiceRegistry::SendServicePortfolioToPeer(
   // create a registration message job for each registered service name
   std::unique_lock callers_lock(m_registered_callers_mutex);
   for (const auto &[service_name, caller] : m_registered_callers) {
-    auto job = CreateRemoteServiceRegistrationJob(peer_id, service_name,
-                                                  this_peer_weak);
-    job_manager->KickJob(job);
+
+    // only offer locally provided services to other nodes.
+    if (caller->ContainsLocallyCallable()) {
+      auto job = CreateRemoteServiceRegistrationJob(peer_id, service_name,
+                                                    this_peer_weak);
+      job_manager->KickJob(job);
+    }
   }
 }
 

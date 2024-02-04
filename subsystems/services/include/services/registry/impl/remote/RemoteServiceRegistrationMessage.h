@@ -26,6 +26,9 @@ public:
 
   SharedMessage GetMessage() const noexcept;
 
+  void SetId(const std::string &id) noexcept;
+  std::string GetId() noexcept;
+
   void SetServiceName(const std::string &service_name) noexcept;
   std::string GetServiceName() noexcept;
 };
@@ -46,6 +49,15 @@ inline RemoteServiceRegistrationMessage::RemoteServiceRegistrationMessage(
 inline SharedMessage
 RemoteServiceRegistrationMessage::GetMessage() const noexcept {
   return m_message;
+}
+
+inline void
+RemoteServiceRegistrationMessage::SetId(const std::string &id) noexcept {
+  m_message->SetAttribute("service-id", id);
+}
+
+inline std::string RemoteServiceRegistrationMessage::GetId() noexcept {
+  return m_message->GetAttribute("service-id").value_or("");
 }
 
 } // namespace services::impl

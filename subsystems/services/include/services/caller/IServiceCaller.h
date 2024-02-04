@@ -46,8 +46,10 @@ public:
   virtual bool ContainsLocallyCallable() const noexcept = 0;
 
   /**
-   * Adds service executor to this caller.
-   * @param executor to add
+   * Adds service executor to this caller. There must be no duplicate executors
+   * (e.g. two different remote service executors referring to the same node
+   * address). If an executor is already registered, it will be replaced.
+   * @param executor must not be a duplicate of an already added executor.
    */
   virtual void AddExecutor(SharedServiceExecutor executor) = 0;
 

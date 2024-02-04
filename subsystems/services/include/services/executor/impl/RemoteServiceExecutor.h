@@ -28,6 +28,9 @@ private:
   /** name of called service */
   std::string m_service_name;
 
+  /** unique id of this service's executor locally residing on another node */
+  std::string m_id;
+
   /**
    * This execution will pass a promise (for resolving the request's response)
    * to the response consumer. It receives responses and can therefore resolve
@@ -39,7 +42,7 @@ public:
   RemoteServiceExecutor() = delete;
   explicit RemoteServiceExecutor(
       std::string service_name, std::weak_ptr<IMessageEndpoint> peer,
-      std::string remote_host_name,
+      std::string remote_host_name, std::string id,
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer);
 
   std::future<SharedServiceResponse>
@@ -51,6 +54,8 @@ public:
   std::string GetServiceName() override;
 
   bool IsLocal() override { return false; };
+
+  std::string GetId() override { return m_id; }
 };
 } // namespace services::impl
 

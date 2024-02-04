@@ -20,6 +20,18 @@ bool RoundRobinServiceCaller::IsCallable() const noexcept {
 
 void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor stub) {
   std::unique_lock lock(m_service_executors_mutex);
+
+  // no duplicate services allowed
+  for (const auto &registered_executor : m_service_executors) {
+
+    // if executor id has already been added, do not add
+    if (stub->GetId() == registered_executor->GetId()) {
+      LOG_WARN("registration of duplicate executor of service '"
+               << stub->GetServiceName() << "' prevented")
+      return;
+    }
+  }
+
   m_service_executors.push_back(stub);
 }
 

@@ -17,13 +17,15 @@ class LocalServiceExecutor
     : public IServiceExecutor,
       public std::enable_shared_from_this<LocalServiceExecutor> {
 protected:
-  /**
-   * Function that will be called to execute this service
-   */
+  /** Function that will be called to execute this service */
   std::function<std::future<SharedServiceResponse>(SharedServiceRequest)>
       m_func;
 
+  /** service name */
   std::string m_service_name;
+
+  /** unique id of this local service executor */
+  std::string m_id;
 
 public:
   LocalServiceExecutor() = delete;
@@ -42,6 +44,8 @@ public:
   std::string GetServiceName() override;
 
   bool IsLocal() override { return true; };
+
+  std::string GetId() override { return m_id; }
 };
 
 } // namespace services::impl
