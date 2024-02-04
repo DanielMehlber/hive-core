@@ -8,6 +8,7 @@ add_library(common STATIC
         src/common.cpp
         src/BoostUuidGenerator.cpp
         src/Subsystems.cpp
+        src/Timer.cpp
 )
 
 target_include_directories(common PUBLIC

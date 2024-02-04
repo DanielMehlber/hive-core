@@ -1,8 +1,8 @@
 #include "graphics/service/RenderService.h"
+#include "common/profiling/Timer.h"
 #include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/SimpleViewMatrix.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
-#include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
 #include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
 
 using namespace graphics;
@@ -64,6 +64,14 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
     rendering_subsystem->Resize(extend.width, extend.height);
   }
 
+  // setup timers (for profiling purposes)
+  common::profiling::Timer rendering_timer("rendering-service-rendering-" +
+                                           std::to_string(current_width) + "x" +
+                                           std::to_string(current_height));
+  common::profiling::Timer complete_timer("rendering-service-complete" +
+                                          std::to_string(current_width) + "x" +
+                                          std::to_string(current_height));
+
   try {
 
     // apply settings to renderer's main camera
@@ -106,6 +114,9 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   }
 
   rendering_subsystem->Render();
+
+  // do not count encoding of bytes etc.
+  rendering_timer.Stop();
 
   auto opt_result = rendering_subsystem->GetResult();
 

@@ -1,6 +1,7 @@
 #include "jobsystem/manager/JobManager.h"
-#include <sstream>
 #include "boost/core/demangle.hpp"
+#include "common/profiling/TimerManager.h"
+#include <sstream>
 
 using namespace jobsystem;
 using namespace jobsystem::job;
@@ -9,13 +10,23 @@ using namespace std::chrono_literals;
 JobManager::JobManager(const common::config::SharedConfiguration &config)
     : m_config(config), m_execution(config) {
 #ifndef NDEBUG
-  auto job = std::make_shared<TimerJob>(
+  auto stats_job = std::make_shared<TimerJob>(
       [&](JobContext *) {
         PrintStatusLog();
         return JobContinuation::REQUEUE;
       },
       "print-job-system-stats", 1s);
-  KickJob(job);
+  KickJob(stats_job);
+#endif
+
+#ifdef ENABLE_PROFILING
+  auto profiler_job = std::make_shared<TimerJob>(
+      [&](JobContext *) {
+        LOG_DEBUG("\n" << common::profiling::TimerManager::Get().Print())
+        return JobContinuation::REQUEUE;
+      },
+      "print-profiler-stats", 3s);
+  KickJob(profiler_job);
 #endif
 
   std::stringstream ss;
