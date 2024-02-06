@@ -40,8 +40,8 @@ target_sources(networking PUBLIC FILE_SET HEADERS
         FILES ${HEADER_FILES})
 
 install(TARGETS networking
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION bin
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include
 )

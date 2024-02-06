@@ -10,8 +10,8 @@ add_library(core SHARED
 )
 
 install(TARGETS core
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION bin
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
 )
 
