@@ -77,7 +77,7 @@ void FiberExecutionImpl::WaitForCompletion(
   } else {
     // caller is a thread, so block
     while (!waitable->IsFinished()) {
-      std::this_thread::sleep_for(1ms);
+      std::this_thread::sleep_for(0.1ms);
     }
   }
 }
