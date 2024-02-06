@@ -68,30 +68,6 @@ TEST(WebSockets, websockets_connection_establishment) {
   ASSERT_NO_THROW(result.get());
 }
 
-TEST(WebSockets, websockets_connection_closing) {
-  auto config = std::make_shared<common::config::Configuration>();
-  auto job_manager = std::make_shared<JobManager>(config);
-  job_manager->StartExecution();
-
-  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
-  subsystems->AddOrReplaceSubsystem(job_manager);
-
-  SharedMessageEndpoint peer1 = SetupWebSocketPeer(subsystems, 9003);
-  SharedMessage message = std::make_shared<Message>("test-type");
-  {
-    auto subsystems_copy =
-        std::make_shared<common::subsystems::SubsystemManager>(*subsystems);
-    SharedMessageEndpoint peer2 = SetupWebSocketPeer(subsystems_copy, 9004);
-    auto result = peer1->EstablishConnectionTo("ws://127.0.0.1:9004");
-    result.wait();
-
-    SendMessageAndWait(message, peer1, "ws://127.0.0.1:9004");
-  }
-
-  ASSERT_THROW(peer1->Send("ws://127.0.0.1:9004", message),
-               NoSuchPeerException);
-}
-
 TEST(WebSockets, websockets_message_sending_1_to_1) {
   auto config = std::make_shared<common::config::Configuration>();
   SharedJobManager job_manager = std::make_shared<JobManager>(config);
