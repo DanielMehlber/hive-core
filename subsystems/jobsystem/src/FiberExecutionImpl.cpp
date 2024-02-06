@@ -1,7 +1,6 @@
-#include <utility>
-
-#include "common/assert/Assert.h"
 #include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
+#include "common/assert/Assert.h"
+#include "common/profiling/Timer.h"
 #include "jobsystem/manager/JobManager.h"
 
 using namespace jobsystem::execution::impl;
@@ -27,6 +26,9 @@ void FiberExecutionImpl::Init() {
 void FiberExecutionImpl::ShutDown() { Stop(); }
 
 void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
+#ifdef ENABLE_PROFILING
+  common::profiling::Timer schedule_timer("job-scheduling");
+#endif
   auto &weak_manager = m_managing_instance;
   auto runner = [weak_manager, job]() {
     if (weak_manager.expired()) {
@@ -66,6 +68,10 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
 
 void FiberExecutionImpl::WaitForCompletion(
     std::shared_ptr<IJobWaitable> waitable) {
+
+#ifdef ENABLE_PROFILING
+  common::profiling::Timer waiting_timer("job-waiting-for-completion");
+#endif
 
   bool is_called_from_fiber =
       !boost::fibers::context::active()->is_context(boost::fibers::type::none);

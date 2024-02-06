@@ -47,8 +47,10 @@ void TimerManager::Commit(const std::string &name, long ns) {
   current.total_min_ns = std::min(ns, current.total_min_ns);
   current.total_max_ns = std::max(ns, current.total_max_ns);
   current.values.insert(current.values.begin(), ns);
-  if (current.values.size() > 10) {
-    current.values.resize(10);
+
+  unsigned int max_samples = 50;
+  if (current.values.size() > max_samples) {
+    current.values.resize(max_samples);
   }
 
   m_measurements[name] = current;
