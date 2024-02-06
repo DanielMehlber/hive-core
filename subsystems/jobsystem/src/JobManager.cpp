@@ -3,7 +3,6 @@
 #include "common/profiling/TimerManager.h"
 #include <sstream>
 
-
 using namespace jobsystem;
 using namespace jobsystem::job;
 using namespace std::chrono_literals;
