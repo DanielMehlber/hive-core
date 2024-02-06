@@ -10,7 +10,7 @@ add_executable(standalone
 
 install(TARGETS standalone
         RUNTIME DESTINATION bin
-        LIBRARY DESTINATION bin
+        LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
 )
 
