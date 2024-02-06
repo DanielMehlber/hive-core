@@ -85,9 +85,13 @@ void BoostWebSocketEndpoint::SetupCleanUpJob() {
           std::to_string(m_local_endpoint->port()),
       1s, CLEAN_UP);
 
-  auto job_manager =
-      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
-  job_manager->KickJob(clean_up_job);
+  if (auto subsystems = m_subsystems.lock()) {
+    auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
+    job_manager->KickJob(clean_up_job);
+  } else /* if subsystems are not available */ {
+    LOG_WARN("cannot setup web-socket connection clean-up job because required "
+             "subsystems are not available")
+  }
 }
 
 BoostWebSocketEndpoint::~BoostWebSocketEndpoint() {
@@ -166,38 +170,36 @@ void BoostWebSocketEndpoint::CleanUpConsumersOfMessageType(
 void BoostWebSocketEndpoint::ProcessReceivedMessage(
     std::string data, SharedBoostWebSocketConnection over_connection) {
 
-  if (m_subsystems.expired()) {
-    LOG_ERR("Received message but subsystems have shut down. Cannot process "
-            "message.")
-    return;
-  }
+  if (auto subsystems = m_subsystems.lock()) {
+    auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
 
-  auto job_manager =
-      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+    std::unique_lock running_lock(m_running_mutex);
+    if (!m_running) {
+      return;
+    }
 
-  std::unique_lock running_lock(m_running_mutex);
-  if (!m_running) {
-    return;
-  }
+    // convert payload into message
+    SharedMessage message;
+    try {
+      message =
+          networking::websockets::MessageConverter::FromMultipartFormData(data);
+    } catch (const MessagePayloadInvalidException &ex) {
+      LOG_WARN("message received from host "
+               << over_connection->GetRemoteHostAddress()
+               << " contained invalid payload: " << ex.what())
+      return;
+    }
 
-  // convert payload into message
-  SharedMessage message;
-  try {
-    message =
-        networking::websockets::MessageConverter::FromMultipartFormData(data);
-  } catch (const MessagePayloadInvalidException &ex) {
-    LOG_WARN("message received from host "
-             << over_connection->GetRemoteHostAddress()
-             << " contained invalid payload: " << ex.what())
-    return;
-  }
-
-  std::string message_type = message->GetType();
-  auto consumer_list = GetConsumersOfMessageType(message_type);
-  for (auto consumer : consumer_list) {
-    auto job = std::make_shared<MessageConsumerJob>(
-        consumer, message, over_connection->GetConnectionInfo());
-    job_manager->KickJob(job);
+    std::string message_type = message->GetType();
+    auto consumer_list = GetConsumersOfMessageType(message_type);
+    for (auto consumer : consumer_list) {
+      auto job = std::make_shared<MessageConsumerJob>(
+          consumer, message, over_connection->GetConnectionInfo());
+      job_manager->KickJob(job);
+    }
+  } else /* if subsystems are not available */ {
+    LOG_ERR("cannot process received web-socket message because required "
+            "subsystems are not available or have been shut down.")
   }
 }
 
@@ -234,14 +236,19 @@ void BoostWebSocketEndpoint::AddConnection(std::string url,
   std::unique_lock conn_lock(m_connections_mutex);
   m_connections[connection_id] = connection;
 
-  // fire event if event subsystem is found
-  if (m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>()) {
-    ConnectionEstablishedEvent event;
-    event.SetPeer(url);
+  bool subsystems_usable = !m_subsystems.expired();
+  if (subsystems_usable) {
+    auto subsystems = m_subsystems.lock();
 
-    auto event_subsystem =
-        m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
-    event_subsystem->FireEvent(event.GetEvent());
+    // fire event if event subsystem is found
+    if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {
+      ConnectionEstablishedEvent event;
+      event.SetPeer(url);
+
+      auto event_subsystem =
+          subsystems->RequireSubsystem<events::IEventBroker>();
+      event_subsystem->FireEvent(event.GetEvent());
+    }
   }
 }
 
@@ -305,7 +312,7 @@ BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
     return prom.get_future();
   }
 
-  // check if connection establishment component has been initlialized.
+  // check if connection establishment component has been initialized.
   if (!m_connection_establisher) {
     InitConnectionEstablisher();
   }
@@ -356,6 +363,10 @@ BoostWebSocketEndpoint::Broadcast(const SharedMessage &message) {
           if (connection->IsUsable()) {
             auto future = connection->Send(message);
             futures.push_back(std::move(future));
+          } else {
+            LOG_WARN("web-socket connection to remote endpoint "
+                     << connection->GetRemoteHostAddress()
+                     << " is not usable or broken. Skipped for broadcasting.")
           }
         }
 
@@ -366,7 +377,8 @@ BoostWebSocketEndpoint::Broadcast(const SharedMessage &message) {
           count++;
           try {
             future.get();
-          } catch (...) {
+          } catch (const std::exception &ex) {
+            LOG_ERR("failed to broadcast message: " << ex.what());
             count--;
           }
         }
@@ -394,16 +406,17 @@ size_t BoostWebSocketEndpoint::GetActiveConnectionCount() const {
 }
 
 void BoostWebSocketEndpoint::OnConnectionClose(const std::string &id) {
-  if (!m_subsystems.expired() &&
-      m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>()) {
-    auto event_broker =
-        m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+  bool subsystems_still_active = !m_subsystems.expired();
+  if (subsystems_still_active) {
+    auto subsystems = m_subsystems.lock();
 
-    ConnectionClosedEvent event;
-    event.SetPeerId(id);
-    event_broker->FireEvent(event.GetEvent());
-  } else {
-    LOG_WARN("Cannot publish connection close event because event subsystem is "
-             "not provided")
+    // trigger event notifying other parties that a connection has closed
+    if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {
+      auto event_broker = subsystems->RequireSubsystem<events::IEventBroker>();
+
+      ConnectionClosedEvent event;
+      event.SetPeerId(id);
+      event_broker->FireEvent(event.GetEvent());
+    }
   }
 }

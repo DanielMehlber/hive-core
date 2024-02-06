@@ -6,6 +6,7 @@
 #include <any>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <typeindex>
 
@@ -26,6 +27,9 @@ private:
   std::unordered_map<std::type_index, std::any> m_subsystems;
 
 public:
+  SubsystemManager() = default;
+  SubsystemManager(const SubsystemManager &other);
+
   /**
    * Registers subsystem or replaces its implementation if already registered.
    * @tparam subsystem_t type of subsystem. This exact type must be used to
@@ -62,6 +66,9 @@ public:
    */
   template <typename subsystem_t> bool ProvidesSubsystem() const;
 };
+
+inline SubsystemManager::SubsystemManager(const SubsystemManager &other)
+    : m_subsystems(other.m_subsystems) {}
 
 template <typename subsystem_t>
 bool SubsystemManager::ProvidesSubsystem() const {

@@ -32,7 +32,7 @@ SetupWebSocketPeer(const common::subsystems::SharedSubsystemManager &subsystems,
 
 class TestConsumer : public IMessageConsumer {
 public:
-  std::mutex counter_mutex;
+  mutable jobsystem::mutex counter_mutex;
   size_t counter{0};
   std::string GetMessageType() const noexcept override { return "test-type"; }
   void

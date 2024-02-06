@@ -1,6 +1,9 @@
 #include "events/EventFactory.h"
 #include <gtest/gtest.h>
 
+using namespace events;
+using namespace jobsystem;
+
 common::subsystems::SharedSubsystemManager SetupSubsystems() {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   auto config = std::make_shared<common::config::Configuration>();

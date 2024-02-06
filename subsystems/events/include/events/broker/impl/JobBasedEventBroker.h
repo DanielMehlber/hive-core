@@ -10,9 +10,6 @@
 #include <mutex>
 #include <vector>
 
-using namespace jobsystem;
-using namespace events;
-
 namespace events::brokers {
 
 /**
@@ -28,7 +25,7 @@ private:
    */
   std::map<std::string, std::vector<std::weak_ptr<IEventListener>>>
       m_topic_subscribers;
-  mutable std::mutex m_topic_subscribers_mutex;
+  mutable jobsystem::mutex m_topic_subscribers_mutex;
 
   /** Contains required subsystems */
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;

@@ -2,9 +2,9 @@
 #define IJOBEXECUTION_H
 
 #include "JobExecutionState.h"
-#include "jobsystem/job/IJobWaitable.h"
 #include "jobsystem/job/Job.h"
-#include "jobsystem/job/JobCounter.h"
+#include "jobsystem/synchronization/IJobWaitable.h"
+#include "jobsystem/synchronization/JobCounter.h"
 #include <future>
 #include <memory>
 

@@ -10,17 +10,18 @@
 #include "common/config/Configuration.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/execution/IJobExecution.h"
-#include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
-#include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/TimerJob.h"
+#include "jobsystem/synchronization/JobMutex.h"
 #include "logging/LogManager.h"
 #include <set>
 #include <utility>
 
 #ifdef JOB_SYSTEM_SINGLE_THREAD
+#include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 typedef impl::SingleThreadedExecutionImpl JobExecutionImpl;
 #else
+#include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
 typedef jobsystem::execution::impl::FiberExecutionImpl JobExecutionImpl;
 #endif
 
@@ -40,7 +41,7 @@ private:
    * here.
    */
   std::queue<SharedJob> m_init_queue;
-  mutable std::mutex m_init_queue_mutex;
+  mutable mutex m_init_queue_mutex;
   SharedJobCounter m_init_phase_counter;
 
   /**
@@ -48,14 +49,14 @@ private:
    * here.
    */
   std::queue<SharedJob> m_main_queue;
-  mutable std::mutex m_main_queue_mutex;
+  mutable mutex m_main_queue_mutex;
   SharedJobCounter m_main_phase_counter;
 
   /**
    * All jobs for the clean-up phase of the cycle are collected here.
    */
   std::queue<SharedJob> m_clean_up_queue;
-  mutable std::mutex m_clean_up_queue_mutex;
+  mutable mutex m_clean_up_queue_mutex;
   SharedJobCounter m_clean_up_phase_counter;
 
   /**
@@ -65,7 +66,7 @@ private:
    * time-interval jobs).
    */
   std::queue<SharedJob> m_next_cycle_queue;
-  mutable std::mutex m_next_cycle_queue_mutex;
+  mutable mutex m_next_cycle_queue_mutex;
 
   /**
    * Some jobs must be prevented from being rescheduled for the next
@@ -73,7 +74,7 @@ private:
    * currently in the execution and must therefore be prevented from requeueing.
    */
   std::set<std::string> m_continuation_requeue_blacklist;
-  std::mutex m_continuation_requeue_blacklist_mutex;
+  mutable mutex m_continuation_requeue_blacklist_mutex;
 
   JobManagerState m_current_state{READY};
   JobExecutionImpl m_execution;
@@ -95,8 +96,7 @@ private:
    * @param counter counter that should be used to track the progress of all job
    * instances pushed into the execution
    */
-  void ExecuteQueueAndWait(std::queue<SharedJob> &queue,
-                           std::mutex &queue_mutex,
+  void ExecuteQueueAndWait(std::queue<SharedJob> &queue, mutex &queue_mutex,
                            const SharedJobCounter &counter);
 
   /**
@@ -108,8 +108,7 @@ private:
    * @param counter counter that is attached to all job instances that get
    * passed to the job execution.
    */
-  void ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
-                              std::mutex &queue_mutex,
+  void ScheduleAllJobsInQueue(std::queue<SharedJob> &queue, mutex &queue_mutex,
                               const SharedJobCounter &counter);
 
   /**

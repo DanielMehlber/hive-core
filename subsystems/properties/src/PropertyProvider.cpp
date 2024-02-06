@@ -46,35 +46,49 @@ std::string buildTopicName(const std::string &path) {
 
 void PropertyProvider::RegisterListener(
     const std::string &path, const SharedPropertyListener &listener) {
-  std::shared_ptr<events::IEventListener> subscriber =
-      std::static_pointer_cast<events::IEventListener>(listener);
+  if (auto subsystems = m_subsystems.lock()) {
+    std::shared_ptr<events::IEventListener> subscriber =
+        std::static_pointer_cast<events::IEventListener>(listener);
 
-  auto message_broker =
-      m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
-  message_broker->RegisterListener(subscriber, buildTopicName(path));
+    auto message_broker = subsystems->RequireSubsystem<events::IEventBroker>();
+    message_broker->RegisterListener(subscriber, buildTopicName(path));
+  } else /* if subsystems are not available */ {
+    LOG_ERR("cannot register property change listener for '"
+            << path << "' because required subsystems are not available")
+  }
 }
 
 void PropertyProvider::UnregisterListener(
     const SharedPropertyListener &listener) {
-  std::shared_ptr<events::IEventListener> subscriber =
-      std::static_pointer_cast<events::IEventListener>(listener);
+  if (auto subsystems = m_subsystems.lock()) {
+    std::shared_ptr<events::IEventListener> subscriber =
+        std::static_pointer_cast<events::IEventListener>(listener);
 
-  auto message_broker =
-      m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
-  message_broker->UnregisterListener(subscriber);
+    auto message_broker = subsystems->RequireSubsystem<events::IEventBroker>();
+    message_broker->UnregisterListener(subscriber);
+  } else /* if subsystems are not available */ {
+    LOG_ERR("cannot unregister property change listener because required "
+            "subsystems are not available or have been shut down already.")
+  }
 }
 
 void PropertyProvider::NotifyListenersAboutChange(
     const std::string &path) const {
-  std::vector<std::string> paths = getSubpaths(path, '.');
+  if (auto subsystems = m_subsystems.lock()) {
+    std::vector<std::string> paths = getSubpaths(path, '.');
 
-  for (const auto &subpath : paths) {
-    auto event = std::make_shared<events::Event>(buildTopicName(subpath));
+    for (const auto &subpath : paths) {
+      auto event = std::make_shared<events::Event>(buildTopicName(subpath));
+      event->SetPayload("property-key", path);
 
-    event->SetPayload("property-key", path);
-
-    auto message_broker =
-        m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
-    message_broker->FireEvent(event);
+      auto message_broker =
+          m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+      message_broker->FireEvent(event);
+    }
+  } else /* if subsystems are not available */ {
+    LOG_ERR("cannot notify property change listeners of '"
+            << path
+            << "' because required subsystems are not available or have been "
+               "shut down")
   }
 }

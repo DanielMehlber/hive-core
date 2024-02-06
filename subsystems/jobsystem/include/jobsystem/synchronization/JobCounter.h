@@ -1,8 +1,9 @@
 #ifndef JOBCOUNTER_H
 #define JOBCOUNTER_H
 
-#include "IJobWaitable.h"
 #include "common/assert/Assert.h"
+#include "jobsystem/synchronization/IJobWaitable.h"
+#include "jobsystem/synchronization/JobMutex.h"
 #include <memory>
 #include <mutex>
 
@@ -20,7 +21,7 @@ class JobCounter : public IJobWaitable {
 private:
   /** Current count of unfinished jobs attached to this counter. */
   size_t m_count{0};
-  mutable std::mutex m_count_mutex;
+  mutable jobsystem::mutex m_count_mutex;
 
 public:
   /**

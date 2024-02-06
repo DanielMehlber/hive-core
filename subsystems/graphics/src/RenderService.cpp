@@ -19,8 +19,8 @@ RenderService::RenderService(
       m_subsystems(subsystems), m_renderer(std::move(renderer)) {
 
   // register render-result encoder if none
-  if (!m_subsystems.lock()->ProvidesSubsystem<IRenderResultEncoder>()) {
-    m_subsystems.lock()->AddOrReplaceSubsystem<IRenderResultEncoder>(
+  if (!subsystems->ProvidesSubsystem<IRenderResultEncoder>()) {
+    subsystems->AddOrReplaceSubsystem<IRenderResultEncoder>(
         std::make_shared<PlainRenderResultEncoder>());
   }
 }
@@ -120,32 +120,47 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
 
   auto result = opt_result.value();
 
-  // attach color render result to response
-  auto encoder = m_subsystems.lock()->RequireSubsystem<IRenderResultEncoder>();
-  response->SetResult("encoding", encoder->GetName());
+  if (auto subsystems = m_subsystems.lock()) {
+    // attach color render result to response
+    auto encoder = subsystems->RequireSubsystem<IRenderResultEncoder>();
+    response->SetResult("encoding", encoder->GetName());
 
-  auto color_data = result->ExtractColorData();
+    auto color_data = result->ExtractColorData();
 
-  auto encoded_color = encoder->Encode(color_data);
-  response->SetResult("color", std::move(encoded_color));
+    auto encoded_color = encoder->Encode(color_data);
+    response->SetResult("color", std::move(encoded_color));
 
-  // check if depth buffer is requested as well and attach it accordingly
-  bool depth_requested = std::stoi(
-      raw_request->GetParameter("include-depth-buffer").value_or("0"));
-  if (depth_requested) {
-    auto depth_data = result->ExtractDepthData();
-    auto encoded_depth = encoder->Encode(depth_data);
-    response->SetResult("depth", std::move(encoded_depth));
+    // check if depth buffer is requested as well and attach it accordingly
+    bool depth_requested = std::stoi(
+        raw_request->GetParameter("include-depth-buffer").value_or("0"));
+    if (depth_requested) {
+      auto depth_data = result->ExtractDepthData();
+      auto encoded_depth = encoder->Encode(depth_data);
+      response->SetResult("depth", std::move(encoded_depth));
+    }
+
+    promise.set_value(response);
+    return future;
+  } else /* if subsystems are not available */ {
+    LOG_ERR("cannot encode render service result because subsystems are not "
+            "available")
+    response->SetStatus(ServiceResponseStatus::INTERNAL_ERROR);
+    response->SetStatusMessage("no encoder found for result");
+    promise.set_value(response);
+    return future;
   }
-
-  promise.set_value(response);
-  return future;
 }
 
 std::optional<graphics::SharedRenderer> RenderService::GetRenderer() const {
   if (m_renderer) {
     return m_renderer;
   } else {
-    return m_subsystems.lock()->GetSubsystem<graphics::IRenderer>();
+    if (auto subsystems = m_subsystems.lock()) {
+      return subsystems->GetSubsystem<graphics::IRenderer>();
+    } else {
+      LOG_WARN("no renderer found in render service because subsystems are not "
+               "available")
+      return {};
+    }
   }
 }

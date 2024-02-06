@@ -1,6 +1,7 @@
 #ifndef WEBSOCKETSERVICERESPONSECONSUMER_H
 #define WEBSOCKETSERVICERESPONSECONSUMER_H
 
+#include "jobsystem/synchronization/JobMutex.h"
 #include "networking/peers/IMessageConsumer.h"
 #include "services/ServiceResponse.h"
 #include <future>
@@ -14,7 +15,7 @@ namespace services::impl {
  */
 class RemoteServiceResponseConsumer : public IMessageConsumer {
 private:
-  mutable std::mutex m_promises_mutex;
+  mutable jobsystem::mutex m_promises_mutex;
   std::map<std::string, std::promise<SharedServiceResponse>> m_promises;
 
 public:

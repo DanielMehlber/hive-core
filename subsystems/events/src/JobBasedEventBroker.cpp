@@ -3,8 +3,7 @@
 using namespace events;
 using namespace events::brokers;
 using namespace std::chrono_literals;
-
-
+using namespace jobsystem;
 
 JobBasedEventBroker::JobBasedEventBroker(
     const common::subsystems::SharedSubsystemManager &subsystems)
@@ -24,15 +23,16 @@ JobBasedEventBroker::JobBasedEventBroker(
       },
       "events-listener-clean-up", 5s, JobExecutionPhase::INIT);
 
-  auto job_manager = m_subsystems.lock()->RequireSubsystem<JobManager>();
+  auto job_manager = subsystems->RequireSubsystem<JobManager>();
   job_manager->KickJob(clean_up_job);
 }
 
 JobBasedEventBroker::~JobBasedEventBroker() {
-  if (!m_subsystems.expired()) {
-    auto job_manager = m_subsystems.lock()->RequireSubsystem<JobManager>();
+  if (auto subsystems = m_subsystems.lock()) {
+    auto job_manager = subsystems->RequireSubsystem<JobManager>();
     job_manager->DetachJob("events-listener-clean-up");
   }
+  
   RemoveAllListeners();
 }
 
@@ -51,28 +51,36 @@ void JobBasedEventBroker::CleanUpSubscribers() {
 }
 
 void JobBasedEventBroker::FireEvent(SharedEvent event) {
-  const auto &topic_name = event->GetTopic();
+  if (auto subsystems = m_subsystems.lock()) {
 
-  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
-  if (m_topic_subscribers.contains(topic_name)) {
-    auto &subscribers_of_topic = m_topic_subscribers.at(topic_name);
-    for (auto &subscriber : subscribers_of_topic) {
-      if (!subscriber.expired()) {
-        SharedJob message_job =
-            std::make_shared<Job>([subscriber, event](JobContext *) {
-              if (!subscriber.expired()) {
-                subscriber.lock()->HandleMessage(event);
-              }
-              return JobContinuation::DISPOSE;
-            });
-        auto job_manager = m_subsystems.lock()->RequireSubsystem<JobManager>();
-        job_manager->KickJob(message_job);
+    const auto &topic_name = event->GetTopic();
+
+    std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
+    if (m_topic_subscribers.contains(topic_name)) {
+      auto &subscribers_of_topic = m_topic_subscribers.at(topic_name);
+      for (auto &subscriber : subscribers_of_topic) {
+        if (!subscriber.expired()) {
+          SharedJob message_job =
+              std::make_shared<Job>([subscriber, event](JobContext *) {
+                if (!subscriber.expired()) {
+                  subscriber.lock()->HandleMessage(event);
+                }
+                return JobContinuation::DISPOSE;
+              });
+
+          auto job_manager = subsystems->RequireSubsystem<JobManager>();
+          job_manager->KickJob(message_job);
+        }
       }
-    }
 
-    LOG_DEBUG("message of topic '" << topic_name << "' published to "
-                                   << subscribers_of_topic.size()
-                                   << " subscribers")
+      LOG_DEBUG("message of topic '" << topic_name << "' published to "
+                                     << subscribers_of_topic.size()
+                                     << " subscribers")
+    }
+  } else {
+    LOG_ERR("cannot fire event of topic '"
+            << event->GetTopic()
+            << "' because required subsystems are not available")
   }
 }
 

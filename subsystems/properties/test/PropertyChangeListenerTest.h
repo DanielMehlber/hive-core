@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 using namespace props;
+using namespace jobsystem;
 
 class VerificationListener : public PropertyChangeListener {
 private:

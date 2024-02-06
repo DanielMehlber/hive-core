@@ -31,7 +31,7 @@ private:
    * Indicates if the web socket peer is currently running
    */
   bool m_running{false};
-  mutable std::mutex m_running_mutex;
+  mutable jobsystem::mutex m_running_mutex;
 
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 
@@ -41,7 +41,7 @@ private:
    * maps message type names to their consumers
    */
   std::map<std::string, std::list<std::weak_ptr<IMessageConsumer>>> m_consumers;
-  mutable std::mutex m_consumers_mutex;
+  mutable jobsystem::mutex m_consumers_mutex;
 
   /**
    * Acts as execution environment for asynchronous operations, such as
@@ -53,7 +53,7 @@ private:
    * Maps host addresses to the connection established with the host.
    */
   std::map<std::string, SharedBoostWebSocketConnection> m_connections;
-  mutable std::mutex m_connections_mutex;
+  mutable jobsystem::mutex m_connections_mutex;
 
   std::shared_ptr<BoostWebSocketConnectionEstablisher> m_connection_establisher;
   std::shared_ptr<BoostWebSocketConnectionListener> m_connection_listener;

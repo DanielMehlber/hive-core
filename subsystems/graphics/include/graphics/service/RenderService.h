@@ -24,7 +24,7 @@ private:
    * Fow now, only one image can be taken at a time. This mutex enforces this
    * rule.
    */
-  mutable std::mutex m_service_mutex;
+  mutable jobsystem::mutex m_service_mutex;
 
 public:
   explicit RenderService(

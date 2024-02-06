@@ -27,7 +27,7 @@ protected:
 
   /** List of all currently installed plugins */
   std::map<std::string, boost::shared_ptr<IPlugin>> m_plugins;
-  mutable std::mutex m_plugins_mutex;
+  mutable jobsystem::mutex m_plugins_mutex;
 
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
 

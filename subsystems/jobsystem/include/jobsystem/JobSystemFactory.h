@@ -2,7 +2,7 @@
 #define JOBFACTORY_H
 
 #include "jobsystem/job/Job.h"
-#include "jobsystem/job/JobCounter.h"
+#include "jobsystem/synchronization/JobCounter.h"
 
 using namespace jobsystem::job;
 

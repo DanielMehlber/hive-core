@@ -14,7 +14,7 @@ class RoundRobinServiceCaller
       public std::enable_shared_from_this<RoundRobinServiceCaller> {
 private:
   /** List of service stubs */
-  mutable std::mutex m_service_executors_mutex;
+  mutable jobsystem::mutex m_service_executors_mutex;
   std::vector<SharedServiceExecutor> m_service_executors;
 
   /** Last selected index (necessary for round robin) */

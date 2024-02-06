@@ -2,11 +2,13 @@
 #define RESOURCEMANAGER_H
 
 #include "common/exceptions/ExceptionsBase.h"
+#include "jobsystem/synchronization/JobMutex.h"
 #include "resourcemgmt/Resource.h"
 #include "resourcemgmt/loader/IResourceLoader.h"
 #include "resourcemgmt/manager/IResourceManager.h"
 #include <condition_variable>
 #include <map>
+#include <mutex>
 #include <queue>
 
 namespace resourcemgmt {
@@ -16,7 +18,7 @@ DECLARE_EXCEPTION(ResourceLoaderNotFound);
 class ThreadPoolResourceManager : public IResourceManager {
 private:
   std::map<std::string, std::shared_ptr<IResourceLoader>> m_registered_loaders;
-  mutable std::mutex m_registered_loaders_mutex;
+  mutable jobsystem::mutex m_registered_loaders_mutex;
 
   std::queue<std::function<void()>> m_loading_queue;
   std::condition_variable m_loading_queue_condition;

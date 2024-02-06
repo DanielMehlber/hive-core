@@ -147,7 +147,8 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
 
 void BoostWebSocketConnection::OnMessageSent(
     std::promise<void> &&promise, SharedMessage message,
-    std::shared_ptr<std::string> sent_data, std::unique_lock<std::mutex> lock,
+    std::shared_ptr<std::string> sent_data,
+    std::unique_lock<jobsystem::mutex> lock,
     boost::beast::error_code error_code,
     [[maybe_unused]] std::size_t bytes_transferred) {
 

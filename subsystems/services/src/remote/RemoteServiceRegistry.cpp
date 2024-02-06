@@ -54,39 +54,42 @@ void broadcastServiceRegistration(
 void RemoteServiceRegistry::Register(const SharedServiceExecutor &stub) {
 
   if (!stub->IsCallable()) {
-    LOG_WARN("Cannot register " << (stub->IsLocal() ? "local" : "remote")
+    LOG_WARN("cannot register " << (stub->IsLocal() ? "local" : "remote")
                                 << " service '" << stub->GetServiceName()
                                 << " because it is not callable (anymore)")
     return;
   }
 
-  auto job_manager =
-      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
-  auto web_socket_peer =
-      m_subsystems.lock()->RequireSubsystem<IMessageEndpoint>();
+  if (auto subsystems = m_subsystems.lock()) {
+    auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
+    auto web_socket_peer = subsystems->RequireSubsystem<IMessageEndpoint>();
 
-  std::string name = stub->GetServiceName();
+    std::string name = stub->GetServiceName();
 
-  std::unique_lock lock(m_registered_callers_mutex);
-  if (!m_registered_callers.contains(name)) {
-    m_registered_callers[name] = std::make_shared<RoundRobinServiceCaller>();
-  }
+    std::unique_lock lock(m_registered_callers_mutex);
+    if (!m_registered_callers.contains(name)) {
+      m_registered_callers[name] = std::make_shared<RoundRobinServiceCaller>();
+    }
 
-  if (stub->IsLocal()) {
-    broadcastServiceRegistration(web_socket_peer, stub, job_manager);
-  }
+    if (stub->IsLocal()) {
+      broadcastServiceRegistration(web_socket_peer, stub, job_manager);
+    }
 
-  m_registered_callers.at(name)->AddExecutor(stub);
-  LOG_DEBUG("new service '" << name
-                            << "' has been registered in web-socket registry")
+    m_registered_callers.at(name)->AddExecutor(stub);
+    LOG_DEBUG("new service '" << name
+                              << "' has been registered in web-socket registry")
 
-  // send notification that new service has been registered
-  if (m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>()) {
-    auto broker = m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+    // send notification that new service has been registered
+    if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {
+      auto broker = subsystems->RequireSubsystem<events::IEventBroker>();
 
-    ServiceRegisteredNotification message;
-    message.SetServiceName(name);
-    broker->FireEvent(message.GetMessage());
+      ServiceRegisteredNotification message;
+      message.SetServiceName(name);
+      broker->FireEvent(message.GetMessage());
+    }
+  } else {
+    LOG_ERR("cannot perform registration in remote service registry because "
+            "required subsystems are not available")
   }
 }
 
@@ -98,13 +101,27 @@ void RemoteServiceRegistry::Unregister(const std::string &name) {
                           << "' has been unregistered from web-socket registry")
   }
 
-  // send notification that new service has been registered
-  if (m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>()) {
-    auto broker = m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+  if (auto subsystems = m_subsystems.lock()) {
+    // send notification that new service has been registered
+    if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {
+      auto broker = subsystems->RequireSubsystem<events::IEventBroker>();
 
-    ServiceUnregisteredNotification message;
-    message.SetServiceName(name);
-    broker->FireEvent(message.GetMessage());
+      ServiceUnregisteredNotification message;
+      message.SetServiceName(name);
+      broker->FireEvent(message.GetMessage());
+    } else /* if event broker is not available */ {
+      LOG_WARN("cannot send event notification about the un-registration of "
+               "service '"
+               << name
+               << "' from the remote service registry: the event broker "
+                  "subsystem is not available")
+    }
+  } else /* if subsystems in general are not available */ {
+    LOG_WARN("cannot send event notification about the un-registration of "
+             "service '"
+             << name
+             << "' from the remote service registry: required subsystems are "
+                "not available or have been shut down")
   }
 }
 
@@ -155,11 +172,11 @@ RemoteServiceRegistry::RemoteServiceRegistry(
 void RemoteServiceRegistry::SetupEventSubscribers() {
 
   ASSERT(!m_subsystems.expired(), "subsystems should still exist")
-  ASSERT(m_subsystems.lock()->ProvidesSubsystem<events::IEventBroker>(),
+  auto subsystems = m_subsystems.lock();
+  ASSERT(subsystems->ProvidesSubsystem<events::IEventBroker>(),
          "event broker subsystem should exist")
 
-  auto event_system =
-      m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+  auto event_system = subsystems->RequireSubsystem<events::IEventBroker>();
 
   m_new_peer_connection_listener =
       std::make_shared<events::FunctionalEventListener>(

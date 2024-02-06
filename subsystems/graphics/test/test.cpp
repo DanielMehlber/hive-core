@@ -10,6 +10,7 @@
 #endif
 
 using namespace common::test;
+using namespace jobsystem;
 
 SharedServiceRequest GenerateRenderingRequest(int width, int height) {
   auto request = std::make_shared<ServiceRequest>("render");

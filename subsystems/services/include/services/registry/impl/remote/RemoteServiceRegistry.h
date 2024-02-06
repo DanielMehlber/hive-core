@@ -15,7 +15,7 @@ namespace services::impl {
  */
 class RemoteServiceRegistry : public IServiceRegistry {
 protected:
-  mutable std::mutex m_registered_callers_mutex;
+  mutable jobsystem::mutex m_registered_callers_mutex;
   std::map<std::string, SharedServiceCaller> m_registered_callers;
 
   std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;

@@ -2,6 +2,7 @@
 #define BOOSTWEBSOCKETCONNECTION_H
 
 #include "common/exceptions/ExceptionsBase.h"
+#include "jobsystem/manager/JobManager.h"
 #include "networking/peers/ConnectionInfo.h"
 #include "networking/peers/Message.h"
 #include <boost/beast/core.hpp>
@@ -26,7 +27,7 @@ private:
    * TCP stream that allows interaction with the communication partner.
    */
   stream_type m_socket;
-  mutable std::mutex m_socket_mutex;
+  mutable jobsystem::mutex m_socket_mutex;
 
   /**
    * Buffer for received messages
@@ -77,7 +78,7 @@ private:
    */
   void OnMessageSent(std::promise<void> &&promise, SharedMessage message,
                      std::shared_ptr<std::string> sent_data,
-                     std::unique_lock<std::mutex> lock,
+                     std::unique_lock<jobsystem::mutex> lock,
                      boost::beast::error_code error_code,
                      [[maybe_unused]] std::size_t bytes_transferred);
 

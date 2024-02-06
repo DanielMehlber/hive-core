@@ -22,7 +22,7 @@ class SingleThreadedExecutionImpl
     : public jobsystem::execution::IJobExecution<SingleThreadedExecutionImpl> {
 private:
   std::queue<std::shared_ptr<Job>> m_execution_queue;
-  std::mutex m_execution_queue_mutex;
+  mutable std::mutex m_execution_queue_mutex;
 
   std::unique_ptr<std::thread> m_worker_thread;
   std::condition_variable m_execution_queue_condition;

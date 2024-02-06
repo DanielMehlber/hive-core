@@ -1,6 +1,6 @@
 #include "jobsystem/manager/JobManager.h"
-#include <sstream>
 #include "boost/core/demangle.hpp"
+#include <sstream>
 
 using namespace jobsystem;
 using namespace jobsystem::job;
@@ -101,7 +101,7 @@ void JobManager::KickJob(const SharedJob &job) {
 }
 
 void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
-                                        std::mutex &queue_mutex,
+                                        mutex &queue_mutex,
                                         const SharedJobCounter &counter) {
   std::unique_lock lock(queue_mutex);
   while (!queue.empty()) {
@@ -124,7 +124,7 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
 }
 
 void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
-                                     std::mutex &queue_mutex,
+                                     mutex &queue_mutex,
                                      const SharedJobCounter &counter) {
   ScheduleAllJobsInQueue(queue, queue_mutex, counter);
   WaitForCompletion(counter);
@@ -196,8 +196,7 @@ void JobManager::KickJobForNextCycle(const SharedJob &job) {
 }
 
 void tryRemoveJobWithIdFromQueue(const std::string &id,
-                                 std::queue<SharedJob> &queue,
-                                 std::mutex &mutex) {
+                                 std::queue<SharedJob> &queue, mutex &mutex) {
   std::queue<SharedJob> new_queue;
   std::unique_lock lock(mutex);
   while (!queue.empty()) {

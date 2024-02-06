@@ -2,10 +2,11 @@
 #define JOB_H
 
 #include "JobContext.h"
-#include "JobCounter.h"
 #include "JobExecutionPhase.h"
 #include "JobExitBehavior.h"
 #include "JobState.h"
+#include "jobsystem/synchronization/JobCounter.h"
+#include "jobsystem/synchronization/JobMutex.h"
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -38,7 +39,7 @@ protected:
 
   /** All counters that track the progress of this job. */
   std::queue<std::shared_ptr<JobCounter>> m_counters;
-  std::mutex m_counters_mutex;
+  mutable mutex m_counters_mutex;
 
   /**
    * Notifies all counters that this job has finished and removes them
