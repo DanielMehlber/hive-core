@@ -22,10 +22,10 @@ target_include_directories(core PUBLIC
 
 target_link_libraries(core PUBLIC
         ${Boost_LIBRARIES}
+        common
         logging
         jobsystem
         events
-        common
         networking
         scene
         graphics

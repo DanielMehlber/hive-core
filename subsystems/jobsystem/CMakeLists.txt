@@ -2,10 +2,16 @@ cmake_minimum_required(VERSION 3.10)
 
 project(jobsystem)
 
-find_package(Boost REQUIRED COMPONENTS system context fiber filesystem)
+find_package(Boost REQUIRED COMPONENTS
+        system
+        context
+        fiber
+        filesystem
+)
 
 # build sources
-add_library(jobsystem STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(jobsystem SHARED
         src/Job.cpp
         src/JobManager.cpp
         src/SingleThreadedExecutionImpl.cpp
@@ -18,9 +24,23 @@ target_include_directories(jobsystem PUBLIC
 )
 
 target_link_libraries(jobsystem
-        logging
+        ${Boost_LIBRARIES}
         common
-        ${Boost_Libraries}
+        logging
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(jobsystem PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS jobsystem
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION bin
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # build tests

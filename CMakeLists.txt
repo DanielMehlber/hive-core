@@ -9,7 +9,7 @@ option(ENABLE_PROFILING "Measure elapsed time of various processes" ON)
 # if profiling is wished, enable it
 IF (ENABLE_PROFILING)
     message("Profiling has been enabled")
-    add_definitions(-DENABLE_PROFILING)
+    add_compile_definitions(ENABLE_PROFILING)
 ENDIF ()
 
 # necessary for building shared libraries

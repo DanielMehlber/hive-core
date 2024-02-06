@@ -22,6 +22,7 @@ target_include_directories(tiled-composite-renderer-plugin PUBLIC
 target_link_libraries(tiled-composite-renderer-plugin
         PUBLIC
         ${Boost_LIBRARIES}
+        common
         plugins
 )
 

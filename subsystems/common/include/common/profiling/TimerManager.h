@@ -8,39 +8,19 @@
 
 namespace common::profiling {
 
+/**
+ * Collects measurements of all timers and analyzes them.
+ */
 class TimerManager {
 private:
   std::map<std::string, long> m_measurements;
+  static std::shared_ptr<TimerManager> m_global_instance;
 
 public:
-  static TimerManager &Get() {
-    static TimerManager manager;
-    return manager;
-  }
-
-  inline void Reset() { m_measurements.clear(); };
-
-  inline std::string Print() {
-#ifdef ENABLE_PROFILING
-    std::stringstream ss;
-    for (auto &[name, ns] : m_measurements) {
-      ss << "> Timer " << name << ": " << ns << "ns (" << (float)ns / 1000000
-         << "ms)"
-         << "\n";
-    }
-
-    return ss.str();
-#else
-    return "";
-#endif
-  };
-
-  inline void Commit(const std::string &name, long ns) {
-#ifdef ENABLE_PROFILING
-    auto value = m_measurements.contains(name) ? m_measurements.at(name) : ns;
-    m_measurements[name] = (value + ns) / 2;
-#endif
-  }
+  static std::shared_ptr<TimerManager> GetGlobal();
+  void Reset();
+  std::string Print();
+  void Commit(const std::string &name, long ns);
 };
 
 } // namespace common::profiling

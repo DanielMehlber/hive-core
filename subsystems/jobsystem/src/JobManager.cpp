@@ -1,5 +1,6 @@
 #include "jobsystem/manager/JobManager.h"
 #include "boost/core/demangle.hpp"
+#include "common/profiling/Timer.h"
 #include "common/profiling/TimerManager.h"
 #include <sstream>
 
@@ -22,7 +23,8 @@ JobManager::JobManager(const common::config::SharedConfiguration &config)
 #ifdef ENABLE_PROFILING
   auto profiler_job = std::make_shared<TimerJob>(
       [&](JobContext *) {
-        LOG_DEBUG("\n" << common::profiling::TimerManager::Get().Print())
+        auto timer_manager = common::profiling::TimerManager::GetGlobal();
+        LOG_DEBUG("\n" << timer_manager->Print())
         return JobContinuation::REQUEUE;
       },
       "print-profiler-stats", 3s);
@@ -151,6 +153,7 @@ void JobManager::ResetContinuationRequeueBlacklist() {
 }
 
 void JobManager::InvokeCycleAndWait() {
+  common::profiling::Timer cycle_timer("job-cycles");
   // clear black-list for upcoming cycle
   ResetContinuationRequeueBlacklist();
 

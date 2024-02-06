@@ -27,6 +27,6 @@ void Timer::Stop() {
       std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed_time)
           .count();
 
-  TimerManager::Get().Commit(m_name, elapsed_time_ns);
+  TimerManager::GetGlobal()->Commit(m_name, elapsed_time_ns);
   m_running = false;
 }

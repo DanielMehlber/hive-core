@@ -5,7 +5,8 @@ find_package(Boost REQUIRED COMPONENTS log)
 find_package(vsg REQUIRED)
 
 # build sources
-add_library(scene STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(scene SHARED
         src/SceneManager.cpp
 )
 
@@ -18,6 +19,20 @@ target_link_libraries(scene PUBLIC
         ${Boost_LIBRARIES}
         logging
         vsg::vsg
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(scene PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS scene
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION bin
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # create documentation using doxygen (if doxygen is installed and documentation is requested)

@@ -4,7 +4,8 @@ project(networking)
 find_package(Boost REQUIRED COMPONENTS json log)
 
 # build sources
-add_library(networking STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(networking SHARED
         src/UrlParser.cpp
         src/Message.cpp
         src/MessageConsumerJob.cpp
@@ -29,6 +30,20 @@ target_link_libraries(networking PUBLIC
         events
         common
         properties
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(networking PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS networking
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION bin
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # build tests

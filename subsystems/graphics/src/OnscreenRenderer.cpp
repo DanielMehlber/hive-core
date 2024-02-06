@@ -1,5 +1,6 @@
 #include <utility>
 
+#include "common/profiling/Timer.h"
 #include "graphics/renderer/impl/OnscreenRenderer.h"
 #include "logging/LogManager.h"
 
@@ -75,6 +76,12 @@ OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene, int width,
 }
 
 bool OnscreenRenderer::Render() {
+#ifdef ENABLE_PROFILING
+  auto [width, height] = GetCurrentSize();
+  common::profiling::Timer render_timer("onscreen-rendering-" +
+                                        std::to_string(width) + "x" +
+                                        std::to_string(height));
+#endif
   if (m_viewer->advanceToNextFrame()) {
     m_viewer->handleEvents();
     m_viewer->update();
