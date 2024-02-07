@@ -46,9 +46,7 @@ void OnscreenRenderer::SetupCommandGraph() {
   m_viewer->compile();
 }
 
-OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene, int width,
-                                   int height)
-    : m_scene(std::move(scene)) {
+void OnscreenRenderer::SetupWindow(int width, int height) {
   auto windowTraits = vsg::WindowTraits::create();
   windowTraits->width = width;
   windowTraits->height = height;
@@ -58,8 +56,9 @@ OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene, int width,
 #endif
 
   m_window = vsg::Window::create(windowTraits);
+
   if (!m_window) {
-    LOG_ERR("Cannot create window for Onscreen Renderer");
+    LOG_ERR("failed to create window for unknown reason")
     return;
   }
 
@@ -68,6 +67,72 @@ OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene, int width,
 
   // add close handler to respond to the close window button and pressing escape
   m_viewer->addEventHandler(vsg::CloseHandler::create(m_viewer));
+}
+
+OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene, int width,
+                                   int height)
+    : m_scene(std::move(scene)) {
+
+#ifdef WIN32
+  /*
+   * *** Windows workaround ahead ***
+   *
+   * Introduction: Operating systems send messages/events to running windows
+   * (mouse events, pressed keys, and various others). The window must handle
+   * (or respond) to them. If it does not for some time period, the window is
+   * marked as non-responsive. The Windows OS, however, additionally requires
+   * these events/messages to be processed by the same thread, that initially
+   * created the window. This dedicated thread responsible for managing the
+   * window during its entire lifetime is called the WinProc (Window Procedure).
+   *
+   * Problem: Because the job-system possibly schedules the rendering task
+   * (which includes processing of window events) onto different worker threads
+   * each time, events are usually not handled by the same WinProc thread that
+   * created the window. As consequence, events of the Windows API are not
+   * handled properly and the window is marked as non-responsive.
+   *
+   * Solution: Create a dedicated WinProc thread that creates the window AND
+   * handles all of its events.
+   *
+   * Personal Rant: Shouldn't it be irrelevant to the OS which thread polls and
+   * handles a window's events as long as they are handled at all? Somehow, this
+   * is not an issue on Linux. I'd love to hear the reason for this API design
+   * decision of Microsoft.
+   */
+  std::promise<void> window_promise;
+  std::future<void> window_future = window_promise.get_future();
+
+  // Set up the WinProc thread for window creation and event handling.
+  m_win_proc_thread = std::thread(
+      [this, promise = std::move(window_promise), width, height]() mutable {
+        // 1) create window and notify main thread that it can continue
+        this->SetupWindow(width, height);
+        promise.set_value();
+
+        // 2) do not process events if the window creation failed
+        if (!m_window) {
+          return;
+        }
+
+        // 3) poll and handle events in a synchronized manner
+        while (m_viewer) {
+          std::unique_lock lock(m_viewer_mutex);
+          m_viewer->pollEvents(true);
+          m_viewer->handleEvents();
+        }
+      });
+
+  // only continue as soon as window has been setup
+  window_future.wait();
+#else
+  // linux does not require a dedicated WinProc thread.
+  SetupWindow(width, height);
+#endif
+
+  if (!m_window) {
+    LOG_ERR("Cannot create window for Onscreen Renderer");
+    return;
+  }
 
   SetupCamera();
   SetupCommandGraph();
@@ -82,6 +147,13 @@ bool OnscreenRenderer::Render() {
                                         std::to_string(width) + "x" +
                                         std::to_string(height));
 #endif
+
+#ifdef WIN32
+  // required on windows to avoid data races between the WinProc thread and this
+  // thread/fiber both accessing the viewer.
+  std::unique_lock lock(m_viewer_mutex);
+#endif
+
   if (m_viewer->advanceToNextFrame()) {
     m_viewer->handleEvents();
     m_viewer->update();

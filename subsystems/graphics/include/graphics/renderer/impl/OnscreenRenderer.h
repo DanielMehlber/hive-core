@@ -1,9 +1,14 @@
 #ifndef ONSCREENRENDERER_H
 #define ONSCREENRENDERER_H
 
+#include "common/exceptions/ExceptionsBase.h"
 #include "graphics/renderer/IRenderer.h"
+#include "jobsystem/synchronization/JobMutex.h"
+#include <future>
 
 namespace graphics {
+
+DECLARE_EXCEPTION(WindowCreationFailedException);
 
 /**
  * Renderer creating a window and displaying its image results on it.
@@ -15,8 +20,26 @@ protected:
   vsg::ref_ptr<vsg::Viewer> m_viewer;
   vsg::ref_ptr<vsg::Camera> m_camera;
 
+#ifdef WIN32
+  /**
+   * In contrast to linux, Windows OS requires that the same thread that creates
+   * the window (called WinProc) is also the one handling messages from the
+   * Windows API. Otherwise, the spawned window is marked as non-responsive.
+   * This is the WinProc thread (only required on Windows OS).
+   */
+  std::thread m_win_proc_thread;
+
+  /**
+   * The viewer is now accessed simultaneously by the WinProc and rendering job.
+   * This mutex synchronizes their access and avoid double message/event
+   * handling.
+   */
+  jobsystem::mutex m_viewer_mutex;
+#endif
+
   void SetupCamera();
   void SetupCommandGraph();
+  void SetupWindow(int width, int height);
 
 public:
   explicit OnscreenRenderer(
