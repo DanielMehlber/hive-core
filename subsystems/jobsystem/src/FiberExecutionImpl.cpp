@@ -165,7 +165,8 @@ void FiberExecutionImpl::ExecuteWorker() {
     auto fiber = boost::fibers::fiber(job);
     fiber.detach();
 
-    // avoid keeping some lambdas hostage (caused SEGFAULTS in some scenarios)
+    // avoid keeping some anonymous functions (and their captured variables)
+    // hostage (caused SEGFAULTS in some scenarios) by releasing it.
     job = nullptr;
   }
 }
