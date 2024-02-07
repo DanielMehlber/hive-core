@@ -4,7 +4,7 @@ project(simulation-framework)
 enable_testing()
 
 option(GENERATE_DOCS "Run Doxygen to build the documentation" OFF)
-option(ENABLE_PROFILING "Measure elapsed time of various processes" ON)
+option(ENABLE_PROFILING "Measure elapsed time of various processes" OFF)
 
 # if profiling is wished, enable it
 IF (ENABLE_PROFILING)

@@ -64,6 +64,7 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
     rendering_subsystem->Resize(extend.width, extend.height);
   }
 
+#ifdef ENABLE_PROFILING
   // setup timers (for profiling purposes)
   common::profiling::Timer rendering_timer("rendering-service-rendering-" +
                                            std::to_string(current_width) + "x" +
@@ -71,6 +72,7 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   common::profiling::Timer complete_timer("rendering-service-complete" +
                                           std::to_string(current_width) + "x" +
                                           std::to_string(current_height));
+#endif
 
   try {
 
@@ -115,8 +117,10 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
 
   rendering_subsystem->Render();
 
+#ifdef ENABLE_PROFILING
   // do not count encoding of bytes etc.
   rendering_timer.Stop();
+#endif
 
   auto opt_result = rendering_subsystem->GetResult();
 
