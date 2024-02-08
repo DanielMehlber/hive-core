@@ -36,7 +36,13 @@ enum JobState {
   /**
    * The job has been executed successfully.
    */
-  EXECUTION_FINISHED
+  EXECUTION_FINISHED,
+
+  /**
+   * The job was not able to complete successfully.
+   * @note This can happen if an exception is thrown in the jobs workload.
+   */
+  FAILED
 };
 } // namespace jobsystem::job
 

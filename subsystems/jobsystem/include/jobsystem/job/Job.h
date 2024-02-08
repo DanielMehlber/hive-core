@@ -76,16 +76,16 @@ public:
    */
   void AddCounter(const std::shared_ptr<JobCounter> &counter);
 
-  JobState GetState() noexcept;
-  void SetState(JobState state) noexcept;
-  JobExecutionPhase GetPhase() noexcept;
-  const std::string &GetId() noexcept;
+  JobState GetState();
+  void SetState(JobState state);
+  JobExecutionPhase GetPhase();
+  const std::string &GetId();
 };
 
-inline JobState Job::GetState() noexcept { return m_current_state; }
-inline void Job::SetState(JobState state) noexcept { m_current_state = state; }
-inline JobExecutionPhase Job::GetPhase() noexcept { return m_phase; }
-inline const std::string &Job::GetId() noexcept { return m_id; }
+inline JobState Job::GetState() { return m_current_state; }
+inline void Job::SetState(JobState state) { m_current_state = state; }
+inline JobExecutionPhase Job::GetPhase() { return m_phase; }
+inline const std::string &Job::GetId() { return m_id; }
 
 typedef std::shared_ptr<jobsystem::job::Job> SharedJob;
 

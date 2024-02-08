@@ -10,8 +10,17 @@ JobContinuation Job::Execute(JobContext *context) {
   common::profiling::Timer job_execution_timer("job-execution-" + m_id);
 #endif
   m_current_state = IN_EXECUTION;
-  JobContinuation continuation = m_workload(context);
-  m_current_state = EXECUTION_FINISHED;
+  JobContinuation continuation;
+  try {
+    continuation = m_workload(context);
+    m_current_state = EXECUTION_FINISHED;
+  } catch (const std::exception &exception) {
+    LOG_ERR("job " << m_id
+                   << " threw and exception and failed: " << exception.what())
+    m_current_state = FAILED;
+    continuation = DISPOSE;
+  }
+
   FinishJob();
 
   return continuation;

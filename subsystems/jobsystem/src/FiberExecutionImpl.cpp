@@ -42,7 +42,6 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
 
     JobContext context(manager->GetTotalCyclesCount(), manager);
     JobContinuation continuation = job->Execute(&context);
-    job->SetState(JobState::EXECUTION_FINISHED);
 
     if (continuation == JobContinuation::REQUEUE) {
       manager->KickJobForNextCycle(job);
@@ -77,9 +76,13 @@ void FiberExecutionImpl::WaitForCompletion(
       !boost::fibers::context::active()->is_context(boost::fibers::type::none);
   if (is_called_from_fiber) {
     // caller is a fiber, so yield
+    auto id_before = boost::this_fiber::get_id();
     while (!waitable->IsFinished()) {
       boost::this_fiber::yield();
     }
+
+    auto id_after = boost::this_fiber::get_id();
+    ASSERT(id_before == id_after, "fiber must not change id during yielding")
   } else {
     // caller is a thread, so block
     while (!waitable->IsFinished()) {

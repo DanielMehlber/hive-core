@@ -143,7 +143,7 @@ void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
   WaitForCompletion(counter);
 }
 
-size_t jobsystem::JobManager::GetTotalCyclesCount() const noexcept {
+size_t jobsystem::JobManager::GetTotalCyclesCount() const {
   return m_total_cycle_count;
 }
 

@@ -1,4 +1,5 @@
 #include "common/profiling/TimerManager.h"
+#include <algorithm>
 #include <numeric>
 
 using namespace common::profiling;
