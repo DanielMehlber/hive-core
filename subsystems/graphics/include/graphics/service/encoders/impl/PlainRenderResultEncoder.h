@@ -14,7 +14,7 @@ public:
 
 inline std::string
 PlainRenderResultEncoder::Encode(const std::vector<unsigned char> &buffer) {
-#ifndef NDEBUG
+#ifdef ENABLE_PROFILING
   common::profiling::Timer timer("plain-encode-" +
                                  std::to_string(buffer.size()));
 #endif
@@ -26,7 +26,7 @@ PlainRenderResultEncoder::Encode(const std::vector<unsigned char> &buffer) {
 
 inline std::vector<unsigned char>
 PlainRenderResultEncoder::Decode(const std::string &str) {
-#ifndef NDEBUG
+#ifdef ENABLE_PROFILING
   common::profiling::Timer timer("plain-decode-" +
                                  std::to_string(str.length()));
 #endif

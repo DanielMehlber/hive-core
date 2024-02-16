@@ -153,7 +153,10 @@ void JobManager::ResetContinuationRequeueBlacklist() {
 }
 
 void JobManager::InvokeCycleAndWait() {
+#ifdef ENABLE_PROFILING
   common::profiling::Timer cycle_timer("job-cycles");
+#endif
+
   // clear black-list for upcoming cycle
   ResetContinuationRequeueBlacklist();
 
