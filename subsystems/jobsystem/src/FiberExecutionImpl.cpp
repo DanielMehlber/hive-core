@@ -1,7 +1,6 @@
-#include <utility>
-
-#include "common/assert/Assert.h"
 #include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
+#include "common/assert/Assert.h"
+#include "common/profiling/Timer.h"
 #include "jobsystem/manager/JobManager.h"
 
 using namespace jobsystem::execution::impl;
@@ -11,8 +10,7 @@ using namespace std::chrono_literals;
 FiberExecutionImpl::FiberExecutionImpl(
     const common::config::SharedConfiguration &config)
     : m_config(config) {
-  m_worker_thread_count = config->GetAsInt(
-      "jobs.concurrency", (int)std::thread::hardware_concurrency());
+  m_worker_thread_count = config->GetAsInt("jobs.concurrency", 4);
   Init();
 }
 
@@ -27,6 +25,9 @@ void FiberExecutionImpl::Init() {
 void FiberExecutionImpl::ShutDown() { Stop(); }
 
 void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
+#ifdef ENABLE_PROFILING
+  common::profiling::Timer schedule_timer("job-scheduling");
+#endif
   auto &weak_manager = m_managing_instance;
   auto runner = [weak_manager, job]() {
     if (weak_manager.expired()) {
@@ -40,14 +41,17 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
 
     JobContext context(manager->GetTotalCyclesCount(), manager);
     JobContinuation continuation = job->Execute(&context);
-    job->SetState(JobState::EXECUTION_FINISHED);
 
     if (continuation == JobContinuation::REQUEUE) {
       manager->KickJobForNextCycle(job);
     }
+
+    job->FinishJob();
   };
 
   auto status = m_job_channel->push(std::move(runner));
+
+  job->SetState(AWAITING_EXECUTION);
 
   // check other status codes than 'success'
   if (status != boost::fibers::channel_op_status::success) {
@@ -67,17 +71,25 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
 void FiberExecutionImpl::WaitForCompletion(
     std::shared_ptr<IJobWaitable> waitable) {
 
+#ifdef ENABLE_PROFILING
+  common::profiling::Timer waiting_timer("job-waiting-for-completion");
+#endif
+
   bool is_called_from_fiber =
       !boost::fibers::context::active()->is_context(boost::fibers::type::none);
   if (is_called_from_fiber) {
     // caller is a fiber, so yield
+    auto id_before = boost::this_fiber::get_id();
     while (!waitable->IsFinished()) {
       boost::this_fiber::yield();
     }
+
+    auto id_after = boost::this_fiber::get_id();
+    ASSERT(id_before == id_after, "fiber must not change id during yielding")
   } else {
     // caller is a thread, so block
     while (!waitable->IsFinished()) {
-      std::this_thread::sleep_for(1ms);
+      std::this_thread::sleep_for(0.1ms);
     }
   }
 }
@@ -159,7 +171,8 @@ void FiberExecutionImpl::ExecuteWorker() {
     auto fiber = boost::fibers::fiber(job);
     fiber.detach();
 
-    // avoid keeping some lambdas hostage (caused SEGFAULTS in some scenarios)
+    // avoid keeping some anonymous functions (and their captured variables)
+    // hostage (caused SEGFAULTS in some scenarios) by releasing it.
     job = nullptr;
   }
 }

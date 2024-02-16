@@ -4,7 +4,8 @@ project(properties)
 find_package(Boost REQUIRED COMPONENTS)
 
 # build sources
-add_library(properties STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(properties SHARED
         src/PropertyChangeListener.cpp
         src/PropertyProvider.cpp
 )
@@ -20,6 +21,20 @@ target_link_libraries(properties PUBLIC
         jobsystem
         events
         common
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(properties PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS properties
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # build tests

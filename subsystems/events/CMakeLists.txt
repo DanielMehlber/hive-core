@@ -4,7 +4,8 @@ project(events)
 find_package(Boost REQUIRED COMPONENTS fiber context)
 
 # build sources
-add_library(events STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(events SHARED
         src/JobBasedEventBroker.cpp
 )
 
@@ -17,6 +18,20 @@ target_link_libraries(events PUBLIC
         ${Boost_LIBRARIES}
         logging
         jobsystem
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(events PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS events
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # build tests

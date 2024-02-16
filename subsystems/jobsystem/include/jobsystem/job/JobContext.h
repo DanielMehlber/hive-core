@@ -27,20 +27,20 @@ public:
    * GetAsInt number of current job cycle
    * @return current job cycle number
    */
-  size_t GetCycleNumber() const noexcept;
+  size_t GetCycleNumber() const;
 
   /**
    * GetAsInt the managing instance of the current job execution
    * @return managing instance of the current job execution
    */
-  std::shared_ptr<JobManager> GetJobManager() noexcept;
+  std::shared_ptr<JobManager> GetJobManager();
 };
 
-inline size_t jobsystem::JobContext::GetCycleNumber() const noexcept {
+inline size_t jobsystem::JobContext::GetCycleNumber() const {
   return m_cycle_number;
 }
 
-inline std::shared_ptr<JobManager> JobContext::GetJobManager() noexcept {
+inline std::shared_ptr<JobManager> JobContext::GetJobManager() {
   return m_job_manager.lock();
 }
 

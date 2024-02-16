@@ -1,8 +1,8 @@
 #ifndef NETWORKINGFACTORY_H
 #define NETWORKINGFACTORY_H
 
-#include "peers/IMessageEndpoint.h"
-#include "peers/impl/websockets/boost/BoostWebSocketEndpoint.h"
+#include "messaging/IMessageEndpoint.h"
+#include "messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"
 #include <memory>
 
 using namespace networking::websockets;

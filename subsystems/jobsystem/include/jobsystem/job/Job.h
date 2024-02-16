@@ -41,18 +41,18 @@ protected:
   std::queue<std::shared_ptr<JobCounter>> m_counters;
   mutable mutex m_counters_mutex;
 
-  /**
-   * Notifies all counters that this job has finished and removes them
-   * from the counters list.
-   */
-  void FinishJob();
-
 public:
   Job(std::function<JobContinuation(JobContext *)>, std::string id,
       JobExecutionPhase phase = MAIN);
   explicit Job(std::function<JobContinuation(JobContext *)>,
                JobExecutionPhase phase = MAIN);
   virtual ~Job() { FinishJob(); };
+
+  /**
+   * Notifies all counters that this job has finished and removes them
+   * from the counters list.
+   */
+  void FinishJob();
 
   /**
    * Executes the workload in the calling thread and adjusts state variables of
@@ -76,16 +76,16 @@ public:
    */
   void AddCounter(const std::shared_ptr<JobCounter> &counter);
 
-  JobState GetState() noexcept;
-  void SetState(JobState state) noexcept;
-  JobExecutionPhase GetPhase() noexcept;
-  const std::string &GetId() noexcept;
+  JobState GetState();
+  void SetState(JobState state);
+  JobExecutionPhase GetPhase();
+  const std::string &GetId();
 };
 
-inline JobState Job::GetState() noexcept { return m_current_state; }
-inline void Job::SetState(JobState state) noexcept { m_current_state = state; }
-inline JobExecutionPhase Job::GetPhase() noexcept { return m_phase; }
-inline const std::string &Job::GetId() noexcept { return m_id; }
+inline JobState Job::GetState() { return m_current_state; }
+inline void Job::SetState(JobState state) { m_current_state = state; }
+inline JobExecutionPhase Job::GetPhase() { return m_phase; }
+inline const std::string &Job::GetId() { return m_id; }
 
 typedef std::shared_ptr<jobsystem::job::Job> SharedJob;
 

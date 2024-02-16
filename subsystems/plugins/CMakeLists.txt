@@ -4,7 +4,8 @@ project(plugins)
 find_package(Boost REQUIRED COMPONENTS log)
 
 # build sources
-add_library(plugins STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(plugins SHARED
         src/BoostPluginManager.cpp
 )
 
@@ -24,6 +25,20 @@ target_link_libraries(plugins PUBLIC
         resourcemgmt
         scene
         graphics
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(plugins PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS plugins
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # build tests

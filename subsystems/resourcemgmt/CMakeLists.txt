@@ -4,7 +4,8 @@ project(resourcemgmt)
 find_package(Boost REQUIRED COMPONENTS fiber)
 
 # build sources
-add_library(resourcemgmt STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(resourcemgmt SHARED
         src/ThreadPoolResourceManager.cpp
         src/FileLoader.cpp
 )
@@ -19,6 +20,20 @@ target_link_libraries(resourcemgmt PUBLIC
         logging
         jobsystem
         common
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(resourcemgmt PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS resourcemgmt
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # build test

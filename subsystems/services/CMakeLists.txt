@@ -9,7 +9,8 @@ find_package(Boost REQUIRED COMPONENTS log)
 add_compile_definitions(NOMINMAX)
 
 # build sources
-add_library(services STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(services SHARED
         src/ServiceRequest.cpp
         src/ServiceResponse.cpp
         src/LocalServiceExecutor.cpp
@@ -35,6 +36,20 @@ target_link_libraries(services PUBLIC
         events
         common
         networking
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(services PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS services
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # build tests

@@ -10,8 +10,8 @@ add_library(core SHARED
 )
 
 install(TARGETS core
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION bin
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
 )
 
@@ -22,10 +22,10 @@ target_include_directories(core PUBLIC
 
 target_link_libraries(core PUBLIC
         ${Boost_LIBRARIES}
+        common
         logging
         jobsystem
         events
-        common
         networking
         scene
         graphics

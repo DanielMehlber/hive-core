@@ -1,5 +1,7 @@
 #include "jobsystem/manager/JobManager.h"
 #include "boost/core/demangle.hpp"
+#include "common/profiling/Timer.h"
+#include "common/profiling/TimerManager.h"
 #include <sstream>
 
 using namespace jobsystem;
@@ -9,13 +11,24 @@ using namespace std::chrono_literals;
 JobManager::JobManager(const common::config::SharedConfiguration &config)
     : m_config(config), m_execution(config) {
 #ifndef NDEBUG
-  auto job = std::make_shared<TimerJob>(
+  auto stats_job = std::make_shared<TimerJob>(
       [&](JobContext *) {
         PrintStatusLog();
         return JobContinuation::REQUEUE;
       },
       "print-job-system-stats", 1s);
-  KickJob(job);
+  KickJob(stats_job);
+#endif
+
+#ifdef ENABLE_PROFILING
+  auto profiler_job = std::make_shared<TimerJob>(
+      [&](JobContext *) {
+        auto timer_manager = common::profiling::TimerManager::GetGlobal();
+        LOG_DEBUG("\n" << timer_manager->Print())
+        return JobContinuation::REQUEUE;
+      },
+      "print-profiler-stats", 3s);
+  KickJob(profiler_job);
 #endif
 
   std::stringstream ss;
@@ -46,7 +59,7 @@ void JobManager::KickJob(const SharedJob &job) {
    * execution to requeue the job once it's done because the job-manager
    * intercepts and disposes the re-entering job.
    *
-   * In some (rare) scenarios it can occur, that a job is detached and kicked in
+   * In some (rare) scenarios it can occur that a job is detached and kicked in
    * the same execution cycle (e.g. when a job replaces another one). This would
    * not be possible because the manager prohibits scheduling the kicked job
    * because its old counterpart is still on the blacklist. Therefore, a newly
@@ -130,7 +143,7 @@ void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
   WaitForCompletion(counter);
 }
 
-size_t jobsystem::JobManager::GetTotalCyclesCount() const noexcept {
+size_t jobsystem::JobManager::GetTotalCyclesCount() const {
   return m_total_cycle_count;
 }
 
@@ -140,17 +153,21 @@ void JobManager::ResetContinuationRequeueBlacklist() {
 }
 
 void JobManager::InvokeCycleAndWait() {
+#ifdef ENABLE_PROFILING
+  common::profiling::Timer cycle_timer("job-cycles");
+#endif
+
   // clear black-list for upcoming cycle
   ResetContinuationRequeueBlacklist();
 
   // put waiting jobs into queues for the upcoming cycle
-  std::unique_lock lock(m_next_cycle_queue_mutex);
+  std::unique_lock next_cycle_queue_lock(m_next_cycle_queue_mutex);
   while (!m_next_cycle_queue.empty()) {
     auto job = m_next_cycle_queue.front();
     m_next_cycle_queue.pop();
     KickJob(job);
   }
-  lock.unlock();
+  next_cycle_queue_lock.unlock();
 
   // start the cycle by starting the execution
   m_total_cycle_count++;
@@ -180,9 +197,7 @@ void JobManager::InvokeCycleAndWait() {
 
 void JobManager::KickJobForNextCycle(const SharedJob &job) {
   /*
-   * When a job is detached, but is currently in execution (so it can't be
-   * removed easily from any queues), its id is black-listed for the upcoming
-   * cycle. Enforce that rule.
+   * When a job is detached, intercept it from re-entering the job queue.
    */
   std::unique_lock black_list_lock(m_continuation_requeue_blacklist_mutex);
   if (m_continuation_requeue_blacklist.contains(job->GetId())) {
@@ -192,7 +207,7 @@ void JobManager::KickJobForNextCycle(const SharedJob &job) {
 
   std::unique_lock lock(m_next_cycle_queue_mutex);
   m_next_cycle_queue.push(job);
-  lock.unlock();
+  job->SetState(RESERVED_FOR_NEXT_CYCLE);
 }
 
 void tryRemoveJobWithIdFromQueue(const std::string &id,
@@ -205,6 +220,9 @@ void tryRemoveJobWithIdFromQueue(const std::string &id,
     bool should_remove_job = job->GetId() == id;
     if (!should_remove_job) {
       new_queue.push(job);
+    } else {
+      LOG_DEBUG("job " << job->GetId() << " has been detached")
+      job->SetState(DETACHED);
     }
   }
 
@@ -212,6 +230,14 @@ void tryRemoveJobWithIdFromQueue(const std::string &id,
 }
 
 void JobManager::DetachJob(const std::string &job_id) {
+  /*
+   * In order to prohibit jobs from re-entering queues after their execution
+   * (see JobContinuation), we remember their id and black-list them.
+   */
+  std::unique_lock lock(m_continuation_requeue_blacklist_mutex);
+  m_continuation_requeue_blacklist.insert(job_id);
+  lock.unlock();
+
   /*
    * try to remove the job from all queues (only works if it is not currently in
    * execution.
@@ -221,14 +247,6 @@ void JobManager::DetachJob(const std::string &job_id) {
   tryRemoveJobWithIdFromQueue(job_id, m_init_queue, m_init_queue_mutex);
   tryRemoveJobWithIdFromQueue(job_id, m_main_queue, m_main_queue_mutex);
   tryRemoveJobWithIdFromQueue(job_id, m_clean_up_queue, m_clean_up_queue_mutex);
-
-  /*
-   * In order to prohibit jobs from re-entering queues after their execution
-   * (see JobContinuation), we remember their id and black-list them.
-   */
-  std::unique_lock lock(m_continuation_requeue_blacklist_mutex);
-  m_continuation_requeue_blacklist.insert(job_id);
-  lock.unlock();
 }
 
 void JobManager::StartExecution() { m_execution.Start(weak_from_this()); }

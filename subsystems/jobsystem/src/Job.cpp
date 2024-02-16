@@ -1,14 +1,25 @@
 #include "jobsystem/job/Job.h"
+#include "common/profiling/Timer.h"
 #include "common/uuid/UuidGenerator.h"
 #include "logging/LogManager.h"
 
 using namespace jobsystem::job;
 
 JobContinuation Job::Execute(JobContext *context) {
+#ifdef ENABLE_PROFILING
+  common::profiling::Timer job_execution_timer("job-execution-" + m_id);
+#endif
   m_current_state = IN_EXECUTION;
-  JobContinuation continuation = m_workload(context);
-  m_current_state = EXECUTION_FINISHED;
-  FinishJob();
+  JobContinuation continuation;
+  try {
+    continuation = m_workload(context);
+    m_current_state = EXECUTION_FINISHED;
+  } catch (const std::exception &exception) {
+    LOG_ERR("job " << m_id
+                   << " threw and exception and failed: " << exception.what())
+    m_current_state = FAILED;
+    continuation = DISPOSE;
+  }
 
   return continuation;
 }

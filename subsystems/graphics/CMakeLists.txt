@@ -24,7 +24,8 @@ else ()
     message(WARNING "Graphics module does not support Gzip encoder because ZLIB is missing")
 endif ()
 
-add_library(graphics STATIC
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(graphics SHARED
         ${GRAPHICS_SOURCES}
 )
 
@@ -36,6 +37,20 @@ target_include_directories(graphics PUBLIC
 target_link_libraries(graphics PUBLIC
         ${Boost_LIBRARIES}
         ${GRAPHICS_DEPENDENCIES}
+)
+
+# install
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(graphics PUBLIC FILE_SET HEADERS
+        BASE_DIRS include
+        FILES ${HEADER_FILES})
+
+install(TARGETS graphics
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
 )
 
 # build tests

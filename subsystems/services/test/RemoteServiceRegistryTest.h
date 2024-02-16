@@ -85,6 +85,7 @@ TEST(ServiceTests, run_single_remote_service) {
 
 TEST(ServiceTests, remote_service_load_balancing) {
   auto config = std::make_shared<common::config::Configuration>();
+  config->Set("jobs.concurrency", (int)std::thread::hardware_concurrency());
   auto job_manager = std::make_shared<JobManager>(config);
   job_manager->StartExecution();
 
