@@ -38,8 +38,14 @@ BoostWebSocketEndpoint::BoostWebSocketEndpoint(
     m_running = true;
   }
 
+  // hand threads to boost.asio for handling websocket operations.
+  std::weak_ptr<asio::io_context> weak_execution_context = m_execution_context;
   for (size_t i = 0; i < thread_count; i++) {
-    std::thread execution([this]() { m_execution_context->run(); });
+    std::thread execution([weak_execution_context]() {
+      if (auto execution_context = weak_execution_context.lock()) {
+        execution_context->run();
+      }
+    });
     m_execution_threads.push_back(std::move(execution));
   }
 

@@ -22,6 +22,12 @@ enum JobState {
   QUEUED,
 
   /**
+   * If a job has been queued, but is not ready for execution yet, it will be
+   * queued for an upcoming cycle and excluded from the current one.
+   */
+  RESERVED_FOR_NEXT_CYCLE,
+
+  /**
    * The job instance has been passed to the job execution and will be
    * processed shortly.
    */

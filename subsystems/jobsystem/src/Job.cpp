@@ -21,8 +21,6 @@ JobContinuation Job::Execute(JobContext *context) {
     continuation = DISPOSE;
   }
 
-  FinishJob();
-
   return continuation;
 }
 

@@ -28,7 +28,9 @@ class BoostWebSocketEndpoint
       public std::enable_shared_from_this<BoostWebSocketEndpoint> {
 private:
   /**
-   * Indicates if the web socket peer is currently running
+   * Indicates if the web socket endpoint is currently running
+   * @note The endpoint is not automatically initialized, except the
+   * configuration says so.
    */
   bool m_running{false};
   mutable jobsystem::mutex m_running_mutex;

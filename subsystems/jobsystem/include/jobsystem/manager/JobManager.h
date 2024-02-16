@@ -189,6 +189,10 @@ public:
   template <typename FutureType>
   void WaitForCompletion(const std::future<FutureType> &future);
 
+  /**
+   * Return total count of cycles that have been completed
+   * @return total count of cycles
+   */
   size_t GetTotalCyclesCount() const;
 };
 

@@ -41,18 +41,18 @@ protected:
   std::queue<std::shared_ptr<JobCounter>> m_counters;
   mutable mutex m_counters_mutex;
 
-  /**
-   * Notifies all counters that this job has finished and removes them
-   * from the counters list.
-   */
-  void FinishJob();
-
 public:
   Job(std::function<JobContinuation(JobContext *)>, std::string id,
       JobExecutionPhase phase = MAIN);
   explicit Job(std::function<JobContinuation(JobContext *)>,
                JobExecutionPhase phase = MAIN);
   virtual ~Job() { FinishJob(); };
+
+  /**
+   * Notifies all counters that this job has finished and removes them
+   * from the counters list.
+   */
+  void FinishJob();
 
   /**
    * Executes the workload in the calling thread and adjusts state variables of

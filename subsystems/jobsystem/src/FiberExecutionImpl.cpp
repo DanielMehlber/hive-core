@@ -10,8 +10,7 @@ using namespace std::chrono_literals;
 FiberExecutionImpl::FiberExecutionImpl(
     const common::config::SharedConfiguration &config)
     : m_config(config) {
-  m_worker_thread_count = config->GetAsInt(
-      "jobs.concurrency", (int)std::thread::hardware_concurrency());
+  m_worker_thread_count = config->GetAsInt("jobs.concurrency", 4);
   Init();
 }
 
@@ -46,9 +45,13 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
     if (continuation == JobContinuation::REQUEUE) {
       manager->KickJobForNextCycle(job);
     }
+
+    job->FinishJob();
   };
 
   auto status = m_job_channel->push(std::move(runner));
+
+  job->SetState(AWAITING_EXECUTION);
 
   // check other status codes than 'success'
   if (status != boost::fibers::channel_op_status::success) {

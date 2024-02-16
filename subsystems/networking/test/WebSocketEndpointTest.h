@@ -19,8 +19,8 @@ SetupWebSocketPeer(const common::subsystems::SharedSubsystemManager &subsystems,
                    size_t port) {
   auto config = std::make_shared<common::config::Configuration>();
   config->Set("net.port", port);
-  auto message_broker = EventFactory::CreateBroker(subsystems);
-  subsystems->AddOrReplaceSubsystem(message_broker);
+  auto event_broker = EventFactory::CreateBroker(subsystems);
+  subsystems->AddOrReplaceSubsystem<IEventBroker>(event_broker);
 
   SharedMessageEndpoint server =
       NetworkingFactory::CreateNetworkingPeer(subsystems, config);
@@ -167,7 +167,11 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
 
   std::vector<SharedMessageEndpoint> peers;
   for (size_t i = 9005; i < 9010; i++) {
-    SharedMessageEndpoint peer = SetupWebSocketPeer(subsystems, i);
+    // first copy subsystems so that this peer can register its own event broker
+    std::shared_ptr<common::subsystems::SubsystemManager> peer_subsystems(
+        subsystems);
+
+    SharedMessageEndpoint peer = SetupWebSocketPeer(peer_subsystems, i);
 
     auto result = peer->EstablishConnectionTo("ws://127.0.0.1:9003");
     result.wait();
@@ -197,26 +201,34 @@ TEST(WebSockets, websockets_message_broadcast) {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(job_manager);
 
-  SharedMessageEndpoint peer1 = SetupWebSocketPeer(subsystems, 9003);
+  SharedMessageEndpoint broadcasting_peer =
+      SetupWebSocketPeer(subsystems, 9003);
 
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
 
   std::vector<SharedMessageEndpoint> peers;
   for (size_t i = 9005; i < 9010; i++) {
-    SharedMessageEndpoint peer = SetupWebSocketPeer(subsystems, i);
+    SharedMessageEndpoint recipient_peer = SetupWebSocketPeer(subsystems, i);
 
-    auto result = peer->EstablishConnectionTo("ws://127.0.0.1:9003");
+    auto result = recipient_peer->EstablishConnectionTo("127.0.0.1:9003");
     result.wait();
     ASSERT_NO_THROW(result.get());
 
-    peer->AddMessageConsumer(test_consumer_1);
-    peers.push_back(peer);
+    recipient_peer->AddMessageConsumer(test_consumer_1);
+    peers.push_back(recipient_peer);
   }
+
+  // wait until central peer has recognized connections
+  TryAssertUntilTimeout(
+      [&broadcasting_peer]() {
+        return broadcasting_peer->GetActiveConnectionCount() == 5;
+      },
+      10s);
 
   SharedMessage message = std::make_shared<Message>("test-type");
 
-  auto future = peer1->Broadcast(message);
+  auto future = broadcasting_peer->Broadcast(message);
   job_manager->InvokeCycleAndWait();
 
   future.wait();
