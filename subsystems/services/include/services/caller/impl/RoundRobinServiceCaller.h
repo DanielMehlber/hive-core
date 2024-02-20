@@ -31,7 +31,7 @@ public:
 
   bool ContainsLocallyCallable() const noexcept override;
 
-  void AddExecutor(SharedServiceExecutor stub) override;
+  void AddExecutor(SharedServiceExecutor executor) override;
 
   size_t GetCallableCount() const noexcept override;
 };

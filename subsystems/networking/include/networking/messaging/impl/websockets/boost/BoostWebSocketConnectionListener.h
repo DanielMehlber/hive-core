@@ -81,7 +81,7 @@ private:
 public:
   BoostWebSocketConnectionListener(
       std::shared_ptr<boost::asio::io_context> execution_context,
-      const common::config::SharedConfiguration &config,
+      common::config::SharedConfiguration config,
       std::shared_ptr<boost::asio::ip::tcp::endpoint> local_endpoint,
       std::function<void(std::string, stream_type &&)> connection_consumer);
 

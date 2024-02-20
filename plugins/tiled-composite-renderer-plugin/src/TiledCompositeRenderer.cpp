@@ -122,16 +122,16 @@ bool TiledCompositeRenderer::Render() {
   auto service_registry =
       m_subsystems.lock()->RequireSubsystem<services::IServiceRegistry>();
 
-  auto fut_caller = service_registry->Find("render");
-  job_system->WaitForCompletion(fut_caller);
+  auto future_caller = service_registry->Find("render");
+  job_system->WaitForCompletion(future_caller);
 
-  auto opt_caller = fut_caller.get();
-  if (!opt_caller.has_value()) {
-    LOG_ERR("No render service available")
+  auto maybe_caller = future_caller.get();
+  if (!maybe_caller.has_value()) {
+    LOG_ERR("no render service available")
     return true;
   }
 
-  auto service_caller = opt_caller->get();
+  auto service_caller = maybe_caller->get();
 
   auto counter = std::make_shared<jobsystem::job::JobCounter>();
   for (int i = 0; i < m_tile_infos.size(); i++) {
@@ -163,11 +163,11 @@ bool TiledCompositeRenderer::Render() {
         [_this = weak_from_this(), rendering_service_request,
          subsystems = m_subsystems, service_caller,
          i](jobsystem::JobContext *context) {
-          auto fut_response = service_caller->Call(rendering_service_request,
-                                                   context->GetJobManager());
+          auto future_response = service_caller->Call(rendering_service_request,
+                                                      context->GetJobManager());
 
-          context->GetJobManager()->WaitForCompletion(fut_response);
-          auto response = fut_response.get();
+          context->GetJobManager()->WaitForCompletion(future_response);
+          auto response = future_response.get();
 
           if (response->GetStatus() == services::OK) {
             auto color_buffer_encoded =

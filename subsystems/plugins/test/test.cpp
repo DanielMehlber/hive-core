@@ -4,8 +4,6 @@
 #include "resourcemgmt/ResourceFactory.h"
 #include <gtest/gtest.h>
 
-#define sharednullptr(x) std::shared_ptr<x>(nullptr)
-
 TEST(PluginsTest, lifecycle_test) {
   auto config = std::make_shared<common::config::Configuration>();
   auto job_manager = std::make_shared<jobsystem::JobManager>(config);

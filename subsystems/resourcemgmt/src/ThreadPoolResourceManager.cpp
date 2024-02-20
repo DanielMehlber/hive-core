@@ -9,16 +9,16 @@ void ThreadPoolResourceManager::RegisterLoader(
   if (m_registered_loaders.contains(loader->GetId())) {
     THROW_EXCEPTION(DuplicateLoaderIdException,
                     "loader id '" << loader->GetId()
-                                  << "' is already taken and must stay unique");
+                                  << "' is already taken and must stay unique")
   }
   m_registered_loaders[loader->GetId()] = loader;
-  LOG_DEBUG("new resource loader '" << loader->GetId() << "' registered");
+  LOG_DEBUG("new resource loader '" << loader->GetId() << "' registered")
 }
 
 void ThreadPoolResourceManager::UnregisterLoader(const std::string &id) {
   std::unique_lock registered_loaders_lock(m_registered_loaders_mutex);
   m_registered_loaders.erase(id);
-  LOG_DEBUG("resource loader '" << id << "' unregistered");
+  LOG_DEBUG("resource loader '" << id << "' unregistered")
 }
 
 void ThreadPoolResourceManager::LoadResourcesWorker() {
@@ -90,10 +90,10 @@ ThreadPoolResourceManager::LoadResource(const std::string &uri) {
       m_registered_loaders.contains(resource_loader_id);
 
   if (!resource_loader_exists) {
-    LOG_ERR("unknown resource loader '" << resource_loader_id << "' requested");
+    LOG_ERR("unknown resource loader '" << resource_loader_id << "' requested")
     THROW_EXCEPTION(ResourceLoaderNotFound, "resource loader '"
                                                 << resource_loader_id
-                                                << "' does not exist");
+                                                << "' does not exist")
   }
 
   auto resource_loader = m_registered_loaders[resource_loader_id];

@@ -67,7 +67,7 @@ public:
    * @param other other message
    * @return true if both events are equal in content
    */
-  bool EqualsTo(std::shared_ptr<Message> other) const noexcept;
+  bool EqualsTo(const std::shared_ptr<Message> &other) const noexcept;
 };
 
 inline std::string Message::GetId() const noexcept { return m_uuid; }

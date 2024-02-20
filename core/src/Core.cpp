@@ -68,11 +68,11 @@ void Core::EnableRenderingJob() {
         job_manager->DetachJob("render-job");
         auto rendering_job = std::make_shared<jobsystem::job::TimerJob>(
             [subsystems](jobsystem::JobContext *context) {
-              auto opt_rendering_subsystem =
+              auto maybe_rendering_subsystem =
                   subsystems->GetSubsystem<graphics::IRenderer>();
-              if (opt_rendering_subsystem.has_value()) {
+              if (maybe_rendering_subsystem.has_value()) {
                 bool continue_rendering =
-                    opt_rendering_subsystem.value()->Render();
+                    maybe_rendering_subsystem.value()->Render();
                 if (continue_rendering) {
                   return JobContinuation::REQUEUE;
                 } else {
@@ -94,10 +94,10 @@ void Core::EnableRenderingJob() {
   job_manager->KickJob(enable_rendering_job_job);
 }
 
-void Core::EnableRenderingService(graphics::SharedRenderer serivce_renderer) {
+void Core::EnableRenderingService(graphics::SharedRenderer service_renderer) {
   graphics::SharedRenderer renderer;
-  if (serivce_renderer) {
-    renderer = serivce_renderer;
+  if (service_renderer) {
+    renderer = service_renderer;
   } else {
     renderer = m_subsystems->RequireSubsystem<graphics::IRenderer>();
   }

@@ -2,7 +2,7 @@
 #define WEBSOCKETSERVICERESPONSECONSUMER_H
 
 #include "jobsystem/synchronization/JobMutex.h"
-#include "networking/peers/IMessageConsumer.h"
+#include "networking/messaging/IMessageConsumer.h"
 #include "services/ServiceResponse.h"
 #include <future>
 

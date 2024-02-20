@@ -1,7 +1,10 @@
 #include "jobsystem/job/Job.h"
-#include "common/profiling/Timer.h"
 #include "common/uuid/UuidGenerator.h"
 #include "logging/LogManager.h"
+
+#ifdef ENABLE_PROFILING
+#include "common/profiling/Timer.h"
+#endif
 
 using namespace jobsystem::job;
 

@@ -1,6 +1,5 @@
 #include "plugins/impl/BoostPluginManager.h"
 #include <boost/dll/import.hpp>
-#include <boost/dll/shared_library.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
 #include <boost/json.hpp>
@@ -20,7 +19,7 @@ void BoostPluginManager::InstallPlugin(const std::string &path) {
     InstallPlugin(plugin);
   } else {
     LOG_ERR("Cannot load plugin: loaded library "
-            << absolute_path << " does not provide a plugin symbol");
+            << absolute_path << " does not provide a plugin symbol")
     return;
   }
 } // namespace boost::filesystem
@@ -30,7 +29,7 @@ SharedPluginContext BoostPluginManager::GetContext() { return m_context; }
 void BoostPluginManager::InstallPlugin(boost::shared_ptr<IPlugin> plugin) {
   auto install_job = jobsystem::JobSystemFactory::CreateJob(
       [plugin_manager = weak_from_this(),
-       plugin = std::move(plugin)](jobsystem::JobContext *context) {
+       plugin = std::move(plugin)](jobsystem::JobContext *context) mutable {
         if (plugin_manager.expired()) {
           LOG_ERR("Cannot install plugin "
                   << plugin->GetName()

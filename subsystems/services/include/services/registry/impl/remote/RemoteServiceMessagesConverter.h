@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETSERVICERESPONSEMESSAGE_H
 #define WEBSOCKETSERVICERESPONSEMESSAGE_H
 
-#include "networking/peers/Message.h"
+#include "networking/messaging/Message.h"
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
 

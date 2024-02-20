@@ -145,7 +145,7 @@ void FiberExecutionImpl::Stop() {
     // TODO: Fix this bug
     ASSERT(worker->get_id() != std::this_thread::get_id(),
            "execution is not supposed to be terminated by one of its own "
-           "worker threads: The thread would join itself");
+           "worker threads: The thread would join itself")
     worker->join();
   }
 

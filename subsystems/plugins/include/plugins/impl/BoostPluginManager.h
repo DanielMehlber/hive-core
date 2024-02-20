@@ -34,7 +34,7 @@ protected:
 public:
   explicit BoostPluginManager(
       SharedPluginContext context,
-      common::subsystems::SharedSubsystemManager subsystems)
+      const common::subsystems::SharedSubsystemManager &subsystems)
       : m_context(std::move(context)), m_subsystems(subsystems){};
   void InstallPlugin(const std::string &path) override;
   void InstallPlugin(boost::shared_ptr<IPlugin> plugin) override;

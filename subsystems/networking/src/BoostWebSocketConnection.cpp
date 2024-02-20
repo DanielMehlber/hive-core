@@ -1,6 +1,6 @@
-#include "networking/peers/impl/websockets/boost/BoostWebSocketConnection.h"
+#include "networking/messaging/impl/websockets/boost/BoostWebSocketConnection.h"
 #include "logging/LogManager.h"
-#include "networking/peers/MessageConverter.h"
+#include "networking/messaging/MessageConverter.h"
 #include <boost/asio.hpp>
 #include <utility>
 

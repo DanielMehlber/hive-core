@@ -70,11 +70,23 @@ public:
    * @return value or alternative as boolean
    */
   bool GetBool(const std::string &name, bool alternative);
+
+  /**
+   * Try to find a value for the requested configuration name and return true if
+   * it has been found.
+   * @param name name of requested configuration name
+   * @return true if configuration name has value
+   */
+  bool Contains(const std::string &name);
 };
+
+inline bool Configuration::Contains(const std::string &name) {
+  return m_values.contains(name);
+}
 
 inline std::string Configuration::Get(const std::string &name,
                                       std::string alternative) {
-  if (m_values.contains(name)) {
+  if (Contains(name)) {
     return m_values.at(name);
   } else {
     return alternative;
@@ -82,7 +94,7 @@ inline std::string Configuration::Get(const std::string &name,
 }
 
 inline int Configuration::GetAsInt(const std::string &name, int alternative) {
-  if (m_values.contains(name)) {
+  if (Contains(name)) {
     return std::stoi(m_values.at(name));
   } else {
     return alternative;
@@ -91,7 +103,7 @@ inline int Configuration::GetAsInt(const std::string &name, int alternative) {
 
 inline float Configuration::GetAsFloat(const std::string &name,
                                        float alternative) {
-  if (m_values.contains(name)) {
+  if (Contains(name)) {
     return std::stof(m_values.at(name));
   } else {
     return alternative;
@@ -99,7 +111,7 @@ inline float Configuration::GetAsFloat(const std::string &name,
 }
 
 inline bool Configuration::GetBool(const std::string &name, bool alternative) {
-  if (m_values.contains(name)) {
+  if (Contains(name)) {
     const auto &value = m_values.at(name);
     if (value == "true" || value == "1") {
       return true;

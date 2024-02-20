@@ -4,7 +4,7 @@
 #include "common/test/TryAssertUntilTimeout.h"
 #include "events/EventFactory.h"
 #include "networking/NetworkingFactory.h"
-#include "networking/peers/ConnectionInfo.h"
+#include "networking/messaging/ConnectionInfo.h"
 
 using namespace networking;
 using namespace networking::websockets;

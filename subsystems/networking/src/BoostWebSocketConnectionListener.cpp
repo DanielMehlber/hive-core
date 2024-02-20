@@ -1,4 +1,4 @@
-#include "networking/peers/impl/websockets/boost/BoostWebSocketConnectionListener.h"
+#include "networking/messaging/impl/websockets/boost/BoostWebSocketConnectionListener.h"
 
 using namespace networking::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -9,12 +9,12 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 BoostWebSocketConnectionListener::BoostWebSocketConnectionListener(
     std::shared_ptr<boost::asio::io_context> execution_context,
-    const common::config::SharedConfiguration &config,
+    common::config::SharedConfiguration config,
     std::shared_ptr<boost::asio::ip::tcp::endpoint> local_endpoint,
     std::function<void(std::string, stream_type &&)> connection_consumer)
-    : m_connection_consumer{connection_consumer},
-      m_execution_context{execution_context}, m_config{config},
-      m_local_endpoint{local_endpoint} {}
+    : m_connection_consumer{std::move(connection_consumer)},
+      m_execution_context{std::move(execution_context)}, m_config{config},
+      m_local_endpoint{std::move(local_endpoint)} {}
 
 BoostWebSocketConnectionListener::~BoostWebSocketConnectionListener() {
   ShutDown();

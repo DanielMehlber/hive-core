@@ -7,7 +7,7 @@
 #include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
-#include "networking/peers/IMessageEndpoint.h"
+#include "networking/messaging/IMessageEndpoint.h"
 #include "properties/PropertyProvider.h"
 #include <atomic>
 #include <boost/beast/core.hpp>
@@ -87,7 +87,7 @@ private:
    * @param url id of connection
    * @param stream web-socket stream
    */
-  void AddConnection(std::string url, stream_type &&stream);
+  void AddConnection(const std::string &url, stream_type &&stream);
 
   std::optional<SharedBoostWebSocketConnection>
   GetConnection(const std::string &uri);

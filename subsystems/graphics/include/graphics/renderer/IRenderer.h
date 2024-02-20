@@ -1,11 +1,17 @@
 #ifndef IRENDERER_H
 #define IRENDERER_H
 
+#include "common/exceptions/ExceptionsBase.h"
 #include "graphics/RenderResult.h"
 #include "scene/SceneManager.h"
 #include <optional>
 
 namespace graphics {
+
+/**
+ * An error occurred during renderer setup, so it can't be used.
+ */
+DECLARE_EXCEPTION(RendererSetupException);
 
 /**
  * Contains Vulkan setup that can be used to create more renderers without

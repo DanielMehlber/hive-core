@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETCONVERTERTEST_H
 #define WEBSOCKETCONVERTERTEST_H
 
-#include "networking/peers/MessageConverter.h"
+#include "networking/messaging/MessageConverter.h"
 #include <gtest/gtest.h>
 #include <memory>
 

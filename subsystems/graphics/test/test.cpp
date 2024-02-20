@@ -24,12 +24,12 @@ TEST(GraphicsTests, remote_render_service) {
   auto job_manager = std::make_shared<jobsystem::JobManager>(config);
   job_manager->StartExecution();
 
-  auto peer_1 = setupPeerNode(job_manager, config, 9005);
+  auto peer_1 = setupNode(job_manager, config, 9005);
   auto peer_1_networking_subsystem =
       peer_1->RequireSubsystem<IMessageEndpoint>();
   auto peer_1_service_registry = peer_1->RequireSubsystem<IServiceRegistry>();
 
-  auto peer_2 = setupPeerNode(job_manager, config, 9006);
+  auto peer_2 = setupNode(job_manager, config, 9006);
   auto peer_2_service_registry = peer_2->RequireSubsystem<IServiceRegistry>();
 
   auto encoder = std::make_shared<graphics::PlainRenderResultEncoder>();
@@ -78,12 +78,12 @@ TEST(GraphicsTests, remote_render_service) {
         end_point - start_point);
 
     times[i] = elapsed_time.count();
-    LOG_INFO("Remote rendering took " << elapsed_time.count() << "ms");
+    LOG_INFO("Remote rendering took " << elapsed_time.count() << "ms")
   }
 
   auto const count = static_cast<float>(times.size());
   auto average = std::reduce(times.begin(), times.end()) / count;
-  LOG_INFO("average remote rendering time was " << average << "ms");
+  LOG_INFO("average remote rendering time was " << average << "ms")
 }
 
 TEST(GraphicsTest, offscreen_rendering_sphere) {

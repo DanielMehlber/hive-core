@@ -130,7 +130,7 @@ OnscreenRenderer::OnscreenRenderer(scene::SharedScene scene, int width,
 #endif
 
   if (!m_window) {
-    LOG_ERR("Cannot create window for Onscreen Renderer");
+    LOG_ERR("Cannot create window for Onscreen Renderer")
     return;
   }
 
@@ -166,7 +166,7 @@ bool OnscreenRenderer::Render() {
 }
 
 std::optional<SharedRenderResult> OnscreenRenderer::GetResult() {
-  LOG_WARN("RenderResults are not supported for the OnscreenRenderer");
+  LOG_WARN("RenderResults are not supported for the OnscreenRenderer")
   return {};
 }
 

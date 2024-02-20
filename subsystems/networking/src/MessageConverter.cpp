@@ -1,5 +1,5 @@
+#include "networking/messaging/MessageConverter.h"
 #include "logging/LogManager.h"
-#include "networking/peers/MessageConverter.h"
 #include "networking/util/MultipartFormdata.h"
 #include <boost/json.hpp>
 
@@ -13,10 +13,10 @@ networking::websockets::MessageConverter::FromJson(const std::string &json) {
 
   if (err) {
     LOG_ERR("cannot parse JSON web-socket message due to syntax errors: "
-            << err.message());
+            << err.message())
     THROW_EXCEPTION(
         MessagePayloadInvalidException,
-        "cannot parse json message due to syntax errors: " << err.message());
+        "cannot parse json message due to syntax errors: " << err.message())
   }
 
   if (message_body.is_object()) {
@@ -37,7 +37,7 @@ networking::websockets::MessageConverter::FromJson(const std::string &json) {
 
     return parsed_message;
   } else {
-    THROW_EXCEPTION(MessagePayloadInvalidException, "message is not an object");
+    THROW_EXCEPTION(MessagePayloadInvalidException, "message is not an object")
   }
 }
 
@@ -94,7 +94,7 @@ std::string extractPartContent(networking::util::Multipart &multipart,
   } else {
     THROW_EXCEPTION(MessagePayloadInvalidException,
                     "required part " << name
-                                     << " is missing in multipart message");
+                                     << " is missing in multipart message")
   }
 }
 
@@ -114,10 +114,10 @@ MessageConverter::FromMultipartFormData(const std::string &multipart_string) {
 
     if (err) {
       LOG_ERR("cannot parse message meta part (JSON) due to syntax errors: "
-              << err.message());
+              << err.message())
       THROW_EXCEPTION(MessagePayloadInvalidException,
                       "cannot parse message meta part (JSON) to syntax errors: "
-                          << err.message());
+                          << err.message())
     }
 
     if (message_body.is_object()) {

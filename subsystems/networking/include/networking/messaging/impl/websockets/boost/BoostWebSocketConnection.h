@@ -3,8 +3,8 @@
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "jobsystem/manager/JobManager.h"
-#include "networking/peers/ConnectionInfo.h"
-#include "networking/peers/Message.h"
+#include "networking/messaging/ConnectionInfo.h"
+#include "networking/messaging/Message.h"
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <future>

@@ -16,15 +16,15 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
   if (auto subsystems = m_subsystems.lock()) {
     auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
 
-    auto opt_request =
+    auto maybe_request =
         RemoteServiceMessagesConverter::ToServiceRequest(received_message);
 
-    if (!opt_request.has_value()) {
+    if (!maybe_request.has_value()) {
       LOG_WARN("received invalid service request. Dropped.")
       return;
     }
 
-    SharedServiceRequest request = opt_request.value();
+    SharedServiceRequest request = maybe_request.value();
     LOG_DEBUG("received service request for service "
               << request->GetServiceName())
 
@@ -35,24 +35,24 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
           auto job_manager = _this->m_subsystems.lock()
                                  ->RequireSubsystem<jobsystem::JobManager>();
 
-          auto fut_opt_service_caller =
+          auto future_service_caller =
               _this->m_service_query_func(request->GetServiceName(), true);
 
-          context->GetJobManager()->WaitForCompletion(fut_opt_service_caller);
+          context->GetJobManager()->WaitForCompletion(future_service_caller);
 
           SharedServiceResponse response;
 
           try {
-            auto opt_service_caller = fut_opt_service_caller.get();
-            if (opt_service_caller.has_value()) {
-              auto service_caller = opt_service_caller.value();
+            auto maybe_service_caller = future_service_caller.get();
+            if (maybe_service_caller.has_value()) {
+              auto service_caller = maybe_service_caller.value();
 
               // call service locally
-              std::future<SharedServiceResponse> fut_response =
+              std::future<SharedServiceResponse> future_response =
                   service_caller->Call(request, job_manager, true);
 
-              context->GetJobManager()->WaitForCompletion(fut_response);
-              response = fut_response.get();
+              context->GetJobManager()->WaitForCompletion(future_response);
+              response = future_response.get();
 
             } else {
               LOG_WARN("received service request for service '"

@@ -19,7 +19,7 @@ public:
     m_change_notification_received++;
     LOG_DEBUG("received property change notification for "
               << key << " for a total of " << m_change_notification_received
-              << " times");
+              << " times")
   }
 
   unsigned int GetChangeNotificationsReceived() const {

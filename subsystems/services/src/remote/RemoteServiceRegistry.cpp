@@ -1,6 +1,6 @@
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 #include "common/assert/Assert.h"
-#include "networking/peers/events/ConnectionEstablishedEvent.h"
+#include "networking/messaging/events/ConnectionEstablishedEvent.h"
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "services/messages/ServiceRegisteredNotification.h"
 #include "services/messages/ServiceUnegisteredNotification.h"
@@ -225,7 +225,7 @@ void RemoteServiceRegistry::SendServicePortfolioToPeer(
   if (!m_subsystems.lock()
            ->ProvidesSubsystem<networking::websockets::IMessageEndpoint>()) {
     LOG_ERR("Cannot transmit service portfolio to remote peer "
-            << peer_id << ": this peer cannot be found as subsystem");
+            << peer_id << ": this peer cannot be found as subsystem")
     return;
   }
 
@@ -261,7 +261,7 @@ SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
         if (sending_peer.expired()) {
           LOG_WARN("Cannot transmit service "
                    << service_name << " to remote peer " << peer_id
-                   << " because peer subsystem has expired");
+                   << " because peer subsystem has expired")
           return DISPOSE;
         }
 

@@ -1,6 +1,5 @@
-#include "networking/peers/MessageConsumerJob.h"
+#include "networking/messaging/MessageConsumerJob.h"
 #include <functional>
-#include <utility>
 
 using namespace networking::websockets;
 using namespace std::placeholders;

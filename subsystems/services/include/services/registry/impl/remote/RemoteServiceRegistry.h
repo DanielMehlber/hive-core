@@ -2,7 +2,7 @@
 #define WEBSOCKETSERVICEREGISTRY_H
 
 #include "events/listener/impl/FunctionalEventListener.h"
-#include "networking/peers/IMessageEndpoint.h"
+#include "networking/messaging/IMessageEndpoint.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistrationConsumer.h"
 #include "services/registry/impl/remote/RemoteServiceRequestConsumer.h"

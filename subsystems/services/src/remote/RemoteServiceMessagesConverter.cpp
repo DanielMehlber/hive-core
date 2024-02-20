@@ -7,34 +7,34 @@ using namespace services;
 std::optional<SharedServiceResponse>
 RemoteServiceMessagesConverter::ToServiceResponse(Message &&message) {
 
-  auto opt_transaction_id = message.GetAttribute("transaction-id");
-  if (!opt_transaction_id.has_value()) {
+  auto maybe_transaction_id = message.GetAttribute("transaction-id");
+  if (!maybe_transaction_id.has_value()) {
     LOG_WARN("web-socket message is not a valid service response: transaction "
-             "id is missing");
+             "id is missing")
     return {};
   }
 
-  auto opt_status_code = message.GetAttribute("status");
-  if (!opt_status_code.has_value()) {
+  auto maybe_status_code = message.GetAttribute("status");
+  if (!maybe_status_code.has_value()) {
     LOG_WARN("web-socket message is not a valid service response: status code "
-             "is missing");
+             "is missing")
     return {};
   }
 
   ServiceResponseStatus status;
   try {
-    int status_number = std::stoi(opt_status_code.value());
+    int status_number = std::stoi(maybe_status_code.value());
     status = static_cast<ServiceResponseStatus>(status_number);
   } catch (...) {
     LOG_WARN("web-socket message is not a valid service response: status code "
-             "is not a valid number");
+             "is not a valid number")
     return {};
   }
 
   auto status_message = message.GetAttribute("status-message").value_or("Ok");
 
   SharedServiceResponse response = std::make_shared<ServiceResponse>(
-      opt_transaction_id.value(), status, status_message);
+      maybe_transaction_id.value(), status, status_message);
 
   // attributes are moved to avoid copying large attributes containing heavy
   // blobs; message object looses its attributes
@@ -65,22 +65,22 @@ SharedMessage RemoteServiceMessagesConverter::FromServiceRequest(
 std::optional<SharedServiceRequest>
 RemoteServiceMessagesConverter::ToServiceRequest(const SharedMessage &message) {
 
-  auto opt_transaction_id = message->GetAttribute("transaction-id");
-  if (!opt_transaction_id.has_value()) {
+  auto maybe_transaction_id = message->GetAttribute("transaction-id");
+  if (!maybe_transaction_id.has_value()) {
     LOG_WARN("web-socket message is not a valid service request: transaction "
-             "id is missing");
+             "id is missing")
     return {};
   }
 
-  auto opt_service_name = message->GetAttribute("service");
-  if (!opt_service_name.has_value()) {
+  auto maybe_service_name = message->GetAttribute("service");
+  if (!maybe_service_name.has_value()) {
     LOG_WARN("web-socket message is not a valid service request: service name "
-             "is missing");
+             "is missing")
     return {};
   }
 
   SharedServiceRequest request = std::make_shared<ServiceRequest>(
-      opt_service_name.value(), opt_transaction_id.value());
+      maybe_service_name.value(), maybe_transaction_id.value());
 
   for (const auto &attr_name : message->GetAttributeNames()) {
     request->SetParameter(attr_name, message->GetAttribute(attr_name).value());

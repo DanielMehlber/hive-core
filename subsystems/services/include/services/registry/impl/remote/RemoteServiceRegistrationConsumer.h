@@ -1,8 +1,8 @@
 #ifndef WEBSOCKETSERVICEREGISTRATIONCONSUMER_H
 #define WEBSOCKETSERVICEREGISTRATIONCONSUMER_H
 
-#include "networking/peers/IMessageConsumer.h"
-#include "networking/peers/IMessageEndpoint.h"
+#include "networking/messaging/IMessageConsumer.h"
+#include "networking/messaging/IMessageEndpoint.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistrationMessage.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"

@@ -27,6 +27,7 @@ RenderService::RenderService(
 
 std::future<services::SharedServiceResponse>
 RenderService::Render(const services::SharedServiceRequest &raw_request) {
+  // only process a single render process at a time.
   std::unique_lock lock(m_service_mutex);
 
   std::promise<SharedServiceResponse> promise;
@@ -35,14 +36,14 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   RenderServiceRequest request(raw_request);
 
   auto extend = request.GetExtend().value();
-  auto opt_projection_type = request.GetProjectionType();
-  auto opt_view_matrix = request.GetViewMatrix();
+  auto maybe_projection_type = request.GetProjectionType();
+  auto maybe_view_matrix = request.GetViewMatrix();
 
   auto response =
       std::make_shared<ServiceResponse>(raw_request->GetTransactionId());
 
-  auto opt_rendering_subsystem = GetRenderer();
-  bool rendering_subsystem_available = opt_rendering_subsystem.has_value();
+  auto maybe_rendering_subsystem = GetRenderer();
+  bool rendering_subsystem_available = maybe_rendering_subsystem.has_value();
   if (!rendering_subsystem_available) {
     LOG_ERR("Cannot perform rendering service because there is no renderer "
             "available")
@@ -53,7 +54,7 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
     return future;
   }
 
-  auto rendering_subsystem = opt_rendering_subsystem.value();
+  auto rendering_subsystem = maybe_rendering_subsystem.value();
 
   // check if renderer must be resized
   const auto [current_width, current_height] =
@@ -75,10 +76,9 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
 #endif
 
   try {
-
     // apply settings to renderer's main camera
-    if (opt_projection_type.has_value()) {
-      auto projection_matrix_type = opt_projection_type.value();
+    if (maybe_projection_type.has_value()) {
+      auto projection_matrix_type = maybe_projection_type.value();
 
       // check which projection (perspective, orthographic) is requested
       if (projection_matrix_type == ProjectionType::PERSPECTIVE) {
@@ -93,12 +93,12 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
         rendering_subsystem->SetCameraProjectionMatrix(matrix);
       } else if (projection_matrix_type == ProjectionType::ORTHOGRAPHIC) {
         // TODO: Support orthographic projection
-        LOG_WARN("Orthographic projection in Render-Service is not yet "
+        LOG_WARN("orthographic projection in render service is not yet "
                  "implemented")
       }
     }
   } catch (const std::exception &exception) {
-    LOG_ERR("Cannot execute rendering process due to invalid parameters: "
+    LOG_ERR("cannot execute rendering process due to invalid parameters: "
             << exception.what())
 
     response->SetStatus(ServiceResponseStatus::PARAMETER_ERROR);
@@ -108,9 +108,9 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   }
 
   // check if camera must be moved
-  bool camera_view_set = opt_view_matrix.has_value();
+  bool camera_view_set = maybe_view_matrix.has_value();
   if (camera_view_set) {
-    auto view_matrix = opt_view_matrix.value();
+    auto view_matrix = maybe_view_matrix.value();
     auto simple_view_matrix = graphics::SimpleViewMatrix::create(view_matrix);
     rendering_subsystem->SetCameraViewMatrix(simple_view_matrix);
   }
@@ -122,18 +122,17 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   rendering_timer.Stop();
 #endif
 
-  auto opt_result = rendering_subsystem->GetResult();
-
-  if (!opt_result.has_value()) {
+  auto maybe_result = rendering_subsystem->GetResult();
+  if (!maybe_result.has_value()) {
     LOG_ERR(
-        "Renderer used for Render-Service did not return any rending result")
+        "renderer used for render service did not return any rending result")
     response->SetStatus(ServiceResponseStatus::INTERNAL_ERROR);
-    response->SetStatusMessage("Renderer did not return any rendering result");
+    response->SetStatusMessage("renderer did not return any rendering result");
     promise.set_value(response);
     return future;
   }
 
-  auto result = opt_result.value();
+  auto result = maybe_result.value();
 
   if (auto subsystems = m_subsystems.lock()) {
     // attach color render result to response

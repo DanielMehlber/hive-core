@@ -1,5 +1,5 @@
+#include "networking/messaging/Message.h"
 #include "common/uuid/UuidGenerator.h"
-#include "networking/peers/Message.h"
 
 using namespace networking::websockets;
 
@@ -37,7 +37,7 @@ std::set<std::string> Message::GetAttributeNames() const noexcept {
   return attribute_names;
 }
 
-bool Message::EqualsTo(std::shared_ptr<Message> other) const noexcept {
+bool Message::EqualsTo(const std::shared_ptr<Message> &other) const noexcept {
   if (m_uuid != other->m_uuid) {
     return false;
   } else if (m_type != other->m_type) {

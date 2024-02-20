@@ -28,10 +28,9 @@ public:
 template <typename Type> std::shared_ptr<Type> Resource::ExtractAsType() {
   if (typeid(Type).hash_code() != m_type_id) {
     LOG_WARN("resource stores type " << m_type_name << ", but "
-                                     << typeid(Type).name()
-                                     << " was requested");
+                                     << typeid(Type).name() << " was requested")
     THROW_EXCEPTION(WrongResourceTypeRequestedException,
-                    "wrong resource type was requested");
+                    "wrong resource type was requested")
   }
 
   return std::static_pointer_cast<Type>(m_value);

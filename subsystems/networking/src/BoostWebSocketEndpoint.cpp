@@ -1,8 +1,8 @@
-#include "networking/peers/impl/websockets/boost/BoostWebSocketEndpoint.h"
-#include "networking/peers/MessageConsumerJob.h"
-#include "networking/peers/MessageConverter.h"
-#include "networking/peers/events/ConnectionClosedEvent.h"
-#include "networking/peers/events/ConnectionEstablishedEvent.h"
+#include "networking/messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"
+#include "networking/messaging/MessageConsumerJob.h"
+#include "networking/messaging/MessageConverter.h"
+#include "networking/messaging/events/ConnectionClosedEvent.h"
+#include "networking/messaging/events/ConnectionEstablishedEvent.h"
 #include "networking/util/UrlParser.h"
 #include <regex>
 #include <utility>
@@ -210,9 +210,9 @@ void BoostWebSocketEndpoint::ProcessReceivedMessage(
 }
 
 std::optional<std::string> connectionIdFromUrl(const std::string &url) {
-  auto opt_parsed_url = util::UrlParser::parse(url);
-  if (opt_parsed_url.has_value()) {
-    auto parsed_url = opt_parsed_url.value();
+  auto maybe_parsed_url = util::UrlParser::parse(url);
+  if (maybe_parsed_url.has_value()) {
+    auto parsed_url = maybe_parsed_url.value();
     std::stringstream ss;
     ss << parsed_url.host << ":" << parsed_url.port << parsed_url.path;
     return ss.str();
@@ -221,7 +221,7 @@ std::optional<std::string> connectionIdFromUrl(const std::string &url) {
   }
 }
 
-void BoostWebSocketEndpoint::AddConnection(std::string url,
+void BoostWebSocketEndpoint::AddConnection(const std::string &url,
                                            stream_type &&stream) {
   std::unique_lock running_lock(m_running_mutex);
   if (!m_running) {
@@ -299,9 +299,9 @@ void BoostWebSocketEndpoint::InitConnectionEstablisher() {
 
 std::future<void> BoostWebSocketEndpoint::Send(const std::string &uri,
                                                SharedMessage message) {
-  auto opt_connection = GetConnection(uri);
-  if (opt_connection.has_value()) {
-    return opt_connection.value()->Send(message);
+  auto maybe_connection = GetConnection(uri);
+  if (maybe_connection.has_value()) {
+    return maybe_connection.value()->Send(message);
   } else {
     THROW_EXCEPTION(NoSuchPeerException, "peer " << uri << " does not exist")
   }
@@ -309,10 +309,10 @@ std::future<void> BoostWebSocketEndpoint::Send(const std::string &uri,
 
 std::future<void>
 BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
-  auto opt_connection = GetConnection(uri);
+  auto maybe_connection = GetConnection(uri);
 
   // if connection has already been established
-  if (opt_connection.has_value()) {
+  if (maybe_connection.has_value()) {
     std::promise<void> prom;
     prom.set_value();
     return prom.get_future();
@@ -328,9 +328,9 @@ BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
 
 void BoostWebSocketEndpoint::CloseConnectionTo(
     const std::string &uri) noexcept {
-  auto opt_connection_id = connectionIdFromUrl(uri);
-  if (opt_connection_id.has_value()) {
-    auto connection_id = opt_connection_id.value();
+  auto maybe_connection_id = connectionIdFromUrl(uri);
+  if (maybe_connection_id.has_value()) {
+    auto connection_id = maybe_connection_id.value();
     std::unique_lock lock(m_connections_mutex);
     if (m_connections.contains(connection_id)) {
       m_connections.at(connection_id)->Close();
@@ -384,7 +384,7 @@ BoostWebSocketEndpoint::Broadcast(const SharedMessage &message) {
           try {
             future.get();
           } catch (const std::exception &ex) {
-            LOG_ERR("failed to broadcast message: " << ex.what());
+            LOG_ERR("failed to broadcast message: " << ex.what())
             count--;
           }
         }

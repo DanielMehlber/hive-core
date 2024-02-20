@@ -66,7 +66,9 @@ void JobManager::KickJob(const SharedJob &job) {
    * kicked job must be removed from the blacklist.
    */
   std::unique_lock lock(m_continuation_requeue_blacklist_mutex);
-  if (m_continuation_requeue_blacklist.contains(job->GetId())) {
+  bool contains_job = m_continuation_requeue_blacklist.find(job->GetId()) !=
+                      m_continuation_requeue_blacklist.end();
+  if (contains_job) {
     m_continuation_requeue_blacklist.erase(job->GetId());
   }
   lock.unlock();
@@ -200,7 +202,9 @@ void JobManager::KickJobForNextCycle(const SharedJob &job) {
    * When a job is detached, intercept it from re-entering the job queue.
    */
   std::unique_lock black_list_lock(m_continuation_requeue_blacklist_mutex);
-  if (m_continuation_requeue_blacklist.contains(job->GetId())) {
+  bool contains_job = m_continuation_requeue_blacklist.find(job->GetId()) !=
+                      m_continuation_requeue_blacklist.end();
+  if (contains_job) {
     return;
   }
   black_list_lock.unlock();

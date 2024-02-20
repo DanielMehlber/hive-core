@@ -7,24 +7,22 @@ using namespace services::impl;
 void RemoteServiceResponseConsumer::ProcessReceivedMessage(
     SharedMessage received_message, ConnectionInfo connection_info) noexcept {
 
-  auto opt_response = RemoteServiceMessagesConverter::ToServiceResponse(
+  auto maybe_response = RemoteServiceMessagesConverter::ToServiceResponse(
       std::move(*received_message));
 
-  if (!opt_response.has_value()) {
-    LOG_WARN(
-        "received message of type '"
-        << GetMessageType()
-        << "' cannot be converted to service response. Response dropped. ");
+  if (!maybe_response.has_value()) {
+    LOG_WARN("received message of type '"
+             << GetMessageType()
+             << "' cannot be converted to service response. Response dropped. ")
     return;
   }
 
-  SharedServiceResponse response = opt_response.value();
+  SharedServiceResponse response = maybe_response.value();
   std::string transaction_id = response->GetTransactionId();
 
   std::unique_lock lock(m_promises_mutex);
   if (!m_promises.contains(transaction_id)) {
-    LOG_WARN("received service response for unknown request "
-             << transaction_id);
+    LOG_WARN("received service response for unknown request " << transaction_id)
     return;
   }
 
@@ -32,22 +30,22 @@ void RemoteServiceResponseConsumer::ProcessReceivedMessage(
 
   switch (response->GetStatus()) {
   case OK:
-    LOG_DEBUG("received service response for request " << transaction_id);
+    LOG_DEBUG("received service response for request " << transaction_id)
     break;
   case PARAMETER_ERROR:
     LOG_WARN("received service response for request "
              << transaction_id << ", but there was an parameter error: "
-             << response->GetStatusMessage());
+             << response->GetStatusMessage())
     break;
   case INTERNAL_ERROR:
     LOG_WARN("received service response for request "
              << transaction_id << ", but an internal error occurred: "
-             << response->GetStatusMessage());
+             << response->GetStatusMessage())
     break;
   case GONE:
     LOG_WARN("received service response for request "
              << transaction_id << ", but service is gone from endpoint: "
-             << response->GetStatusMessage());
+             << response->GetStatusMessage())
     break;
   }
 

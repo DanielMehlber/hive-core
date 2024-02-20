@@ -1,9 +1,7 @@
 #ifndef WEBSOCKETSERVICEREGISTRATIONMESSAGE_H
 #define WEBSOCKETSERVICEREGISTRATIONMESSAGE_H
 
-#include <utility>
-
-#include "networking/peers/Message.h"
+#include "networking/messaging/Message.h"
 
 using namespace networking::websockets;
 

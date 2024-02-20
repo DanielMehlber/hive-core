@@ -1,5 +1,4 @@
 #include "logging/logger/impl/BoostLogger.h"
-#include <boost/log/common.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks.hpp>
@@ -17,7 +16,7 @@ void logging::logger::impl::BoostLogger::Init() {
       boost::log::keywords::format =
           "[%TimeStamp%] [%Severity%] in Thread [%ThreadID%]: %Message%");
   boost::log::add_common_attributes();
-};
+}
 
 void logging::logger::impl::BoostLogger::ShutDown(){};
 
@@ -29,25 +28,25 @@ void logging::logger::impl::BoostLogger::Info(
   BOOST_LOG_TRIVIAL(info) << boost::log::add_value("ThreadID",
                                                    std::this_thread::get_id())
                           << message;
-};
+}
 
 void logging::logger::impl::BoostLogger::Error(
     const std::string &message) const noexcept {
   BOOST_LOG_TRIVIAL(error) << boost::log::add_value("ThreadID",
                                                     std::this_thread::get_id())
                            << message;
-};
+}
 
 void logging::logger::impl::BoostLogger::Warn(
     const std::string &message) const noexcept {
   BOOST_LOG_TRIVIAL(warning)
       << boost::log::add_value("ThreadID", std::this_thread::get_id())
       << message;
-};
+}
 
 void logging::logger::impl::BoostLogger::Debug(
     const std::string &message) const noexcept {
   BOOST_LOG_TRIVIAL(debug) << boost::log::add_value("ThreadID",
                                                     std::this_thread::get_id())
                            << message;
-};
+}

@@ -36,7 +36,7 @@ RemoteServiceExecutor::Call(SharedServiceRequest request,
         if (_this->IsCallable()) {
           LOG_DEBUG("calling remote web-socket service '"
                     << request->GetServiceName() << "' at endpoint "
-                    << _this->m_remote_host_name);
+                    << _this->m_remote_host_name)
 
           if (!_this->m_response_consumer.expired()) {
             _this->m_response_consumer.lock()->AddResponsePromise(
@@ -45,7 +45,7 @@ RemoteServiceExecutor::Call(SharedServiceRequest request,
             LOG_ERR("cannot receive response to service request "
                     << request->GetTransactionId() << " of service "
                     << request->GetServiceName()
-                    << " because response consumer has been destroyed");
+                    << " because response consumer has been destroyed")
             auto exception = BUILD_EXCEPTION(
                 CallFailedException, "called remote web-socket service, but "
                                      "cannot receive response because "
@@ -67,7 +67,7 @@ RemoteServiceExecutor::Call(SharedServiceRequest request,
         } else {
           LOG_ERR("cannot call remote web-socket service "
                   << request->GetServiceName() << " at "
-                  << _this->m_remote_host_name);
+                  << _this->m_remote_host_name)
           auto exception = BUILD_EXCEPTION(
               CallFailedException, "cannot call remote web-socket service "
                                        << request->GetServiceName() << " at "

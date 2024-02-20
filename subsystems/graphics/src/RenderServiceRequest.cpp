@@ -75,20 +75,21 @@ void RenderServiceRequest::SetExtend(const Extend &extend) {
 }
 
 std::optional<Extend> RenderServiceRequest::GetExtend() const {
-  auto opt_width = m_request->GetParameter("width");
-  auto opt_height = m_request->GetParameter("height");
+  auto maybe_width = m_request->GetParameter("width");
+  auto maybe_height = m_request->GetParameter("height");
 
-  if (opt_height.has_value() && opt_width.has_value()) {
-    return Extend{std::stoi(opt_width.value()), std::stoi(opt_height.value())};
+  if (maybe_height.has_value() && maybe_width.has_value()) {
+    return Extend{std::stoi(maybe_width.value()),
+                  std::stoi(maybe_height.value())};
   }
 
   return {};
 }
 
 std::optional<ProjectionType> RenderServiceRequest::GetProjectionType() const {
-  auto opt_type = m_request->GetParameter("projection-type");
-  if (opt_type.has_value()) {
-    auto type = opt_type.value();
+  auto maybe_type = m_request->GetParameter("projection-type");
+  if (maybe_type.has_value()) {
+    auto type = maybe_type.value();
     if (type == "perspective") {
       return ProjectionType::PERSPECTIVE;
     } else if (type == "orthographic") {

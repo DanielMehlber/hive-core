@@ -30,10 +30,10 @@ void TiledCompositeRendererPlugin::Init(plugins::SharedPluginContext context) {
                 LOG_INFO("new render service detected")
 
                 // TODO: this operation blocks. Make it yield using Jobsystem.
-                auto opt_caller = service_registry->Find("render").get();
+                auto maybe_caller = service_registry->Find("render").get();
 
-                if (opt_caller.has_value()) {
-                  auto caller = opt_caller.value();
+                if (maybe_caller.has_value()) {
+                  auto caller = maybe_caller.value();
                   auto service_count = caller->GetCallableCount();
                   tiled_renderer->SetServiceCount(service_count);
                 }

@@ -92,7 +92,7 @@ std::shared_ptr<subsystem_t> SubsystemManager::RequireSubsystem() const {
 template <typename subsystem_t>
 std::optional<std::shared_ptr<subsystem_t>>
 SubsystemManager::GetSubsystem() const {
-  if (m_subsystems.contains(typeid(subsystem_t))) {
+  if (ProvidesSubsystem<subsystem_t>()) {
     return std::any_cast<std::shared_ptr<subsystem_t>>(
         m_subsystems.at(typeid(subsystem_t)));
   }

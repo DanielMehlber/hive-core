@@ -14,8 +14,8 @@ using namespace networking;
 using namespace graphics;
 
 common::subsystems::SharedSubsystemManager
-setupPeerNode(const jobsystem::SharedJobManager &job_manager,
-              const common::config::SharedConfiguration &config, int port) {
+setupNode(const jobsystem::SharedJobManager &job_manager,
+          const common::config::SharedConfiguration &config, int port) {
   auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(job_manager);
 

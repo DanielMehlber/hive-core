@@ -18,21 +18,21 @@ bool RoundRobinServiceCaller::IsCallable() const noexcept {
   return false;
 }
 
-void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor stub) {
+void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor executor) {
   std::unique_lock lock(m_service_executors_mutex);
 
   // no duplicate services allowed
   for (const auto &registered_executor : m_service_executors) {
 
     // if executor id has already been added, do not add
-    if (stub->GetId() == registered_executor->GetId()) {
-      LOG_WARN("registration of duplicate executor of service '"
-               << stub->GetServiceName() << "' prevented")
+    if (executor->GetId() == registered_executor->GetId()) {
+      LOG_WARN("registration of duplicate executor for service '"
+               << executor->GetServiceName() << "' prevented")
       return;
     }
   }
 
-  m_service_executors.push_back(stub);
+  m_service_executors.push_back(executor);
 }
 
 std::future<SharedServiceResponse>
@@ -47,17 +47,18 @@ RoundRobinServiceCaller::Call(SharedServiceRequest request,
   SharedJob job = JobSystemFactory::CreateJob(
       [_this = shared_from_this(), promise, request, only_local,
        job_manager](JobContext *context) {
-        std::optional<SharedServiceExecutor> opt_stub =
+        std::optional<SharedServiceExecutor> maybe_executor =
             _this->SelectNextUsableCaller(only_local);
-        if (opt_stub.has_value()) {
+
+        if (maybe_executor.has_value()) {
           // call stub
-          SharedServiceExecutor stub = opt_stub.value();
-          auto result_future = stub->Call(request, job_manager);
+          SharedServiceExecutor executor = maybe_executor.value();
+          auto future_result = executor->Call(request, job_manager);
 
           // wait for call to complete
-          context->GetJobManager()->WaitForCompletion(result_future);
+          context->GetJobManager()->WaitForCompletion(future_result);
           try {
-            SharedServiceResponse response = result_future.get();
+            SharedServiceResponse response = future_result.get();
             promise->set_value(response);
           } catch (...) {
             promise->set_exception(std::current_exception());
@@ -105,8 +106,8 @@ RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
 
 bool RoundRobinServiceCaller::ContainsLocallyCallable() const noexcept {
   std::unique_lock lock(m_service_executors_mutex);
-  for (const auto &stub : m_service_executors) {
-    if (stub->IsCallable() && stub->IsLocal()) {
+  for (const auto &some_executor : m_service_executors) {
+    if (some_executor->IsCallable() && some_executor->IsLocal()) {
       return true;
     }
   }
@@ -116,12 +117,12 @@ bool RoundRobinServiceCaller::ContainsLocallyCallable() const noexcept {
 
 size_t RoundRobinServiceCaller::GetCallableCount() const noexcept {
   std::unique_lock lock(m_service_executors_mutex);
-  size_t count = 0;
-  for (auto &stubs : m_service_executors) {
-    if (stubs->IsCallable()) {
-      count++;
+  size_t callable_count = 0;
+  for (auto &some_executor : m_service_executors) {
+    if (some_executor->IsCallable()) {
+      callable_count++;
     }
   }
 
-  return count;
+  return callable_count;
 }

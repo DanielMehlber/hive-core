@@ -16,14 +16,14 @@ void LocalOnlyServiceRegistry::Register(const SharedServiceExecutor &stub) {
   m_registered_services.at(name)->AddExecutor(stub);
 
   LOG_DEBUG("new service '" << name
-                            << "' has been registered in local registry");
+                            << "' has been registered in local registry")
 }
 
 void LocalOnlyServiceRegistry::Unregister(const std::string &name) {
   if (m_registered_services.contains(name)) {
     m_registered_services.erase(name);
     LOG_DEBUG("service '" << name
-                          << "' has been unregistered from local registry");
+                          << "' has been unregistered from local registry")
   }
 }
 
@@ -41,14 +41,14 @@ LocalOnlyServiceRegistry::Find(const std::string &name,
       } else {
         LOG_WARN("service '" << name
                              << "' is registered in local registry, but not "
-                                "locally callable");
+                                "locally callable")
         promise.set_value({});
       }
     } else {
       LOG_WARN(
           "service '"
           << name
-          << "' was registered in local registry, but is not usable anymore");
+          << "' was registered in local registry, but is not usable anymore")
       promise.set_value({});
     }
   } else {

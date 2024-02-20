@@ -119,8 +119,8 @@ int main(int argc, const char **argv) {
       offscreen_renderer->Resize(width, height);
     }
   } else if (renderer_type == "offscreen") {
-    graphics::RendererSetup info{};
-    auto renderer = std::make_shared<graphics::OffscreenRenderer>(info, scene);
+    auto renderer =
+        std::make_shared<graphics::OffscreenRenderer>(std::nullopt, scene);
     kernel.SetRenderer(renderer);
 
     renderer->Resize(width, height);

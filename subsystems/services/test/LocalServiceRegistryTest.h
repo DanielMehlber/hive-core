@@ -33,6 +33,8 @@ TEST(ServiceTests, adding_service) {
   result_fut.wait();
   auto result = result_fut.get();
   ASSERT_EQ(11, GetResultOfAddition(result));
+
+  job_manager->StopExecution();
 }
 
 #endif // LOCALSERVICEREGISTRYTEST_H

@@ -1,6 +1,6 @@
 #include "services/registry/impl/remote/RemoteServiceRegistrationConsumer.h"
 #include "logging/LogManager.h"
-#include "networking/peers/ConnectionInfo.h"
+#include "networking/messaging/ConnectionInfo.h"
 #include "services/executor/impl/RemoteServiceExecutor.h"
 
 using namespace services::impl;
@@ -19,7 +19,7 @@ void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
   RemoteServiceRegistrationMessage registration_message(received_message);
   LOG_INFO("received web-socket service registration of service '"
            << registration_message.GetServiceName() << "' from host "
-           << connection_info.GetHostname());
+           << connection_info.GetHostname())
 
   auto service_id = registration_message.GetId();
   auto service_name = registration_message.GetServiceName();

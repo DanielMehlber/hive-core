@@ -18,4 +18,4 @@ typedef boost::fibers::condition_variable condition_variable;
 } // namespace jobsystem
 #endif
 
-#endif // SIMULATION_FRAMEWORK_JOBMUTEX_H
+#endif // JOBMUTEX_H

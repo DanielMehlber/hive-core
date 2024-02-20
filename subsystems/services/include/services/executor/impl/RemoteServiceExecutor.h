@@ -1,7 +1,7 @@
 #ifndef WEBSOCKETSERVICEEXECUTOR_H
 #define WEBSOCKETSERVICEEXECUTOR_H
 
-#include "networking/peers/IMessageEndpoint.h"
+#include "networking/messaging/IMessageEndpoint.h"
 #include "services/executor/IServiceExecutor.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 #include <memory>

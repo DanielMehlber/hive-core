@@ -13,7 +13,7 @@ namespace common::test {
  * @param timeout period of time for assertion. After is has expired and the
  * assertion was not successful, it fails.
  */
-void TryAssertUntilTimeout(std::function<bool()> evaluation,
+void TryAssertUntilTimeout(const std::function<bool()> &evaluation,
                            std::chrono::seconds timeout) {
   auto time = std::chrono::high_resolution_clock::now();
   while (!evaluation()) {

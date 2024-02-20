@@ -2,8 +2,8 @@
 #define WEBSOCKETSERVICEREQUESTCONSUMER_H
 
 #include "jobsystem/manager/JobManager.h"
-#include "networking/peers/IMessageConsumer.h"
-#include "networking/peers/IMessageEndpoint.h"
+#include "networking/messaging/IMessageConsumer.h"
+#include "networking/messaging/IMessageEndpoint.h"
 #include "services/caller/IServiceCaller.h"
 
 using namespace networking::websockets;

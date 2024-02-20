@@ -363,55 +363,72 @@ createDepthCapture(const vsg::ref_ptr<vsg::Device> &device,
 }
 
 void OffscreenRenderer::SetupInstanceAndDevice(
-    const RendererSetup &pre_init_info) {
-  if (pre_init_info.instance && pre_init_info.device) {
-    m_instance = pre_init_info.instance;
-    m_device = pre_init_info.device;
+    const std::optional<RendererSetup> &existing_renderer_setup) {
 
-    auto [physicalDevice, queueFamily] =
-        m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
-    m_queueFamily = queueFamily;
-    if (!physicalDevice || queueFamily < 0) {
-      LOG_ERR("Cannot create physical device in Vulkan")
-      return;
+  bool use_existing_renderer_setup = existing_renderer_setup.has_value();
+  if (use_existing_renderer_setup) {
+    LOG_DEBUG("using existing renderer setup for setting up offscreen renderer")
+    // existing renderer setup contains pre-initialized device and instance
+    const RendererSetup &renderer_setup = existing_renderer_setup.value();
+
+    bool is_valid_setup = renderer_setup.device && renderer_setup.instance;
+    if (is_valid_setup) {
+      // use existing setup (possibly sharing it with another renderer)
+      m_instance = renderer_setup.instance;
+      m_device = renderer_setup.device;
+
+      auto [physicalDevice, queueFamily] =
+          m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
+      m_queueFamily = queueFamily;
+
+      if (physicalDevice && queueFamily > 0) {
+        // finish setup and do not continue creating own instance and device
+        return;
+      } else {
+        LOG_ERR("cannot get physical Vulkan device from existing renderer "
+                "setup. Trying to create a device instead...")
+      }
+    } else {
+      LOG_WARN("existing renderer setup was invalid: either the device or "
+               "instance is unusable. Trying to create them instead...")
     }
-  } else {
-    uint32_t vulkanVersion = VK_API_VERSION_1_2;
+  }
 
-    vsg::Names instanceExtensions;
-    vsg::Names requestedLayers;
+  uint32_t vulkanVersion = VK_API_VERSION_1_2;
+
+  vsg::Names instanceExtensions;
+  vsg::Names requestedLayers;
 #ifndef NBEGUB
-    instanceExtensions.push_back(
-        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-    // requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
-    // requestedLayers.push_back("VK_LAYER_LUNARG_api_dump");
+  instanceExtensions.push_back(
+      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+  instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+  // requestedLayers.push_back("VK_LAYER_KHRONOS_validation");
+  // requestedLayers.push_back("VK_LAYER_LUNARG_api_dump");
 #endif
 
-    vsg::Names validatedNames =
-        vsg::validateInstancelayerNames(requestedLayers);
+  vsg::Names validatedNames = vsg::validateInstancelayerNames(requestedLayers);
 
-    m_instance = vsg::Instance::create(instanceExtensions, validatedNames,
-                                       vulkanVersion);
-    auto [physicalDevice, queueFamily] =
-        m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
-    m_queueFamily = queueFamily;
-    if (!physicalDevice || queueFamily < 0) {
-      LOG_ERR("Cannot create physical device in Vulkan")
-      return;
-    }
-
-    vsg::Names deviceExtensions;
-    vsg::QueueSettings queueSettings{vsg::QueueSetting{queueFamily, {1.0}}};
-
-    auto deviceFeatures = vsg::DeviceFeatures::create();
-    deviceFeatures->get().samplerAnisotropy = VK_TRUE;
-    deviceFeatures->get().geometryShader = true;
-
-    m_device =
-        vsg::Device::create(physicalDevice, queueSettings, validatedNames,
-                            deviceExtensions, deviceFeatures);
+  m_instance =
+      vsg::Instance::create(instanceExtensions, validatedNames, vulkanVersion);
+  auto [physicalDevice, queueFamily] =
+      m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
+  m_queueFamily = queueFamily;
+  if (!physicalDevice || queueFamily < 0) {
+    LOG_ERR("cannot create physical Vulkan device for offscreen renderer")
+    THROW_EXCEPTION(
+        RendererSetupException,
+        "cannot create physical Vulkan device for offscreen renderer")
   }
+
+  vsg::Names deviceExtensions;
+  vsg::QueueSettings queueSettings{vsg::QueueSetting{queueFamily, {1.0}}};
+
+  auto deviceFeatures = vsg::DeviceFeatures::create();
+  deviceFeatures->get().samplerAnisotropy = VK_TRUE;
+  deviceFeatures->get().geometryShader = true;
+
+  m_device = vsg::Device::create(physicalDevice, queueSettings, validatedNames,
+                                 deviceExtensions, deviceFeatures);
 }
 
 void OffscreenRenderer::SetupCamera() {
@@ -443,20 +460,19 @@ void OffscreenRenderer::SetupCamera() {
   }
 }
 
-OffscreenRenderer::OffscreenRenderer(RendererSetup pre_init_setup,
-                                     scene::SharedScene scene,
-                                     bool use_depth_buffer, bool msaa,
-                                     VkFormat imageFormat, VkFormat depthFormat,
-                                     VkSampleCountFlagBits sample_count,
-                                     VkExtent2D size)
+OffscreenRenderer::OffscreenRenderer(
+    const std::optional<RendererSetup> &existing_renderer_setup,
+    scene::SharedScene scene, bool use_depth_buffer, bool msaa,
+    VkFormat imageFormat, VkFormat depthFormat,
+    VkSampleCountFlagBits sample_count, VkExtent2D size)
     : m_color_image_format(imageFormat), m_depth_image_format(depthFormat),
       m_sample_count(sample_count), m_size(size), m_scene(std::move(scene)),
-      m_use_depth_buffer(use_depth_buffer), m_msaa(msaa) {
+      m_use_depth_buffer(use_depth_buffer), m_msaa(msaa), m_queueFamily(-1) {
 
   if (m_msaa)
     m_sample_count = VK_SAMPLE_COUNT_8_BIT;
 
-  SetupInstanceAndDevice(pre_init_setup);
+  SetupInstanceAndDevice(existing_renderer_setup);
   SetupCamera();
 
   m_scene_graph_root = vsg::StateGroup::create();
@@ -474,7 +490,8 @@ OffscreenRenderer::OffscreenRenderer(RendererSetup pre_init_setup,
    * It is only resolved by only resizing the renderer AFTER it once rendered.
    *
    * Might this be a bug in the VulkanSceneGraph RenderGraph? Its renderArea
-   * attribute is all over the place. Waiting for documentation of fix.
+   * attribute's value is messed up after direct resize. Waiting for
+   * documentation of fix.
    *
    * -> Constructor -> render -> resize -> render -> ... [OKAY]
    * -> Constructor -> resize -> render -> ... [NOT OKAY]
@@ -735,7 +752,7 @@ void replaceChild(vsg::Group *group, const vsg::ref_ptr<vsg::Node> &previous,
     if (child == previous)
       child = replacement;
   }
-};
+}
 
 void OffscreenRenderer::ReplaceFramebufferAndCaptures() {
   auto previous_colorBufferCapture = m_color_buffer_capture;
