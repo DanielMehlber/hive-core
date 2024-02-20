@@ -69,7 +69,7 @@ int main(int argc, const char **argv) {
   bool local_only = service_port < 0;
 
   /* START KERNEL AND ALL ITS SUBSYSTEMS */
-  kernel::Core kernel(config, local_only);
+  core::Core core(config, local_only);
 
   /* LOAD SCENE FILES (IF ANY WERE SPECIFIED) */
   auto vsg_options = vsg::Options::create();
@@ -105,44 +105,44 @@ int main(int argc, const char **argv) {
   if (renderer_type == "onscreen") {
     auto renderer =
         std::make_shared<graphics::OnscreenRenderer>(scene, width, height);
-    kernel.SetRenderer(renderer);
+    core.SetRenderer(renderer);
 
     if (enable_rendering_job) {
-      kernel.EnableRenderingJob();
+      core.EnableRenderingJob();
     }
 
     if (enable_rendering_service) {
       auto offscreen_renderer = std::make_shared<graphics::OffscreenRenderer>(
           renderer->GetSetup(), scene);
 
-      kernel.EnableRenderingService(offscreen_renderer);
+      core.EnableRenderingService(offscreen_renderer);
       offscreen_renderer->Resize(width, height);
     }
   } else if (renderer_type == "offscreen") {
     auto renderer =
         std::make_shared<graphics::OffscreenRenderer>(std::nullopt, scene);
-    kernel.SetRenderer(renderer);
+    core.SetRenderer(renderer);
 
     renderer->Resize(width, height);
 
     if (enable_rendering_job) {
-      kernel.EnableRenderingJob();
+      core.EnableRenderingJob();
     }
 
     if (enable_rendering_service) {
-      kernel.EnableRenderingService();
+      core.EnableRenderingService();
     }
   }
 
   /* LOAD PLUGINS (IF ANY WERE SPECIFIED) */
   if (!plugin_path.empty()) {
-    kernel.GetPluginManager()->InstallPlugins(plugin_path);
+    core.GetPluginManager()->InstallPlugins(plugin_path);
   }
 
   /* CONNECT TO OTHER PEERS (IF ANY WERE SPECIFIED AND SUBSYSTEM IS PROVIDED) */
-  if (kernel.GetSubsystemsManager()->ProvidesSubsystem<IMessageEndpoint>()) {
+  if (core.GetSubsystemsManager()->ProvidesSubsystem<IMessageEndpoint>()) {
     auto peer_networking_subsystem =
-        kernel.GetSubsystemsManager()->RequireSubsystem<IMessageEndpoint>();
+        core.GetSubsystemsManager()->RequireSubsystem<IMessageEndpoint>();
     for (const auto &connection_url : connections_to_establish) {
       peer_networking_subsystem->EstablishConnectionTo(connection_url);
     }
@@ -153,7 +153,7 @@ int main(int argc, const char **argv) {
   auto lastIterationTime = std::chrono::steady_clock::now();
 
   /* MAIN PROCESSING LOOP */
-  while (!kernel.ShouldShutdown()) {
+  while (!core.ShouldShutdown()) {
 
     auto currentTime = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -163,7 +163,7 @@ int main(int argc, const char **argv) {
       std::this_thread::sleep_for(targetInterval - elapsed);
     }
     lastIterationTime = std::chrono::steady_clock::now();
-    kernel.GetJobManager()->InvokeCycleAndWait();
+    core.GetJobManager()->InvokeCycleAndWait();
   }
 
   return 0;

@@ -7,7 +7,7 @@
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
-using namespace kernel;
+using namespace core;
 using namespace jobsystem;
 using namespace events;
 using namespace props;

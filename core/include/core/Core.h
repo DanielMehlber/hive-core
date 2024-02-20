@@ -27,7 +27,7 @@
 
 using namespace std::chrono_literals;
 
-namespace kernel {
+namespace core {
 
 /**
  * Encapsulates all components belonging to the core system and allows easy
@@ -103,6 +103,6 @@ public:
 
   common::subsystems::SharedSubsystemManager GetSubsystemsManager() const;
 };
-} // namespace kernel
+} // namespace core
 
 #endif // KERNEL_H

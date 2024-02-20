@@ -18,7 +18,7 @@ void BoostPluginManager::InstallPlugin(const std::string &path) {
   if (plugin) {
     InstallPlugin(plugin);
   } else {
-    LOG_ERR("Cannot load plugin: loaded library "
+    LOG_ERR("cannot load plugin: loaded library "
             << absolute_path << " does not provide a plugin symbol")
     return;
   }
@@ -31,16 +31,16 @@ void BoostPluginManager::InstallPlugin(boost::shared_ptr<IPlugin> plugin) {
       [plugin_manager = weak_from_this(),
        plugin = std::move(plugin)](jobsystem::JobContext *context) mutable {
         if (plugin_manager.expired()) {
-          LOG_ERR("Cannot install plugin "
+          LOG_ERR("cannot install plugin "
                   << plugin->GetName()
-                  << " because Plugin Manager has already shut down")
+                  << " because plugin manager has already shut down")
           return JobContinuation::DISPOSE;
         }
 
         try {
           plugin->Init(plugin_manager.lock()->GetContext());
         } catch (const std::exception &exception) {
-          LOG_ERR("Installation of plugin "
+          LOG_ERR("installation of plugin "
                   << plugin->GetName()
                   << " failed. Initialization threw exception: "
                   << exception.what())
@@ -54,7 +54,7 @@ void BoostPluginManager::InstallPlugin(boost::shared_ptr<IPlugin> plugin) {
         plugin_manager.lock()->m_plugins[name] = std::move(plugin);
         lock.unlock();
 
-        LOG_INFO("Installed plugin " << name)
+        LOG_INFO("installed plugin " << name)
         return JobContinuation::DISPOSE;
       },
       "install-plugin-{" + plugin->GetName() + "}", JobExecutionPhase::INIT);
@@ -72,8 +72,8 @@ void BoostPluginManager::UninstallPlugin(const std::string &name) {
        name](jobsystem::JobContext *context) {
         bool plugin_manager_destroyed = plugin_manager.expired();
         if (plugin_manager_destroyed) {
-          LOG_ERR("Cannot uninstall plugin "
-                  << name << " because Plugin Manager has already shut down")
+          LOG_ERR("cannot uninstall plugin "
+                  << name << " because plugin manager has already shut down")
           return JobContinuation::DISPOSE;
         }
 
@@ -90,7 +90,7 @@ void BoostPluginManager::UninstallPlugin(const std::string &name) {
         try {
           plugin->ShutDown(plugin_manager.lock()->GetContext());
         } catch (const std::exception &exception) {
-          LOG_ERR("ShutDown of plugin "
+          LOG_ERR("shut down of plugin "
                   << plugin->GetName()
                   << " failed due to throws exception: " << exception.what())
           return JobContinuation::DISPOSE;
