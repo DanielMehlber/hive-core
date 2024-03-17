@@ -313,6 +313,8 @@ public:
 
 template <typename T>
 Reference<T> EnableBorrowFromThis<T>::ReferenceFromThis() {
+  ASSERT(_this_reference && _this_reference != nullptr,
+         "cannot create reference because this is currently not owned")
   return *_this_reference;
 }
 
@@ -404,6 +406,8 @@ public:
 
   T *operator->() const { return _owned.get(); }
   T &operator*() const { return *this->operator->(); }
+  Owner<T> &operator=(Owner<T> &&) = delete;
+
   std::shared_ptr<OwnershipState> &GetState();
   std::unique_ptr<T> &GetPointer();
 };
@@ -455,6 +459,9 @@ Owner<T>::Owner(Owner<Other> &&other) {
   ASSERT(_owned, "owned object should not be null")
   ASSERT(_state->alive, "cannot move dead owner")
 
+  ASSERT(!other.GetState(), "other owner should be without state after move")
+  ASSERT(!other.GetPointer(), "other owner should be without owned after move")
+
   _state->owner.store(this);
 
   if constexpr (std::is_base_of<EnableBorrowFromThis<Other>, T>()) {
@@ -470,6 +477,9 @@ template <typename T> Owner<T>::Owner(Owner<T> &&other) {
   ASSERT(_state, "shared state is broken")
   ASSERT(_owned, "owned object should not be null")
   ASSERT(_state->alive, "cannot move dead owner")
+
+  ASSERT(!other._state, "other owner should be without state after move")
+  ASSERT(!other._owned, "other owner should be without owned after move")
 
   _state->owner.store(this);
 

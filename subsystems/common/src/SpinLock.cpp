@@ -9,14 +9,14 @@ bool SpinLock::TryAcquire() {
   return !alreadyLocked;
 }
 
-void SpinLock::Acquire() {
+void SpinLock::lock() {
   // spin until successful acquire
   while (!TryAcquire()) {
     // TODO: introduce some sort of yield to avoid busy waiting
   }
 }
 
-void SpinLock::Release() {
+void SpinLock::unlock() {
   // use release semantics to ensure that all prior
   // writes have been fully committed before we unlock
   m_atomic.clear(std::memory_order_release);

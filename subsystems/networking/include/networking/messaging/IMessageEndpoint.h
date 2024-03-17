@@ -94,6 +94,8 @@ public:
    */
   virtual bool
   HasConnectionTo(const std::string &endpoint_id) const noexcept = 0;
+
+  virtual ~IMessageEndpoint() = default;
 };
 
 } // namespace networking::messaging

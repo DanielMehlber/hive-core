@@ -50,43 +50,45 @@ BoostWebSocketEndpoint::BoostWebSocketEndpoint(
     m_execution_threads.push_back(std::move(execution));
   }
 
+  m_this_pointer = std::make_shared<BoostWebSocketEndpoint *>(this);
   SetupCleanUpJob();
 }
 
 void BoostWebSocketEndpoint::SetupCleanUpJob() {
+  std::weak_ptr<BoostWebSocketEndpoint *> weak_endpoint = m_this_pointer;
   SharedJob clean_up_job = jobsystem::JobSystemFactory::CreateJob<TimerJob>(
-      [weak_this = weak_from_this()](jobsystem::JobContext *context) {
-        if (weak_this.expired()) {
+      [weak_endpoint](jobsystem::JobContext *context) mutable {
+        if (auto shared_ptr_to_endpoint = weak_endpoint.lock()) {
+          auto endpoint = *shared_ptr_to_endpoint;
+
+          for (auto &consumer : endpoint->m_consumers) {
+            endpoint->CleanUpConsumersOfMessageType(consumer.first);
+          }
+
+          // clean up connections that are not usable anymore
+          std::unique_lock lock(endpoint->m_connections_mutex);
+          size_t size_before = endpoint->m_connections.size();
+          for (auto it = endpoint->m_connections.begin();
+               it != endpoint->m_connections.end();
+               /* no increment here */) {
+            if (!it->second->IsUsable()) {
+              endpoint->OnConnectionClose(it->first);
+              it = endpoint->m_connections.erase(it);
+            } else {
+              ++it;
+            }
+          }
+
+          size_t difference = size_before - endpoint->m_connections.size();
+          if (difference > 0) {
+            LOG_INFO("cleaned up " << difference
+                                   << " unusable or dead connections")
+          }
+
+          return REQUEUE;
+        } else {
           return DISPOSE;
         }
-
-        // clean up consumers that are not referencing any valid ones
-        auto _this = weak_this.lock();
-        for (auto &consumer : _this->m_consumers) {
-          _this->CleanUpConsumersOfMessageType(consumer.first);
-        }
-
-        // clean up connections that are not usable anymore
-        std::unique_lock lock(_this->m_connections_mutex);
-        size_t size_before = _this->m_connections.size();
-        for (auto it = _this->m_connections.begin();
-             it != _this->m_connections.end();
-             /* no increment here */) {
-          if (!it->second->IsUsable()) {
-            _this->OnConnectionClose(it->first);
-            it = _this->m_connections.erase(it);
-          } else {
-            ++it;
-          }
-        }
-
-        size_t difference = size_before - _this->m_connections.size();
-        if (difference > 0) {
-          LOG_INFO("cleaned up " << difference
-                                 << " unusable or dead connections")
-        }
-
-        return REQUEUE;
       },
       "boost-web-socket-peer-clean-up-" +
           std::to_string(m_local_endpoint->port()),
@@ -360,7 +362,7 @@ BoostWebSocketEndpoint::Broadcast(const SharedMessage &message) {
   std::future<size_t> future = promise->get_future();
 
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
-      [_this = shared_from_this(), message,
+      [_this = BorrowFromThis(), message,
        promise](jobsystem::JobContext *context) {
         std::list<std::future<void>> futures;
         size_t count{};

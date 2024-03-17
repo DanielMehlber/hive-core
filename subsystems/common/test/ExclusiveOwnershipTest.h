@@ -54,6 +54,23 @@ TEST(ExclusiveOwnershipTests, weak_borrow) {
   ASSERT_THROW(weak_borrow->Borrow(), common::memory::BorrowFailedException);
 }
 
+TEST(ExclusiveOwnershipTests, destroy_after_expiration) {
+  auto shared_string = std::make_shared<std::string>("hallo");
+  std::weak_ptr<std::string> weak_string = shared_string;
+
+  {
+    auto string_pointer = std::move(shared_string);
+    auto string_owner = common::memory::Owner<std::shared_ptr<std::string>>(
+        std::move(string_pointer));
+
+    ASSERT_FALSE(weak_string.expired());
+    ASSERT_EQ(std::string("hallo"), *weak_string.lock());
+    ASSERT_EQ(std::string("hallo"), *(*string_owner));
+  }
+
+  ASSERT_TRUE(weak_string.expired());
+}
+
 class Borrowable : public common::memory::EnableBorrowFromThis<Borrowable> {
 public:
   int _i;

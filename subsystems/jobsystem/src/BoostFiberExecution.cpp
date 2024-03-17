@@ -1,4 +1,4 @@
-#include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
+#include "jobsystem/execution/impl/fiber/BoostFiberExecution.h"
 #include "common/assert/Assert.h"
 #include "common/profiling/Timer.h"
 #include "jobsystem/manager/JobManager.h"
@@ -7,24 +7,24 @@ using namespace jobsystem::execution::impl;
 using namespace jobsystem::job;
 using namespace std::chrono_literals;
 
-FiberExecutionImpl::FiberExecutionImpl(
+BoostFiberExecution::BoostFiberExecution(
     const common::config::SharedConfiguration &config)
     : m_config(config) {
   m_worker_thread_count = config->GetAsInt("jobs.concurrency", 4);
   Init();
 }
 
-FiberExecutionImpl::~FiberExecutionImpl() { ShutDown(); }
+BoostFiberExecution::~BoostFiberExecution() { ShutDown(); }
 
-void FiberExecutionImpl::Init() {
+void BoostFiberExecution::Init() {
   m_job_channel =
       std::make_unique<boost::fibers::buffered_channel<std::function<void()>>>(
           1024);
 }
 
-void FiberExecutionImpl::ShutDown() { Stop(); }
+void BoostFiberExecution::ShutDown() { Stop(); }
 
-void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
+void BoostFiberExecution::Schedule(std::shared_ptr<Job> job) {
 #ifdef ENABLE_PROFILING
   common::profiling::Timer schedule_timer("job-scheduling");
 #endif
@@ -68,15 +68,18 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
   }
 }
 
-void FiberExecutionImpl::WaitForCompletion(
+void BoostFiberExecution::WaitForCompletion(
     std::shared_ptr<IJobWaitable> waitable) {
 
 #ifdef ENABLE_PROFILING
   common::profiling::Timer waiting_timer("job-waiting-for-completion");
 #endif
 
-  bool is_called_from_fiber =
-      !boost::fibers::context::active()->is_context(boost::fibers::type::none);
+  // For type::main_context the context is associated with the “main” fiber of
+  // the thread: the one implicitly created by the thread itself, rather than
+  // one explicitly created by Boost.Fiber (= a normal thread)
+  bool is_called_from_fiber = !boost::fibers::context::active()->is_context(
+      boost::fibers::type::main_context);
   if (is_called_from_fiber) {
     // caller is a fiber, so yield
     auto id_before = boost::this_fiber::get_id();
@@ -89,12 +92,12 @@ void FiberExecutionImpl::WaitForCompletion(
   } else {
     // caller is a thread, so block
     while (!waitable->IsFinished()) {
-      std::this_thread::sleep_for(0.1ms);
+      std::this_thread::yield();
     }
   }
 }
 
-void FiberExecutionImpl::Start(common::memory::Borrower<JobManager> manager) {
+void BoostFiberExecution::Start(common::memory::Borrower<JobManager> manager) {
 
   if (m_current_state != JobExecutionState::STOPPED) {
     return;
@@ -106,7 +109,7 @@ void FiberExecutionImpl::Start(common::memory::Borrower<JobManager> manager) {
   // Spawn worker threads: They will add themselves to the workforce
   for (int i = 0; i < m_worker_thread_count; i++) {
     auto worker = std::make_shared<std::thread>(
-        std::bind(&FiberExecutionImpl::ExecuteWorker, this));
+        std::bind(&BoostFiberExecution::ExecuteWorker, this));
     m_worker_threads.push_back(worker);
   }
 
@@ -114,7 +117,7 @@ void FiberExecutionImpl::Start(common::memory::Borrower<JobManager> manager) {
   m_managing_instance = manager.ToReference();
 }
 
-void FiberExecutionImpl::Stop() {
+void BoostFiberExecution::Stop() {
 
   if (m_current_state != JobExecutionState::RUNNING) {
     return;
@@ -155,7 +158,7 @@ void FiberExecutionImpl::Stop() {
   m_managing_instance = common::memory::Reference<JobManager>();
 }
 
-void FiberExecutionImpl::ExecuteWorker() {
+void BoostFiberExecution::ExecuteWorker() {
 
   /*
    * Work sharing = a scheduler takes fibers from other threads when it has no

@@ -21,8 +21,8 @@
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 typedef impl::SingleThreadedExecutionImpl JobExecutionImpl;
 #else
-#include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
-typedef jobsystem::execution::impl::FiberExecutionImpl JobExecutionImpl;
+#include "jobsystem/execution/impl/fiber/BoostFiberExecution.h"
+typedef jobsystem::execution::impl::BoostFiberExecution JobExecutionImpl;
 #endif
 
 namespace jobsystem {

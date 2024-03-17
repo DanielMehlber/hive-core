@@ -26,7 +26,7 @@ DECLARE_EXCEPTION(NoSuchPeerException);
  */
 class BoostWebSocketEndpoint
     : public IMessageEndpoint,
-      public std::enable_shared_from_this<BoostWebSocketEndpoint> {
+      public common::memory::EnableBorrowFromThis<BoostWebSocketEndpoint> {
 private:
   /**
    * Indicates if the web socket endpoint is currently running
@@ -35,10 +35,15 @@ private:
    */
   bool m_running{false};
   mutable jobsystem::recursive_mutex m_running_mutex;
-
+  
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
-
   common::config::SharedConfiguration m_config;
+
+  /**
+   * Used for clean-up jobs because they are kicked in the constructor, where
+   * shared_from_this() is not available yet.
+   */
+  std::shared_ptr<BoostWebSocketEndpoint *> m_this_pointer;
 
   /**
    * maps message type names to their consumers

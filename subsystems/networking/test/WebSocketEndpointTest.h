@@ -31,6 +31,8 @@ Node SetupWebSocketPeer(size_t port) {
       common::memory::Owner<common::subsystems::SubsystemManager>();
 
   auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
+  job_manager->StartExecution();
+
   auto job_manager_ref = job_manager.CreateReference();
   subsystems->AddOrReplaceSubsystem<JobManager>(std::move(job_manager));
 
@@ -251,6 +253,7 @@ TEST(WebSockets, websockets_message_broadcast) {
   SharedMessage message = std::make_shared<Message>("test-type");
 
   auto future = broadcasting_peer.endpoint.Borrow()->Broadcast(message);
+  broadcasting_peer.job_manager.Borrow()->InvokeCycleAndWait();
   future.wait();
   ASSERT_EQ(future.get(), 5);
 

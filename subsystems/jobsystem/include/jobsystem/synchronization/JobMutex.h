@@ -7,17 +7,14 @@
 #ifdef JOB_SYSTEM_SINGLE_THREAD
 namespace jobsystem {
 typedef std::mutex mutex;
-typedef std::condition_variable condition_variable;
 typedef std::recursive_mutex recursive_mutex;
 } // namespace jobsystem
 #else
 // define synchronization types for fibers
-#include <boost/fiber/mutex.hpp>
-#include <boost/fiber/recursive_mutex.hpp>
+#include "jobsystem/execution/impl/fiber/BoostFiberRecursiveSpinLock.h"
 namespace jobsystem {
-typedef boost::fibers::mutex mutex;
-typedef boost::fibers::condition_variable condition_variable;
-typedef boost::fibers::recursive_mutex recursive_mutex;
+typedef common::sync::SpinLock mutex;
+typedef BoostFiberRecursiveSpinLock recursive_mutex;
 } // namespace jobsystem
 #endif
 

@@ -14,12 +14,12 @@ namespace common::sync {
 class SpinLock {
 protected:
   std::atomic_flag m_atomic;
+  bool TryAcquire();
 
 public:
   SpinLock() : m_atomic(false) {}
-  bool TryAcquire();
-  void Acquire();
-  void Release();
+  void lock();
+  void unlock();
 };
 } // namespace common::sync
 

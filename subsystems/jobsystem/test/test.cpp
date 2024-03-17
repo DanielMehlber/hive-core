@@ -1,5 +1,7 @@
+#include "common/test/TryAssertUntilTimeout.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
+#include "jobsystem/synchronization/JobMutex.h"
 #include <future>
 #include <gtest/gtest.h>
 
@@ -197,9 +199,6 @@ TEST(JobSystem, job_bulk) {
   manager->StopExecution();
 }
 
-// single threaded job implementations do not allow waiting inside jobs because
-// doing so is the only surefire way to deadlock the entire execution
-#ifndef JOB_SYSTEM_SINGLE_THREAD
 TEST(JobSystem, wait_for_job_inside_job) {
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = common::memory::Owner<JobManager>(config);
@@ -229,7 +228,6 @@ TEST(JobSystem, wait_for_job_inside_job) {
 
   manager->StopExecution();
 }
-#endif
 
 TEST(JobSystem, detach_jobs) {
   std::atomic<short> execution_counter = 0;
@@ -254,9 +252,6 @@ TEST(JobSystem, detach_jobs) {
   manager->StopExecution();
 }
 
-// this waits for counters, what is not possible inside jobs using a single
-// threaded implementation
-#ifndef JOB_SYSTEM_SINGLE_THREAD
 TEST(JobSystem, detach_jobs_mid_execution) {
   std::atomic<short> execution_counter = 0;
   auto config = std::make_shared<common::config::Configuration>();
@@ -285,7 +280,6 @@ TEST(JobSystem, detach_jobs_mid_execution) {
 
   manager->StopExecution();
 }
-#endif
 
 TEST(JobSystem, wait_for_future_completion) {
   std::vector<short> order;
@@ -315,12 +309,8 @@ TEST(JobSystem, wait_for_future_completion) {
   manager->StopExecution();
 }
 
-// this waits for counters, what is not possible inside jobs using a single
-// threaded implementation
-#ifndef JOB_SYSTEM_SINGLE_THREAD
-TEST(JobSystem, test_yield) {
+TEST(JobSynchronization, wait_for_future) {
   auto config = std::make_shared<common::config::Configuration>();
-  config->Set("jobs.concurrency", 1);
   auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
@@ -329,28 +319,84 @@ TEST(JobSystem, test_yield) {
 
   SharedJob promise_job =
       JobSystemFactory::CreateJob([promise](JobContext *context) {
-        for (int i = 0; i < 100; i++) {
-          boost::this_fiber::yield();
-        }
+        std::this_thread::sleep_for(0.1s);
 
         promise->set_value();
         return JobContinuation::DISPOSE;
       });
-
-  manager->KickJob(promise_job);
 
   SharedJob future_job =
       JobSystemFactory::CreateJob([&future](JobContext *context) {
         context->GetJobManager()->WaitForCompletion(future);
         return JobContinuation::DISPOSE;
       });
+
+  manager->KickJob(promise_job);
   manager->KickJob(future_job);
 
   manager->InvokeCycleAndWait();
 
   manager->StopExecution();
 }
-#endif
+
+TEST(JobSynchronization, recursive_mutex_threads) {
+  bool finished = false;
+
+  // check that multiple sequential locks can be performed by the same thread
+  std::thread th([&finished] {
+    jobsystem::recursive_mutex recursive_mutex;
+    std::unique_lock lock1(recursive_mutex);
+    std::unique_lock lock2(recursive_mutex);
+    std::unique_lock lock3(recursive_mutex);
+    finished = true;
+  });
+
+  common::test::TryAssertUntilTimeout([&finished]() { return finished; }, 1s);
+  th.join();
+}
+
+TEST(JobSynchronization, recursive_mutex_fibers) {
+  auto config = std::make_shared<common::config::Configuration>();
+  auto job_manager = common::memory::Owner<JobManager>(config);
+  job_manager->StartExecution();
+
+  jobsystem::recursive_mutex recursive_mutex;
+  std::atomic_bool should_be_currently_locked = false;
+
+  // main idea: fire lots of jobs which all lock the same recursive mutex and
+  // assert they do not enter the same critical section in parallel.
+  for (int i = 0; i < 100; i++) {
+    auto job =
+        std::make_shared<Job>([&recursive_mutex, &should_be_currently_locked,
+                               i](JobContext *context) {
+          std::unique_lock lock(recursive_mutex);
+
+          // if this is true, this means that this critical section is actually
+          // locked by another fiber. The current fiber shouldn't get access to
+          // this section, therefore the recursive mutex does not work as
+          // expected.
+          ASSERT(!should_be_currently_locked, "should not be locked");
+          should_be_currently_locked = true;
+
+          {
+            // check if recursive locking works
+            std::unique_lock lock1(recursive_mutex);
+          }
+
+          // if the recursive mutex does not lock correctly or falsely releases
+          // after recursive locking, this delay introduces time for other
+          // fibers to enter the critical section and cause assertion errors.
+          std::this_thread::sleep_for(0.01s);
+          should_be_currently_locked = false;
+
+          return JobContinuation::DISPOSE;
+        });
+    job_manager->KickJob(job);
+  }
+
+  job_manager->InvokeCycleAndWait();
+  job_manager->StopExecution();
+}
 
 int main(int argc, char **argv) {
 

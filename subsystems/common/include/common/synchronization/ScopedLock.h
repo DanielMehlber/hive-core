@@ -12,9 +12,9 @@ template <class Lock> class ScopedLock {
   lock_t *m_pLock;
 
 public:
-  explicit ScopedLock(lock_t &lock) : m_pLock(&lock) { m_pLock->Acquire(); }
+  explicit ScopedLock(lock_t &lock) : m_pLock(&lock) { m_pLock->lock(); }
   ScopedLock(ScopedLock &) = delete;
-  ~ScopedLock() { m_pLock->Release(); }
+  ~ScopedLock() { m_pLock->unlock(); }
 };
 
 } // namespace common::sync

@@ -23,8 +23,8 @@ namespace jobsystem::execution::impl {
  * share their work. When a job yields, the fiber it's running on might be
  * executed on a different thread after it has been revoked as last time.
  */
-class FiberExecutionImpl
-    : jobsystem::execution::IJobExecution<FiberExecutionImpl> {
+class BoostFiberExecution
+    : jobsystem::execution::IJobExecution<BoostFiberExecution> {
 private:
   common::config::SharedConfiguration m_config;
   jobsystem::execution::JobExecutionState m_current_state{STOPPED};
@@ -57,10 +57,10 @@ private:
   void ExecuteWorker();
 
 public:
-  FiberExecutionImpl() = delete;
-  explicit FiberExecutionImpl(
+  BoostFiberExecution() = delete;
+  explicit BoostFiberExecution(
       const common::config::SharedConfiguration &config);
-  virtual ~FiberExecutionImpl();
+  virtual ~BoostFiberExecution();
 
   /**
    * Schedules the job for execution
@@ -107,9 +107,9 @@ public:
 
 template <typename FutureType>
 inline void
-FiberExecutionImpl::WaitForCompletion(const std::future<FutureType> &future) {
-  bool is_called_from_fiber =
-      !boost::fibers::context::active()->is_context(boost::fibers::type::none);
+BoostFiberExecution::WaitForCompletion(const std::future<FutureType> &future) {
+  bool is_called_from_fiber = !boost::fibers::context::active()->is_context(
+      boost::fibers::type::main_context);
   if (is_called_from_fiber) {
     // caller is a fiber, so yield
     while (future.wait_for(std::chrono::seconds(0)) !=
@@ -122,7 +122,7 @@ FiberExecutionImpl::WaitForCompletion(const std::future<FutureType> &future) {
   }
 }
 
-inline jobsystem::execution::JobExecutionState FiberExecutionImpl::GetState() {
+inline jobsystem::execution::JobExecutionState BoostFiberExecution::GetState() {
   return m_current_state;
 }
 
