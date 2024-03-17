@@ -37,7 +37,7 @@ public:
 
   std::future<SharedServiceResponse>
   Call(SharedServiceRequest request,
-       jobsystem::SharedJobManager job_manager) override;
+       common::memory::Borrower<jobsystem::JobManager> job_manager) override;
 
   bool IsCallable() override { return true; };
 

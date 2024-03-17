@@ -7,7 +7,7 @@
 #include "services/registry/impl/remote/RemoteServiceRegistrationMessage.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 
-using namespace networking::websockets;
+using namespace networking::messaging;
 
 namespace services::impl {
 
@@ -19,14 +19,14 @@ class RemoteServiceRegistrationConsumer : public IMessageConsumer {
 private:
   std::function<void(SharedServiceExecutor)> m_consumer;
   std::weak_ptr<RemoteServiceResponseConsumer> m_response_consumer;
-  std::weak_ptr<IMessageEndpoint> m_web_socket_peer;
+  common::memory::Reference<IMessageEndpoint> m_message_endpoint;
 
 public:
   RemoteServiceRegistrationConsumer() = delete;
   explicit RemoteServiceRegistrationConsumer(
       std::function<void(SharedServiceExecutor)> consumer,
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
-      std::weak_ptr<IMessageEndpoint> web_socket_peer);
+      common::memory::Reference<IMessageEndpoint> web_socket_peer);
 
   std::string GetMessageType() const noexcept override;
 

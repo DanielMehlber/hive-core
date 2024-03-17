@@ -7,7 +7,7 @@
 #include <set>
 #include <string>
 
-namespace networking::websockets {
+namespace networking::messaging {
 
 /**
  * Message that can be passed between endpoints. It always has a type and
@@ -75,6 +75,6 @@ inline std::string Message::GetType() const noexcept { return m_type; }
 
 typedef std::shared_ptr<Message> SharedMessage;
 
-} // namespace networking::websockets
+} // namespace networking::messaging
 
 #endif /* WEBSOCKETMESSAGE_H */

@@ -6,7 +6,7 @@
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 #include <memory>
 
-using namespace networking::websockets;
+using namespace networking::messaging;
 
 namespace services::impl {
 
@@ -19,8 +19,8 @@ class RemoteServiceExecutor
     : public IServiceExecutor,
       public std::enable_shared_from_this<RemoteServiceExecutor> {
 private:
-  /** Peer that will be used to send calls to remote services */
-  std::weak_ptr<IMessageEndpoint> m_web_socket_peer;
+  /** Endpoint that will be used to send calls to remote services */
+  common::memory::Reference<IMessageEndpoint> m_endpoint;
 
   /** Hostname of remote endpoint (recipient of call message) */
   std::string m_remote_host_name;
@@ -41,13 +41,14 @@ private:
 public:
   RemoteServiceExecutor() = delete;
   explicit RemoteServiceExecutor(
-      std::string service_name, std::weak_ptr<IMessageEndpoint> peer,
+      std::string service_name,
+      common::memory::Reference<IMessageEndpoint> endpoint,
       std::string remote_host_name, std::string id,
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer);
 
   std::future<SharedServiceResponse>
   Call(SharedServiceRequest request,
-       jobsystem::SharedJobManager job_manager) override;
+       common::memory::Borrower<jobsystem::JobManager> job_manager) override;
 
   bool IsCallable() override;
 

@@ -12,13 +12,12 @@ using namespace std::placeholders;
 TEST(ServiceTests, adding_service) {
   auto config = std::make_shared<common::config::Configuration>();
 
-  SharedServiceRegistry registry =
-      std::make_shared<services::impl::LocalOnlyServiceRegistry>();
+  common::memory::Owner<services::IServiceRegistry> registry =
+      common::memory::Owner<services::impl::LocalOnlyServiceRegistry>();
 
   SharedServiceExecutor adding_service =
       std::make_shared<AddingServiceExecutor>();
-  jobsystem::SharedJobManager job_manager =
-      std::make_shared<jobsystem::JobManager>(config);
+  auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
 
   job_manager->StartExecution();
   registry->Register(adding_service);
@@ -27,7 +26,7 @@ TEST(ServiceTests, adding_service) {
 
   SharedServiceRequest request = GenerateAddingRequest(6, 5);
 
-  auto result_fut = service_caller->Call(request, job_manager);
+  auto result_fut = service_caller->Call(request, job_manager.Borrow());
   job_manager->InvokeCycleAndWait();
 
   result_fut.wait();

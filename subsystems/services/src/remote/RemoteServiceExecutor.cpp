@@ -1,7 +1,7 @@
-#include <utility>
 
-#include "common/uuid/UuidGenerator.h"
+
 #include "services/executor/impl/RemoteServiceExecutor.h"
+#include "common/uuid/UuidGenerator.h"
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
 
 using namespace services::impl;
@@ -9,25 +9,26 @@ using namespace services;
 using namespace jobsystem;
 
 RemoteServiceExecutor::RemoteServiceExecutor(
-    std::string service_name, std::weak_ptr<IMessageEndpoint> peer,
+    std::string service_name,
+    common::memory::Reference<IMessageEndpoint> endpoint,
     std::string remote_host_name, std::string id,
     std::weak_ptr<RemoteServiceResponseConsumer> response_consumer)
-    : m_web_socket_peer(std::move(peer)),
+    : m_endpoint(std::move(endpoint)),
       m_remote_host_name(std::move(remote_host_name)),
       m_service_name(std::move(service_name)),
       m_response_consumer(std::move(response_consumer)), m_id(std::move(id)) {}
 
 bool RemoteServiceExecutor::IsCallable() {
-  if (m_web_socket_peer.expired()) {
+  if (auto maybe_endpoint = m_endpoint.TryBorrow()) {
+    return maybe_endpoint.value()->HasConnectionTo(m_remote_host_name);
+  } else {
     return false;
   }
-
-  return m_web_socket_peer.lock()->HasConnectionTo(m_remote_host_name);
 }
 
-std::future<SharedServiceResponse>
-RemoteServiceExecutor::Call(SharedServiceRequest request,
-                            jobsystem::SharedJobManager job_manager) {
+std::future<SharedServiceResponse> RemoteServiceExecutor::Call(
+    SharedServiceRequest request,
+    common::memory::Borrower<jobsystem::JobManager> job_manager) {
 
   auto promise = std::make_shared<std::promise<SharedServiceResponse>>();
   std::future<SharedServiceResponse> future = promise->get_future();
@@ -56,9 +57,8 @@ RemoteServiceExecutor::Call(SharedServiceRequest request,
           SharedMessage message =
               RemoteServiceMessagesConverter::FromServiceRequest(*request);
 
-          std::future<void> sending_future =
-              _this->m_web_socket_peer.lock()->Send(_this->m_remote_host_name,
-                                                    message);
+          std::future<void> sending_future = _this->m_endpoint.Borrow()->Send(
+              _this->m_remote_host_name, message);
 
           // wait until request has been sent and register promise for
           // resolution

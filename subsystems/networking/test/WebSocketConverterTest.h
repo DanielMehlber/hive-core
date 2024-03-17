@@ -5,7 +5,8 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-using namespace networking::websockets;
+using namespace networking;
+using namespace networking::messaging;
 
 TEST(WebSockets, message_converter_serializing) {
 
@@ -14,9 +15,9 @@ TEST(WebSockets, message_converter_serializing) {
   message->SetAttribute("attr2", "value2");
 
   std::string payload =
-      networking::websockets::MessageConverter::ToMultipartFormData(message);
+      networking::messaging::MessageConverter::ToMultipartFormData(message);
   SharedMessage same_message =
-      networking::websockets::MessageConverter::FromMultipartFormData(payload);
+      networking::messaging::MessageConverter::FromMultipartFormData(payload);
 
   ASSERT_TRUE(message->EqualsTo(same_message));
 }
@@ -29,7 +30,7 @@ TEST(WebSockets, message_converter_invalid) {
   message->SetAttribute("attr2", "value2");
 
   std::string payload =
-      networking::websockets::MessageConverter::ToMultipartFormData(message);
+      networking::messaging::MessageConverter::ToMultipartFormData(message);
 
   // now half of the message gets lost
   auto invalid_payload = payload.substr(0, payload.size() / 2);

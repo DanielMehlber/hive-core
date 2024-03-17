@@ -1,5 +1,4 @@
 #include "resourcemgmt/loader/impl/FileLoader.h"
-#include "resourcemgmt/ResourceFactory.h"
 #include <fstream>
 
 using namespace resourcemgmt;
@@ -16,8 +15,7 @@ SharedResource FileLoader::Load(const std::string &uri) {
     ifs.read(&bytes_in_file->operator[](0), pos);
   }
 
-  SharedResource resource =
-      ResourceFactory::CreateSharedResource(bytes_in_file);
+  SharedResource resource = std::make_shared<Resource>(bytes_in_file);
 
   return resource;
 }

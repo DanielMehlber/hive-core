@@ -8,7 +8,7 @@ using namespace std::chrono_literals;
 
 TEST(JobSystem, allPhases) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<jobsystem::JobManager>(config);
+  auto manager = common::memory::Owner<jobsystem::JobManager>(config);
   manager->StartExecution();
 
   std::vector<short> vec;
@@ -45,7 +45,7 @@ TEST(JobSystem, allPhases) {
 
 TEST(JobSystem, multiple_jobs_per_phase) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   int job_count = 5;
@@ -66,7 +66,7 @@ TEST(JobSystem, multiple_jobs_per_phase) {
 
 TEST(JobSystem, auto_requeue) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
   std::atomic<int> executions = 0;
 
@@ -86,7 +86,7 @@ TEST(JobSystem, auto_requeue) {
 
 TEST(JobSystem, timer_job) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   size_t job_executed = 0;
@@ -95,20 +95,20 @@ TEST(JobSystem, timer_job) {
         job_executed++;
         return JobContinuation::REQUEUE;
       },
-      "timer-test-clean-up-job", 1s, CLEAN_UP);
+      "timer-test-clean-up-job", 0.01s, CLEAN_UP);
 
   manager->KickJob(timer_job);
   manager->InvokeCycleAndWait();
   ASSERT_EQ(0, job_executed);
 
-  std::this_thread::sleep_for(1.2s);
+  std::this_thread::sleep_for(0.01s);
   manager->InvokeCycleAndWait();
   ASSERT_EQ(1, job_executed);
 
   manager->InvokeCycleAndWait();
   ASSERT_EQ(1, job_executed);
 
-  std::this_thread::sleep_for(1.2s);
+  std::this_thread::sleep_for(0.01s);
   manager->InvokeCycleAndWait();
   ASSERT_EQ(2, job_executed);
 
@@ -117,7 +117,7 @@ TEST(JobSystem, timer_job) {
 
 TEST(JobSystem, jobs_kicking_jobs) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   bool jobACompleted = false;
@@ -170,7 +170,7 @@ TEST(JobSystem, jobs_kicking_jobs) {
 // Checks that no jobs are getting lost (due to data races)
 TEST(JobSystem, job_bulk) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   SharedJobCounter absolute_counter = JobSystemFactory::CreateCounter();
@@ -202,7 +202,7 @@ TEST(JobSystem, job_bulk) {
 #ifndef JOB_SYSTEM_SINGLE_THREAD
 TEST(JobSystem, wait_for_job_inside_job) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   std::vector<short> order;
@@ -234,7 +234,7 @@ TEST(JobSystem, wait_for_job_inside_job) {
 TEST(JobSystem, detach_jobs) {
   std::atomic<short> execution_counter = 0;
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
@@ -260,7 +260,7 @@ TEST(JobSystem, detach_jobs) {
 TEST(JobSystem, detach_jobs_mid_execution) {
   std::atomic<short> execution_counter = 0;
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   SharedJobCounter detach_job_counter = JobSystemFactory::CreateCounter();
@@ -290,12 +290,12 @@ TEST(JobSystem, detach_jobs_mid_execution) {
 TEST(JobSystem, wait_for_future_completion) {
   std::vector<short> order;
   auto config = std::make_shared<common::config::Configuration>();
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   SharedJob job = JobSystemFactory::CreateJob([&order](JobContext *context) {
     std::future<void> future = std::async(std::launch::async, [&order] {
-      std::this_thread::sleep_for(1s);
+      std::this_thread::sleep_for(0.1s);
       order.push_back(1);
     });
 
@@ -321,7 +321,7 @@ TEST(JobSystem, wait_for_future_completion) {
 TEST(JobSystem, test_yield) {
   auto config = std::make_shared<common::config::Configuration>();
   config->Set("jobs.concurrency", 1);
-  auto manager = std::make_shared<JobManager>(config);
+  auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
   auto promise = std::make_shared<std::promise<void>>();

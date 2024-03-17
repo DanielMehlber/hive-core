@@ -37,9 +37,9 @@ public:
    * loaded.
    */
   virtual std::future<SharedResource> LoadResource(const std::string &uri) = 0;
-};
 
-typedef std::shared_ptr<IResourceManager> SharedResourceManager;
+  virtual ~IResourceManager() = default;
+};
 
 } // namespace resourcemgmt
 

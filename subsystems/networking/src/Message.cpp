@@ -1,7 +1,7 @@
 #include "networking/messaging/Message.h"
 #include "common/uuid/UuidGenerator.h"
 
-using namespace networking::websockets;
+using namespace networking::messaging;
 
 Message::Message(std::string message_type)
     : m_type{std::move(message_type)},

@@ -59,8 +59,6 @@ public:
   virtual void RemoveAllListeners() = 0;
 };
 
-typedef std::shared_ptr<IEventBroker> SharedEventBroker;
-
 } // namespace events
 
 #endif /* IMESSAGEBROKER_H */

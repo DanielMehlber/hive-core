@@ -1,6 +1,9 @@
 #include "networking/messaging/impl/websockets/boost/BoostWebSocketConnectionListener.h"
 
-using namespace networking::websockets;
+using namespace networking;
+using namespace networking::messaging;
+using namespace networking::messaging::websockets;
+
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>

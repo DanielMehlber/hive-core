@@ -4,7 +4,7 @@
 #include "IMessageConsumer.h"
 #include <jobsystem/job/Job.h>
 
-namespace networking::websockets {
+namespace networking::messaging {
 
 /**
  * A job that, when scheduled, makes a message consumer process a message
@@ -23,6 +23,6 @@ public:
   MessageConsumerJob(SharedMessageConsumer consumer, SharedMessage message,
                      ConnectionInfo connection_info);
 };
-} // namespace networking::websockets
+} // namespace networking::messaging
 
 #endif /* WEBSOCKETMESSAGECONSUMERJOB_H */

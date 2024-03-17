@@ -7,7 +7,7 @@
 #include <boost/asio.hpp>
 #include <future>
 
-namespace networking::websockets {
+namespace networking::messaging::websockets {
 
 DECLARE_EXCEPTION(UrlMalformedException);
 DECLARE_EXCEPTION(CannotResolveHostException);
@@ -65,6 +65,6 @@ public:
    */
   std::future<void> EstablishConnectionTo(const std::string &uri);
 };
-} // namespace networking::websockets
+} // namespace networking::messaging::websockets
 
 #endif /* BOOSTWEBSOCKETCONNECTIONESTABLISHER_H */

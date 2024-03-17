@@ -1,7 +1,7 @@
 #include "networking/messaging/MessageConsumerJob.h"
 #include <functional>
 
-using namespace networking::websockets;
+using namespace networking::messaging;
 using namespace std::placeholders;
 
 MessageConsumerJob::MessageConsumerJob(SharedMessageConsumer consumer,
@@ -14,7 +14,7 @@ MessageConsumerJob::MessageConsumerJob(SharedMessageConsumer consumer,
       m_connection_info(std::move(connection_info)) {}
 
 jobsystem::job::JobContinuation
-networking::websockets::MessageConsumerJob::ConsumeMessage(
+networking::messaging::MessageConsumerJob::ConsumeMessage(
     [[maybe_unused]] jobsystem::JobContext *context) {
   m_consumer->ProcessReceivedMessage(m_message, m_connection_info);
   return jobsystem::job::JobContinuation::DISPOSE;

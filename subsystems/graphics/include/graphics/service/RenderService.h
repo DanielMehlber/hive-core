@@ -1,6 +1,7 @@
 #ifndef RENDERSERVICE_H
 #define RENDERSERVICE_H
 
+#include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "graphics/renderer/IRenderer.h"
 #include "services/executor/impl/LocalServiceExecutor.h"
@@ -15,10 +16,10 @@ namespace graphics {
  */
 class RenderService : public services::impl::LocalServiceExecutor {
 private:
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
   /** Renderer that should be used for executing the rendering request */
-  std::shared_ptr<graphics::IRenderer> m_renderer;
+  common::memory::Reference<graphics::IRenderer> m_renderer;
 
   /**
    * Fow now, only one image can be taken at a time. This mutex enforces this
@@ -28,13 +29,14 @@ private:
 
 public:
   explicit RenderService(
-      const common::subsystems::SharedSubsystemManager &subsystems,
-      std::shared_ptr<graphics::IRenderer> renderer = nullptr);
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems,
+      common::memory::Reference<graphics::IRenderer> renderer = {});
 
   std::future<services::SharedServiceResponse>
   Render(const services::SharedServiceRequest &request);
 
-  std::optional<graphics::SharedRenderer> GetRenderer() const;
+  std::optional<common::memory::Borrower<graphics::IRenderer>> GetRenderer();
 };
 
 } // namespace graphics

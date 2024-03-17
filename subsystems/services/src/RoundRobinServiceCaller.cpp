@@ -35,10 +35,10 @@ void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor executor) {
   m_service_executors.push_back(executor);
 }
 
-std::future<SharedServiceResponse>
-RoundRobinServiceCaller::Call(SharedServiceRequest request,
-                              jobsystem::SharedJobManager job_manager,
-                              bool only_local) noexcept {
+std::future<SharedServiceResponse> RoundRobinServiceCaller::Call(
+    SharedServiceRequest request,
+    common::memory::Borrower<jobsystem::JobManager> job_manager,
+    bool only_local) noexcept {
 
   std::shared_ptr<std::promise<SharedServiceResponse>> promise =
       std::make_shared<std::promise<SharedServiceResponse>>();

@@ -12,16 +12,17 @@ DECLARE_EXCEPTION(MatrixConversionException);
 DECLARE_EXCEPTION(VectorConversionException);
 
 RenderService::RenderService(
-    const common::subsystems::SharedSubsystemManager &subsystems,
-    std::shared_ptr<graphics::IRenderer> renderer)
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems,
+    common::memory::Reference<graphics::IRenderer> renderer)
     : services::impl::LocalServiceExecutor(
           "render", std::bind(&RenderService::Render, this, _1)),
       m_subsystems(subsystems), m_renderer(std::move(renderer)) {
 
   // register render-result encoder if none
-  if (!subsystems->ProvidesSubsystem<IRenderResultEncoder>()) {
-    subsystems->AddOrReplaceSubsystem<IRenderResultEncoder>(
-        std::make_shared<PlainRenderResultEncoder>());
+  if (!m_subsystems.Borrow()->ProvidesSubsystem<IRenderResultEncoder>()) {
+    m_subsystems.Borrow()->AddOrReplaceSubsystem<IRenderResultEncoder>(
+        common::memory::Owner<PlainRenderResultEncoder>());
   }
 }
 
@@ -134,7 +135,8 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
 
   auto result = maybe_result.value();
 
-  if (auto subsystems = m_subsystems.lock()) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     // attach color render result to response
     auto encoder = subsystems->RequireSubsystem<IRenderResultEncoder>();
     response->SetResult("encoding", encoder->GetName());
@@ -165,11 +167,13 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   }
 }
 
-std::optional<graphics::SharedRenderer> RenderService::GetRenderer() const {
+std::optional<common::memory::Borrower<graphics::IRenderer>>
+RenderService::GetRenderer() {
   if (m_renderer) {
-    return m_renderer;
+    return m_renderer.TryBorrow();
   } else {
-    if (auto subsystems = m_subsystems.lock()) {
+    if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+      auto subsystems = maybe_subsystems.value();
       return subsystems->GetSubsystem<graphics::IRenderer>();
     } else {
       LOG_WARN("no renderer found in render service because subsystems are not "

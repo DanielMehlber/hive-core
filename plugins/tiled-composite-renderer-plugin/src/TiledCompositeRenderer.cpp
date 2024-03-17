@@ -9,8 +9,9 @@
 using namespace std::chrono_literals;
 
 TiledCompositeRenderer::TiledCompositeRenderer(
-    const common::subsystems::SharedSubsystemManager &subsystems,
-    graphics::SharedRenderer output_renderer)
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems,
+    common::memory::Owner<graphics::IRenderer> &&output_renderer)
     : m_subsystems(subsystems), m_output_renderer(std::move(output_renderer)),
       m_current_service_count{0} {
 
@@ -46,7 +47,7 @@ TiledCompositeRenderer::TiledCompositeRenderer(
       "render-debug-fps", 1s, CLEAN_UP);
 
   auto job_system =
-      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+      m_subsystems.Borrow()->RequireSubsystem<jobsystem::JobManager>();
   job_system->KickJob(job);
 
   auto camera_move_job = std::make_shared<TimerJob>(
@@ -114,13 +115,14 @@ bool TiledCompositeRenderer::Render() {
     return true;
   }
 
+  auto subsystems = m_subsystems.Borrow();
+
   std::unique_lock lock(m_image_buffers_and_tiling_mutex);
 
-  auto job_system =
-      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+  auto job_system = subsystems->RequireSubsystem<jobsystem::JobManager>();
 
   auto service_registry =
-      m_subsystems.lock()->RequireSubsystem<services::IServiceRegistry>();
+      subsystems->RequireSubsystem<services::IServiceRegistry>();
 
   auto future_caller = service_registry->Find("render");
   job_system->WaitForCompletion(future_caller);
@@ -160,9 +162,9 @@ bool TiledCompositeRenderer::Render() {
     auto rendering_service_request = request.GetRequest();
 
     auto job = std::make_shared<jobsystem::job::Job>(
-        [_this = weak_from_this(), rendering_service_request,
+        [_this = ReferenceFromThis(), rendering_service_request,
          subsystems = m_subsystems, service_caller,
-         i](jobsystem::JobContext *context) {
+         i](jobsystem::JobContext *context) mutable {
           auto future_response = service_caller->Call(rendering_service_request,
                                                       context->GetJobManager());
 
@@ -175,7 +177,7 @@ bool TiledCompositeRenderer::Render() {
 
             auto encoding = response->GetResult("encoding").value();
             auto decoder =
-                subsystems.lock()
+                subsystems.Borrow()
                     ->RequireSubsystem<graphics::IRenderResultEncoder>();
 
             if (encoding == decoder->GetName()) {
@@ -183,7 +185,7 @@ bool TiledCompositeRenderer::Render() {
                   std::move(decoder->Decode(color_buffer_encoded));
 
               // TODO: read format from image instead assuming it
-              auto image_buffer = _this.lock()->m_image_buffers[i];
+              auto image_buffer = _this.Borrow()->m_image_buffers[i];
               image_buffer->properties.format = VK_FORMAT_R8G8B8A8_UNORM;
               std::memcpy(image_buffer->dataPointer(), color_buffer.data(),
                           color_buffer.size());

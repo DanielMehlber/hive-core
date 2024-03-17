@@ -8,9 +8,9 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(common SHARED
         src/common.cpp
         src/BoostUuidGenerator.cpp
-        src/Subsystems.cpp
         src/Timer.cpp
         src/TimerManager.cpp
+        src/SpinLock.cpp
 )
 
 target_include_directories(common PUBLIC

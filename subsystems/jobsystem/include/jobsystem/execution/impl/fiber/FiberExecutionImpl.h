@@ -45,7 +45,7 @@ private:
    * @note This is set when starting the execution and cleared when the
    * execution has stopped.
    */
-  std::weak_ptr<JobManager> m_managing_instance;
+  common::memory::Reference<JobManager> m_managing_instance;
 
   void Init();
   void ShutDown();
@@ -93,7 +93,7 @@ public:
    * Starts processing scheduled jobs and invoke the execution
    * @param manager managing instance that started the execution
    */
-  void Start(std::weak_ptr<JobManager> manager);
+  void Start(common::memory::Borrower<JobManager> manager);
 
   /**
    * Stops processing scheduled jobs and pauses the execution

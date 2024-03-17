@@ -1,3 +1,4 @@
+#include "ExclusiveOwnershipTest.h"
 #include "common/subsystems/SubsystemManager.h"
 #include <gtest/gtest.h>
 
@@ -5,10 +6,10 @@ using namespace common::subsystems;
 
 TEST(SubsystemTest, subsystems) {
   // I was too lazy to write a subsystem, take a string instead
-  auto system = std::make_shared<std::string>("Hallo");
+  auto system = common::memory::Owner<std::string>("Hallo");
 
   SubsystemManager subsystems;
-  subsystems.AddOrReplaceSubsystem(system);
+  subsystems.AddOrReplaceSubsystem<std::string>(std::move(system));
 
   ASSERT_EQ("Hallo", *subsystems.GetSubsystem<std::string>().value());
 }

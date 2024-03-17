@@ -1,12 +1,12 @@
 #include "properties/PropertyProvider.h"
-#include "events/EventFactory.h"
 #include <sstream>
 #include <vector>
 
 using namespace props;
 
 PropertyProvider::PropertyProvider(
-    const common::subsystems::SharedSubsystemManager &subsystems)
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems)
     : m_subsystems(subsystems) {}
 
 PropertyProvider::~PropertyProvider() = default;
@@ -46,7 +46,8 @@ std::string buildTopicName(const std::string &path) {
 
 void PropertyProvider::RegisterListener(
     const std::string &path, const SharedPropertyListener &listener) {
-  if (auto subsystems = m_subsystems.lock()) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     std::shared_ptr<events::IEventListener> subscriber =
         std::static_pointer_cast<events::IEventListener>(listener);
 
@@ -60,7 +61,8 @@ void PropertyProvider::RegisterListener(
 
 void PropertyProvider::UnregisterListener(
     const SharedPropertyListener &listener) {
-  if (auto subsystems = m_subsystems.lock()) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     std::shared_ptr<events::IEventListener> subscriber =
         std::static_pointer_cast<events::IEventListener>(listener);
 
@@ -72,9 +74,9 @@ void PropertyProvider::UnregisterListener(
   }
 }
 
-void PropertyProvider::NotifyListenersAboutChange(
-    const std::string &path) const {
-  if (auto subsystems = m_subsystems.lock()) {
+void PropertyProvider::NotifyListenersAboutChange(const std::string &path) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     std::vector<std::string> paths = getSubpaths(path, '.');
 
     for (const auto &subpath : paths) {
@@ -82,7 +84,7 @@ void PropertyProvider::NotifyListenersAboutChange(
       event->SetPayload("property-key", path);
 
       auto message_broker =
-          m_subsystems.lock()->RequireSubsystem<events::IEventBroker>();
+          subsystems->RequireSubsystem<events::IEventBroker>();
       message_broker->FireEvent(event);
     }
   } else /* if subsystems are not available */ {

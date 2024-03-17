@@ -1,6 +1,7 @@
+#include "common/memory/ExclusiveOwnership.h"
+#include "resourcemgmt/manager/impl/ThreadPoolResourceManager.h"
 #include <chrono>
 #include <gtest/gtest.h>
-#include <resourcemgmt/ResourceFactory.h>
 #include <resourcemgmt/loader/IResourceLoader.h>
 
 using namespace resourcemgmt;
@@ -21,7 +22,7 @@ public:
 
   SharedResource Load(const std::string &uri) override {
     std::this_thread::sleep_for(m_delay);
-    return ResourceFactory::CreateSharedResource<std::string>("dummy");
+    return std::make_shared<Resource>(std::make_shared<std::string>("dummy"));
   };
 };
 
@@ -33,13 +34,12 @@ public:
   };
 
   SharedResource Load(const std::string &uri) override {
-    return ResourceFactory::CreateSharedResource<std::string>("dummy");
+    return std::make_shared<Resource>(std::make_shared<std::string>("dummy"));
   };
 };
 
 TEST(ResourceMgmt, register_loader) {
-  auto manager =
-      ResourceFactory::CreateResourceManager<ThreadPoolResourceManager>();
+  auto manager = common::memory::Owner<ThreadPoolResourceManager>();
   auto dummy_loader = std::make_shared<DummyLoader>(0.5s);
   manager->RegisterLoader(dummy_loader);
 
@@ -54,8 +54,7 @@ TEST(ResourceMgmt, register_loader) {
 }
 
 TEST(ResoureMgmt, loading_multiple) {
-  auto manager =
-      ResourceFactory::CreateResourceManager<ThreadPoolResourceManager>(2);
+  auto manager = common::memory::Owner<ThreadPoolResourceManager>(2);
   auto dummy_loader = std::make_shared<DummyLoader>(0.01s);
   manager->RegisterLoader(dummy_loader);
 
@@ -74,8 +73,7 @@ TEST(ResoureMgmt, loading_multiple) {
 }
 
 TEST(ResourceMgmt, duplicate_loader_id) {
-  auto manager =
-      ResourceFactory::CreateResourceManager<ThreadPoolResourceManager>(2);
+  auto manager = common::memory::Owner<ThreadPoolResourceManager>(2);
   auto dummy_loader = std::make_shared<DummyLoader>(0.01s);
   manager->RegisterLoader(dummy_loader);
 

@@ -1,12 +1,11 @@
-#include <utility>
-
 #include "networking/NetworkingManager.h"
 
 using namespace networking;
-using namespace networking::websockets;
+using namespace networking::messaging;
 
 NetworkingManager::NetworkingManager(
-    const common::subsystems::SharedSubsystemManager &subsystems,
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems,
     const common::config::SharedConfiguration &config)
     : m_subsystems(subsystems), m_config(config) {
 
@@ -21,9 +20,13 @@ NetworkingManager::NetworkingManager(
 void NetworkingManager::StartMessageEndpointServer() {
   if (!m_message_endpoint) {
 
-    m_message_endpoint =
-        NetworkingFactory::CreateNetworkingPeer(m_subsystems.lock(), m_config);
+    common::memory::Owner<IMessageEndpoint> message_endpoint =
+        common::memory::Owner<DefaultMessageEndpointImpl>(m_subsystems,
+                                                          m_config);
 
-    m_subsystems.lock()->AddOrReplaceSubsystem(m_message_endpoint);
+    m_message_endpoint = message_endpoint.CreateReference();
+
+    m_subsystems.Borrow()->AddOrReplaceSubsystem<IMessageEndpoint>(
+        std::move(message_endpoint));
   }
 }

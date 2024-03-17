@@ -29,24 +29,24 @@ void FiberExecutionImpl::Schedule(std::shared_ptr<Job> job) {
   common::profiling::Timer schedule_timer("job-scheduling");
 #endif
   auto &weak_manager = m_managing_instance;
-  auto runner = [weak_manager, job]() {
-    if (weak_manager.expired()) {
+  auto runner = [weak_manager, job]() mutable {
+    if (auto maybe_manager = weak_manager.TryBorrow()) {
+      auto manager = maybe_manager.value();
+
+      JobContext context(manager->GetTotalCyclesCount(), manager);
+      JobContinuation continuation = job->Execute(&context);
+
+      if (continuation == JobContinuation::REQUEUE) {
+        manager->KickJobForNextCycle(job);
+      }
+
+      job->FinishJob();
+    } else {
       LOG_ERR("Cannot execute job "
               << job->GetId()
               << " because job manager has already been destroyed")
       return;
     }
-
-    auto manager = weak_manager.lock();
-
-    JobContext context(manager->GetTotalCyclesCount(), manager);
-    JobContinuation continuation = job->Execute(&context);
-
-    if (continuation == JobContinuation::REQUEUE) {
-      manager->KickJobForNextCycle(job);
-    }
-
-    job->FinishJob();
   };
 
   auto status = m_job_channel->push(std::move(runner));
@@ -94,7 +94,7 @@ void FiberExecutionImpl::WaitForCompletion(
   }
 }
 
-void FiberExecutionImpl::Start(std::weak_ptr<JobManager> manager) {
+void FiberExecutionImpl::Start(common::memory::Borrower<JobManager> manager) {
 
   if (m_current_state != JobExecutionState::STOPPED) {
     return;
@@ -111,7 +111,7 @@ void FiberExecutionImpl::Start(std::weak_ptr<JobManager> manager) {
   }
 
   m_current_state = JobExecutionState::RUNNING;
-  m_managing_instance = std::move(manager);
+  m_managing_instance = manager.ToReference();
 }
 
 void FiberExecutionImpl::Stop() {
@@ -152,7 +152,7 @@ void FiberExecutionImpl::Stop() {
   m_worker_threads.clear();
 
   m_current_state = JobExecutionState::STOPPED;
-  m_managing_instance.reset();
+  m_managing_instance = common::memory::Reference<JobManager>();
 }
 
 void FiberExecutionImpl::ExecuteWorker() {

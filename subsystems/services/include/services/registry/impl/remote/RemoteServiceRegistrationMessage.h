@@ -3,7 +3,7 @@
 
 #include "networking/messaging/Message.h"
 
-using namespace networking::websockets;
+using namespace networking::messaging;
 
 #define MESSAGE_TYPE_REMOTE_SERVICE_REGISTRATION "register-remote-service"
 

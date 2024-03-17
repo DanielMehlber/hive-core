@@ -11,7 +11,6 @@ set(GRAPHICS_SOURCES
         src/OnscreenRenderer.cpp
         src/RenderService.cpp
         src/RenderServiceRequest.cpp
-        src/CharEscapeRenderResultEncoder.cpp
 )
 
 set(GRAPHICS_DEPENDENCIES logging jobsystem common scene vsg::vsg services)

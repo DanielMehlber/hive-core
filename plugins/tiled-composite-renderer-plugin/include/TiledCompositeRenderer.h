@@ -1,9 +1,10 @@
+#ifndef TILEDCOMPOSITERENDERER_H
+#define TILEDCOMPOSITERENDERER_H
+
+#include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "graphics/renderer/IRenderer.h"
 #include "jobsystem/synchronization/JobMutex.h"
-
-#ifndef TILEDCOMPOSITERENDERER_H
-#define TILEDCOMPOSITERENDERER_H
 
 struct Tile {
   int x;
@@ -21,10 +22,10 @@ struct Tile {
  */
 class TiledCompositeRenderer
     : public graphics::IRenderer,
-      public std::enable_shared_from_this<TiledCompositeRenderer> {
+      public common::memory::EnableBorrowFromThis<TiledCompositeRenderer> {
 private:
-  graphics::SharedRenderer m_output_renderer;
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Owner<graphics::IRenderer> m_output_renderer;
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
   vsg::ref_ptr<vsg::Camera> m_camera;
 
@@ -40,8 +41,9 @@ private:
 
 public:
   TiledCompositeRenderer(
-      const common::subsystems::SharedSubsystemManager &subsystems,
-      graphics::SharedRenderer output_renderer);
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems,
+      common::memory::Owner<graphics::IRenderer> &&output_renderer);
 
   /**
    * Render current scene from current view

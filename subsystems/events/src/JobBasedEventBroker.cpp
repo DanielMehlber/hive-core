@@ -6,7 +6,8 @@ using namespace std::chrono_literals;
 using namespace jobsystem;
 
 JobBasedEventBroker::JobBasedEventBroker(
-    const common::subsystems::SharedSubsystemManager &subsystems)
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems)
     : m_subsystems(subsystems), m_this_alive_checker{std::make_shared<bool>()} {
 
   // when this shared pointer expired, this has been destroyed
@@ -23,16 +24,17 @@ JobBasedEventBroker::JobBasedEventBroker(
       },
       "events-listener-clean-up", 5s, JobExecutionPhase::INIT);
 
-  auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  auto job_manager = m_subsystems.Borrow()->RequireSubsystem<JobManager>();
   job_manager->KickJob(clean_up_job);
 }
 
 JobBasedEventBroker::~JobBasedEventBroker() {
-  if (auto subsystems = m_subsystems.lock()) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     auto job_manager = subsystems->RequireSubsystem<JobManager>();
     job_manager->DetachJob("events-listener-clean-up");
   }
-  
+
   RemoveAllListeners();
 }
 
@@ -51,8 +53,8 @@ void JobBasedEventBroker::CleanUpSubscribers() {
 }
 
 void JobBasedEventBroker::FireEvent(SharedEvent event) {
-  if (auto subsystems = m_subsystems.lock()) {
-
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     const auto &topic_name = event->GetTopic();
 
     std::unique_lock subscriber_lock(m_topic_subscribers_mutex);

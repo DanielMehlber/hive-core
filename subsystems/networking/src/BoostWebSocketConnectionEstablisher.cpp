@@ -5,9 +5,9 @@
 #include <boost/beast.hpp>
 #include <regex>
 #include <string>
-#include <utility>
 
-using namespace networking::websockets;
+using namespace networking::messaging::websockets;
+using namespace networking::messaging;
 using namespace networking;
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>

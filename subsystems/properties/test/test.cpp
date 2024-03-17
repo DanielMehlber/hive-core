@@ -1,22 +1,24 @@
 #include "PropertyChangeListenerTest.h"
+#include "events/broker/impl/JobBasedEventBroker.h"
 #include "properties/PropertyProvider.h"
 #include <gtest/gtest.h>
 
 using namespace props;
 
 TEST(PropertyTest, prop_get_set) {
-  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  auto subsystems =
+      common::memory::Owner<common::subsystems::SubsystemManager>();
   auto config = std::make_shared<common::config::Configuration>();
-  auto job_manager = std::make_shared<jobsystem::JobManager>(config);
+  auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
   job_manager->StartExecution();
 
-  subsystems->AddOrReplaceSubsystem(job_manager);
+  subsystems->AddOrReplaceSubsystem<JobManager>(std::move(job_manager));
 
-  events::SharedEventBroker broker =
-      events::EventFactory::CreateBroker(subsystems);
-  subsystems->AddOrReplaceSubsystem(broker);
+  auto broker = common::memory::Owner<events::brokers::JobBasedEventBroker>(
+      subsystems.CreateReference());
+  subsystems->AddOrReplaceSubsystem<events::IEventBroker>(std::move(broker));
 
-  PropertyProvider provider(subsystems);
+  PropertyProvider provider(subsystems.CreateReference());
 
   ASSERT_FALSE(provider.Get<std::string>("example.test.value").has_value());
   provider.Set<std::string>("example.test.value", "test");

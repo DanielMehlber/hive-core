@@ -10,7 +10,7 @@
 #include <future>
 #include <memory>
 
-namespace networking::websockets {
+namespace networking::messaging::websockets {
 
 typedef boost::beast::websocket::stream<boost::beast::tcp_stream> stream_type;
 
@@ -27,7 +27,7 @@ private:
    * TCP stream that allows interaction with the communication partner.
    */
   stream_type m_socket;
-  mutable jobsystem::mutex m_socket_mutex;
+  mutable jobsystem::recursive_mutex m_socket_mutex;
 
   /**
    * Buffer for received messages
@@ -78,7 +78,7 @@ private:
    */
   void OnMessageSent(std::promise<void> &&promise, SharedMessage message,
                      std::shared_ptr<std::string> sent_data,
-                     std::unique_lock<jobsystem::mutex> lock,
+                     std::unique_lock<jobsystem::recursive_mutex> lock,
                      boost::beast::error_code error_code,
                      [[maybe_unused]] std::size_t bytes_transferred);
 
@@ -155,6 +155,6 @@ inline bool BoostWebSocketConnection::IsUsable() const {
 typedef std::shared_ptr<BoostWebSocketConnection>
     SharedBoostWebSocketConnection;
 
-} // namespace networking::websockets
+} // namespace networking::messaging::websockets
 
 #endif /* BOOSTWEBSOCKETCONNECTION_H */

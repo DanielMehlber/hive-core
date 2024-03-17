@@ -14,7 +14,6 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(jobsystem SHARED
         src/Job.cpp
         src/JobManager.cpp
-        src/SingleThreadedExecutionImpl.cpp
         src/TimerJob.cpp
         src/FiberExecutionImpl.cpp)
 

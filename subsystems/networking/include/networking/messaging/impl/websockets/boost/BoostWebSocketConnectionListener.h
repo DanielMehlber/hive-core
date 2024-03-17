@@ -10,7 +10,7 @@
 #include <functional>
 #include <memory>
 
-namespace networking::websockets {
+namespace networking::messaging::websockets {
 
 DECLARE_EXCEPTION(WebSocketTcpServerException);
 
@@ -109,6 +109,6 @@ public:
    */
   void ShutDown();
 };
-} // namespace networking::websockets
+} // namespace networking::messaging::websockets
 
 #endif /* BOOSTWEBSOCKETCONNECTIONLISTENER_H */

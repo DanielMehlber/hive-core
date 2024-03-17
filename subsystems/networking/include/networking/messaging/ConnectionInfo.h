@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace networking::websockets {
+namespace networking::messaging {
 
 class ConnectionInfo {
 protected:
@@ -20,6 +20,6 @@ inline void ConnectionInfo::SetHostname(const std::string &hostname) {
 
 inline std::string ConnectionInfo::GetHostname() const { return m_hostname; }
 
-} // namespace networking::websockets
+} // namespace networking::messaging
 
 #endif // WEBSOCKETCONNECTIONINFO_H
