@@ -25,8 +25,8 @@ private:
    * destroyed).
    */
   std::map<std::string, std::vector<std::weak_ptr<IEventListener>>>
-      m_topic_subscribers;
-  mutable jobsystem::mutex m_topic_subscribers_mutex;
+      m_event_listeners;
+  mutable jobsystem::mutex m_event_listeners_mutex;
 
   /** Contains required subsystems */
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;

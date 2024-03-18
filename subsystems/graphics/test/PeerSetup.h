@@ -27,6 +27,7 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
       common::memory::Owner<common::subsystems::SubsystemManager>();
 
   auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
+  job_manager->StartExecution();
   auto job_manager_ref = job_manager.CreateReference();
   subsystems->AddOrReplaceSubsystem(std::move(job_manager));
 
@@ -34,7 +35,8 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   auto event_broker =
       common::memory::Owner<events::brokers::JobBasedEventBroker>(
           subsystems.CreateReference());
-  subsystems->AddOrReplaceSubsystem(std::move(event_broker));
+  subsystems->AddOrReplaceSubsystem<events::IEventBroker>(
+      std::move(event_broker));
 
   // setup networking peer
   config->Set("net.port", port);

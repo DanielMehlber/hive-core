@@ -73,8 +73,21 @@ TEST(GraphicsTests, remote_render_service) {
                                    node_2.job_manager.Borrow());
 
     auto start_point = std::chrono::high_resolution_clock::now();
-    node_1.job_manager.Borrow()->InvokeCycleAndWait();
+
+    // we need a second thread here: while the requesting node waits, the
+    // processing node must resolve its service request. This can't be done in
+    // the same thread sequentially, but only in parallel.
+    std::atomic_bool finished = false;
+    auto request_processing_thread = std::thread([&node_1, &finished]() {
+      while (!finished.load()) {
+        node_1.job_manager.Borrow()->InvokeCycleAndWait();
+      }
+    });
+
     node_2.job_manager.Borrow()->InvokeCycleAndWait();
+    finished = true;
+    request_processing_thread.join();
+
     auto end_point = std::chrono::high_resolution_clock::now();
 
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -96,6 +109,7 @@ TEST(GraphicsTest, offscreen_rendering_sphere) {
   auto config = std::make_shared<common::config::Configuration>();
 
   auto job_manager = common::memory::Owner<JobManager>(config);
+  auto job_manager_ref = job_manager.CreateReference();
   job_manager->StartExecution();
   subsystems->AddOrReplaceSubsystem<JobManager>(std::move(job_manager));
 
@@ -114,10 +128,10 @@ TEST(GraphicsTest, offscreen_rendering_sphere) {
   RenderServiceRequest request_generator;
   request_generator.SetExtend({10, 10});
   auto response = render_service->Call(request_generator.GetRequest(),
-                                       job_manager.Borrow());
+                                       job_manager_ref.Borrow());
 
-  job_manager->InvokeCycleAndWait();
-  job_manager->WaitForCompletion(response);
+  job_manager_ref.Borrow()->InvokeCycleAndWait();
+  job_manager_ref.Borrow()->WaitForCompletion(response);
 
   auto decoder = subsystems->RequireSubsystem<graphics::IRenderResultEncoder>();
   auto encoded_color_buffer = response.get()->GetResult("color").value();

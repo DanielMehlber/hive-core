@@ -16,13 +16,22 @@ using namespace services::impl;
 using namespace networking;
 using namespace common::test;
 
-common::memory::Owner<common::subsystems::SubsystemManager>
-setupNode(const common::config::SharedConfiguration &config, int port) {
+struct Node {
+  common::memory::Owner<common::subsystems::SubsystemManager> subsystems;
+  common::memory::Reference<JobManager> job_manager;
+  common::memory::Reference<IServiceRegistry> service_registry;
+  common::memory::Reference<IMessageEndpoint> network_endpoint;
+  int port;
+};
+
+Node setupNode(const common::config::SharedConfiguration &config, int port) {
   auto subsystems =
       common::memory::Owner<common::subsystems::SubsystemManager>();
 
   auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
   job_manager->StartExecution();
+  auto job_manager_ref = job_manager.CreateReference();
+
   subsystems->AddOrReplaceSubsystem<JobManager>(std::move(job_manager));
 
   // setup event broker
@@ -36,6 +45,8 @@ setupNode(const common::config::SharedConfiguration &config, int port) {
   config->Set("net.port", port);
   auto networking_node = common::memory::Owner<networking::NetworkingManager>(
       subsystems.CreateReference(), config);
+  auto networking_endpoint_ref =
+      subsystems->RequireSubsystem<IMessageEndpoint>().ToReference();
   subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
       std::move(networking_node));
 
@@ -43,10 +54,12 @@ setupNode(const common::config::SharedConfiguration &config, int port) {
   auto service_registry =
       common::memory::Owner<services::impl::RemoteServiceRegistry>(
           subsystems.CreateReference());
+  auto service_registry_ref = service_registry.CreateReference();
   subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(
       std::move(service_registry));
 
-  return subsystems;
+  return Node{std::move(subsystems), job_manager_ref, service_registry_ref,
+              networking_endpoint_ref, port};
 }
 
 TEST(ServiceTests, run_single_remote_service) {
@@ -55,14 +68,9 @@ TEST(ServiceTests, run_single_remote_service) {
   auto node_1 = setupNode(config, 9005);
   auto node_2 = setupNode(config, 9006);
 
-  auto node_1_job_manager = node_1->RequireSubsystem<jobsystem::JobManager>();
-  auto node_2_job_manager = node_2->RequireSubsystem<jobsystem::JobManager>();
-
   // first establish connection in order to broadcast the connection
-  auto node_1_networking_subsystem =
-      node_1->RequireSubsystem<IMessageEndpoint>();
   auto connection_progress =
-      node_1_networking_subsystem->EstablishConnectionTo("127.0.0.1:9006");
+      node_1.network_endpoint.Borrow()->EstablishConnectionTo("127.0.0.1:9006");
 
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
@@ -70,60 +78,57 @@ TEST(ServiceTests, run_single_remote_service) {
   SharedServiceExecutor local_service =
       std::make_shared<AddingServiceExecutor>();
 
-  auto node_1_service_registry = node_1->RequireSubsystem<IServiceRegistry>();
-  node_1_service_registry->Register(local_service);
-  node_2_job_manager->InvokeCycleAndWait();
+  node_1.service_registry.Borrow()->Register(local_service);
+  node_1.job_manager.Borrow()->InvokeCycleAndWait();
 
-  auto node_2_service_registry = node_2->RequireSubsystem<IServiceRegistry>();
   TryAssertUntilTimeout(
-      [&node_2_service_registry, node_2_job_manager]() mutable {
-        node_2_job_manager->InvokeCycleAndWait();
-        return node_2_service_registry->Find("add").get().has_value();
+      [&node_2]() mutable {
+        node_2.job_manager.Borrow()->InvokeCycleAndWait();
+        return node_2.service_registry.Borrow()->Find("add").get().has_value();
       },
       10s);
 
   SharedServiceCaller caller =
-      node_2_service_registry->Find("add").get().value();
+      node_2.service_registry.Borrow()->Find("add").get().value();
   auto result_fut =
-      caller->Call(GenerateAddingRequest(3, 5), node_2_job_manager);
-  node_2_job_manager->InvokeCycleAndWait();
+      caller->Call(GenerateAddingRequest(3, 5), node_2.job_manager.Borrow());
+
+  // we need 2 threads here: node_1 has to send its call and node_2 needs to
+  // process and respond to it. These actions usually take place in different
+  // processes, so they must be executed in parallel.
+  std::atomic_bool finished = false;
+  auto node_1_request_processing = std::thread([&node_1, &finished]() {
+    while (!finished.load()) {
+      node_1.job_manager.Borrow()->InvokeCycleAndWait();
+    }
+  });
+  node_2.job_manager.Borrow()->InvokeCycleAndWait();
+  finished.store(true);
+  node_1_request_processing.join();
 
   SharedServiceResponse response;
   ASSERT_NO_THROW(response = result_fut.get());
   ASSERT_EQ(8, GetResultOfAddition(response));
 
-  node_1_job_manager->StopExecution();
-  node_2_job_manager->StopExecution();
+  node_1.job_manager.Borrow()->StopExecution();
+  node_2.job_manager.Borrow()->StopExecution();
 }
 
 TEST(ServiceTests, remote_service_load_balancing) {
   auto config = std::make_shared<common::config::Configuration>();
-  config->Set("jobs.concurrency", (int)std::thread::hardware_concurrency());
 
   auto central_node = setupNode(config, 9004);
 
-  auto central_node_registry =
-      central_node->RequireSubsystem<IServiceRegistry>();
-  auto central_node_networking_subsystem =
-      central_node->RequireSubsystem<IMessageEndpoint>();
-  auto central_node_job_manager = central_node->RequireSubsystem<JobManager>();
-
-  std::vector<
-      std::pair<common::memory::Owner<common::subsystems::SubsystemManager>,
-                std::shared_ptr<AddingServiceExecutor>>>
-      nodes;
+  std::vector<std::pair<Node, std::shared_ptr<AddingServiceExecutor>>> nodes;
 
   for (int i = 9005; i < 9010; i++) {
 
     auto ith_node = setupNode(config, i);
 
-    auto ith_node_registry = ith_node->RequireSubsystem<IServiceRegistry>();
-    auto ith_node_networking_subsystem =
-        ith_node->RequireSubsystem<IMessageEndpoint>();
-
     // first establish connection in order to broadcast the connection
     auto connection_progress =
-        ith_node_networking_subsystem->EstablishConnectionTo("127.0.0.1:9004");
+        ith_node.network_endpoint.Borrow()->EstablishConnectionTo(
+            "127.0.0.1:9004");
 
     connection_progress.wait();
     ASSERT_NO_THROW(connection_progress.get());
@@ -135,26 +140,23 @@ TEST(ServiceTests, remote_service_load_balancing) {
   }
 
   // process established connection before registering & broadcasting service
-  central_node_job_manager->InvokeCycleAndWait();
+  central_node.job_manager.Borrow()->InvokeCycleAndWait();
   for (auto &[node, service] : nodes) {
-    auto node_job_manager = node->RequireSubsystem<jobsystem::JobManager>();
-    node_job_manager->InvokeCycleAndWait();
+    node.job_manager.Borrow()->InvokeCycleAndWait();
   }
 
   // register service at nodes
   for (auto &[node, service] : nodes) {
-    auto node_service_registry = node->RequireSubsystem<IServiceRegistry>();
-    node_service_registry->Register(service);
-
-    auto node_job_manager = node->RequireSubsystem<jobsystem::JobManager>();
-    node_job_manager->InvokeCycleAndWait();
+    node.service_registry.Borrow()->Register(service);
+    node.job_manager.Borrow()->InvokeCycleAndWait();
   }
 
   // wait until remote services have been registered due to service broadcast
   TryAssertUntilTimeout(
-      [&central_node_registry, &central_node_job_manager]() {
-        central_node_job_manager->InvokeCycleAndWait();
-        auto maybe_caller = central_node_registry->Find("add").get();
+      [&central_node]() {
+        central_node.job_manager.Borrow()->InvokeCycleAndWait();
+        auto maybe_caller =
+            central_node.service_registry.Borrow()->Find("add").get();
         if (!maybe_caller.has_value()) {
           return false;
         }
@@ -165,24 +167,37 @@ TEST(ServiceTests, remote_service_load_balancing) {
       10s);
 
   // call service 5 times (should equally distribute among all nodes)
-  auto caller = central_node_registry->Find("add").get().value();
+  auto caller =
+      central_node.service_registry.Borrow()->Find("add").get().value();
   std::vector<std::future<SharedServiceResponse>> responses;
   for (int i = 0; i < 5; i++) {
-    auto response =
-        caller->Call(GenerateAddingRequest(1, i), central_node_job_manager);
+    auto response = caller->Call(GenerateAddingRequest(1, i),
+                                 central_node.job_manager.Borrow());
     responses.push_back(std::move(response));
   }
 
-  central_node_job_manager->InvokeCycleAndWait();
+  // we need a second thread here: while the central node waits, the other nodes
+  // must resolve its service request. This can't be done in the same thread
+  // sequentially, but only in parallel.
+  std::atomic_bool finished = false;
+  std::thread nodes_request_processing = std::thread([&nodes, &finished]() {
+    while (!finished.load()) {
+      for (auto &node : nodes) {
+        node.first.job_manager.Borrow()->InvokeCycleAndWait();
+      }
+    }
+  });
+
+  central_node.job_manager.Borrow()->InvokeCycleAndWait();
+  finished.store(true);
+  nodes_request_processing.join();
 
   // wait until all responses arrived
   for (auto &future : responses) {
     TryAssertUntilTimeout(
         [&future, &nodes] {
           for (auto &[node, service] : nodes) {
-            auto node_job_manager =
-                node->RequireSubsystem<jobsystem::JobManager>();
-            node_job_manager->InvokeCycleAndWait();
+            node.job_manager.Borrow()->InvokeCycleAndWait();
           }
           return future.wait_for(0s) == std::future_status::ready;
         },
@@ -196,58 +211,54 @@ TEST(ServiceTests, remote_service_load_balancing) {
     ASSERT_EQ(1, service->count);
   }
 
-  central_node_job_manager->StopExecution();
+  central_node.job_manager.Borrow()->StopExecution();
 }
 
 TEST(ServiceTests, web_socket_node_destroyed) {
   auto config = std::make_shared<common::config::Configuration>();
 
   auto node_1 = setupNode(config, 9005);
-  auto node_1_service_registry = node_1->RequireSubsystem<IServiceRegistry>();
-  auto node_1_networking_subsystem =
-      node_1->RequireSubsystem<IMessageEndpoint>();
-  auto node_1_job_manager = node_1->RequireSubsystem<jobsystem::JobManager>();
 
   {
     auto node_2 = setupNode(config, 9006);
-    auto node_2_networking_subsystem =
-        node_2->RequireSubsystem<IMessageEndpoint>();
-    auto node_2_service_registry = node_2->RequireSubsystem<IServiceRegistry>();
-    auto node_2_job_manager = node_2->RequireSubsystem<jobsystem::JobManager>();
 
-    auto progress =
-        node_2_networking_subsystem->EstablishConnectionTo("127.0.0.1:9005");
+    auto progress = node_2.network_endpoint.Borrow()->EstablishConnectionTo(
+        "127.0.0.1:9005");
 
     ASSERT_NO_THROW(progress.get());
 
-    node_1_job_manager->InvokeCycleAndWait();
-    node_2_job_manager->InvokeCycleAndWait();
+    node_1.job_manager.Borrow()->InvokeCycleAndWait();
+    node_2.job_manager.Borrow()->InvokeCycleAndWait();
 
     SharedServiceExecutor adding_service =
         std::make_shared<AddingServiceExecutor>();
-    node_2_service_registry->Register(adding_service);
+    node_2.service_registry.Borrow()->Register(adding_service);
 
-    node_2_job_manager->InvokeCycleAndWait();
+    node_2.job_manager.Borrow()->InvokeCycleAndWait();
 
     // wait until service is available to node1 (because node2 provides it)
     TryAssertUntilTimeout(
-        [&node_1_job_manager, &node_1_service_registry] {
-          node_1_job_manager->InvokeCycleAndWait();
-          return node_1_service_registry->Find("add").get().has_value();
+        [&node_1] {
+          node_1.job_manager.Borrow()->InvokeCycleAndWait();
+          return node_1.service_registry.Borrow()
+              ->Find("add")
+              .get()
+              .has_value();
         },
         10s);
   }
 
   // we need to wait until the connection closed
   TryAssertUntilTimeout(
-      [&node_1_job_manager, &node_1_networking_subsystem] {
-        node_1_job_manager->InvokeCycleAndWait();
-        return node_1_networking_subsystem->GetActiveConnectionCount() == 0;
+      [&node_1] {
+        node_1.job_manager.Borrow()->InvokeCycleAndWait();
+        return node_1.network_endpoint.Borrow()->GetActiveConnectionCount() ==
+               0;
       },
       10s);
 
   // scenario: both node2 and its services are gone.
-  ASSERT_FALSE(node_1_service_registry->Find("add").get().has_value());
+  ASSERT_FALSE(node_1.service_registry.Borrow()->Find("add").get().has_value());
 }
 
 #endif // WEBSOCKETMESSAGEREGISTRYTEST_H

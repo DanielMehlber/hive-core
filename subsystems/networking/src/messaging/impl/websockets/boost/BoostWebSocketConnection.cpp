@@ -171,7 +171,7 @@ void BoostWebSocketConnection::OnMessageSent(
   }
 
   promise.set_value();
-  LOG_DEBUG("Sent message of type "
+  LOG_DEBUG("sent message of type "
             << message->GetType() << " (" << sent_data->size()
             << " bytes) via web-socket to host "
             << m_remote_endpoint_data.address().to_string() << ":"

@@ -40,7 +40,7 @@ private:
       boost::beast::error_code error_code,
       boost::asio::ip::tcp::resolver::results_type results);
 
-  void ProcessEstablishedConnectionToServer(
+  void ProcessEstablishedTcpConnection(
       std::promise<void> &&connection_promise, std::string uri,
       std::shared_ptr<stream_type> stream, boost::beast::error_code error_code,
       boost::asio::ip::tcp::resolver::results_type::endpoint_type

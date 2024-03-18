@@ -18,7 +18,7 @@ class PropertyChangeListener : public events::IEventListener {
 protected:
   const std::string m_property_listener_id;
 
-  void HandleMessage(events::SharedEvent message) override;
+  void HandleEvent(events::SharedEvent message) override;
   std::string GetId() const override;
 
 public:

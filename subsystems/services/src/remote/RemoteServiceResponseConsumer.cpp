@@ -30,21 +30,25 @@ void RemoteServiceResponseConsumer::ProcessReceivedMessage(
 
   switch (response->GetStatus()) {
   case OK:
-    LOG_DEBUG("received service response for request " << transaction_id)
+    LOG_DEBUG("received service response for pending request "
+              << transaction_id << " from " << connection_info.GetHostname())
     break;
   case PARAMETER_ERROR:
-    LOG_WARN("received service response for request "
-             << transaction_id << ", but there was an parameter error: "
+    LOG_WARN("received service response for pending request "
+             << transaction_id << " from " << connection_info.GetHostname()
+             << ", but there was an parameter error: "
              << response->GetStatusMessage())
     break;
   case INTERNAL_ERROR:
-    LOG_WARN("received service response for request "
-             << transaction_id << ", but an internal error occurred: "
+    LOG_WARN("received service response for pending request "
+             << transaction_id << " from " << connection_info.GetHostname()
+             << ", but an internal error occurred: "
              << response->GetStatusMessage())
     break;
   case GONE:
     LOG_WARN("received service response for request "
-             << transaction_id << ", but service is gone from endpoint: "
+             << transaction_id << " from " << connection_info.GetHostname()
+             << ", but service is gone from endpoint: "
              << response->GetStatusMessage())
     break;
   }

@@ -32,7 +32,7 @@ public:
     return FunctionalEventListener(func);
   };
 
-  void HandleMessage(const SharedEvent event) override { m_function(event); }
+  void HandleEvent(SharedEvent event) override { m_function(event); }
   std::string GetId() const override { return m_id; };
 };
 

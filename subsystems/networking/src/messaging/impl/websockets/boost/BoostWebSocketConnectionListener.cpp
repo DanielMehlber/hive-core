@@ -125,11 +125,14 @@ void BoostWebSocketConnectionListener::ProcessTcpConnection(
     return;
   }
 
-  auto remote_endpoint = socket.remote_endpoint();
-  auto remote_endpoint_address = remote_endpoint.address();
+  auto remote_address = socket.remote_endpoint().address();
+  auto remote_port = socket.remote_endpoint().port();
+  auto local_address = socket.local_endpoint().address();
+  auto local_port = socket.local_endpoint().port();
 
-  LOG_DEBUG("new TCP connection for web-socket established by host "
-            << remote_endpoint_address.to_string())
+  LOG_DEBUG("successfully accepted new incoming TCP connection "
+            << local_address.to_string() << ":" << local_port << "<-"
+            << remote_address.to_string() << remote_port)
 
   // create stream and perform handshake
   auto stream = std::make_shared<stream_type>(std::move(socket));
@@ -172,8 +175,16 @@ void BoostWebSocketConnectionListener::ProcessWebSocketHandshake(
   auto port = current_stream->next_layer().socket().remote_endpoint().port();
   std::string host = address.to_string() + ":" + std::to_string(port);
 
-  LOG_INFO("web-socket connection established by " << address.to_string() << ":"
-                                                   << port)
+  auto &socket = current_stream->next_layer().socket();
+  auto remote_address = socket.remote_endpoint().address();
+  auto remote_port = socket.remote_endpoint().port();
+  auto local_address = socket.local_endpoint().address();
+  auto local_port = socket.local_endpoint().port();
+
+  LOG_INFO("successfully established incoming web-socket connection "
+           << local_address.to_string() << ":" << local_port << "<-"
+           << remote_address.to_string() << ":" << remote_port)
+
   m_connection_consumer(host, std::move(*current_stream));
 
   StartAcceptingAnotherConnection();

@@ -8,6 +8,7 @@
 TEST(PluginsTest, lifecycle_test) {
   auto config = std::make_shared<common::config::Configuration>();
   auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
+  auto job_manager_ref = job_manager.CreateReference();
   job_manager->StartExecution();
 
   auto resource_manager =
@@ -21,15 +22,16 @@ TEST(PluginsTest, lifecycle_test) {
 
   auto plugin_context =
       std::make_shared<plugins::PluginContext>(subsystems.CreateReference());
-  auto plugin_manager = std::make_shared<plugins::BoostPluginManager>(
-      plugin_context, subsystems.CreateReference());
+  common::memory::Owner<plugins::IPluginManager> plugin_manager =
+      common::memory::Owner<plugins::BoostPluginManager>(
+          plugin_context, subsystems.CreateReference());
 
   auto plugin = boost::shared_ptr<TestPlugin>(new TestPlugin());
 
   plugin_manager->InstallPlugin(plugin);
   plugin_manager->UninstallPlugin(plugin->GetName());
 
-  job_manager->InvokeCycleAndWait();
+  job_manager_ref.Borrow()->InvokeCycleAndWait();
 
   ASSERT_EQ(plugin->GetInitCount(), 1);
   ASSERT_EQ(plugin->GetShutdownCount(), 1);
