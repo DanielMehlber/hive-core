@@ -1,41 +1,62 @@
 #ifndef SIMULATION_FRAMEWORK_PEERSETUP_H
 #define SIMULATION_FRAMEWORK_PEERSETUP_H
 
-#include "events/EventFactory.h"
+#include "events/broker/impl/JobBasedEventBroker.h"
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "graphics/service/RenderService.h"
 #include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
-#include "networking/NetworkingFactory.h"
+#include "networking/NetworkingManager.h"
+#include "networking/messaging/IMessageEndpoint.h"
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
 using namespace services;
 using namespace networking;
 using namespace graphics;
 
-common::subsystems::SharedSubsystemManager
-setupNode(const jobsystem::SharedJobManager &job_manager,
-          const common::config::SharedConfiguration &config, int port) {
-  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
-  subsystems->AddOrReplaceSubsystem(job_manager);
+struct Node {
+  common::memory::Owner<common::subsystems::SubsystemManager> subsystems;
+  common::memory::Reference<jobsystem::JobManager> job_manager;
+  common::memory::Reference<IMessageEndpoint> endpoint;
+  common::memory::Reference<IServiceRegistry> registry;
+  int port;
+};
+
+Node setupNode(const common::config::SharedConfiguration &config, int port) {
+  auto subsystems =
+      common::memory::Owner<common::subsystems::SubsystemManager>();
+
+  auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
+  job_manager->StartExecution();
+  auto job_manager_ref = job_manager.CreateReference();
+  subsystems->AddOrReplaceSubsystem(std::move(job_manager));
 
   // setup event broker
-  events::SharedEventBroker event_broker =
-      events::EventFactory::CreateBroker(subsystems);
-  subsystems->AddOrReplaceSubsystem(event_broker);
+  auto event_broker =
+      common::memory::Owner<events::brokers::JobBasedEventBroker>(
+          subsystems.CreateReference());
+  subsystems->AddOrReplaceSubsystem<events::IEventBroker>(
+      std::move(event_broker));
 
   // setup networking peer
   config->Set("net.port", port);
-  auto networking_peer =
-      networking::NetworkingFactory::CreateNetworkingPeer(subsystems, config);
-  subsystems->AddOrReplaceSubsystem(networking_peer);
+  auto networking_peer = common::memory::Owner<networking::NetworkingManager>(
+      subsystems.CreateReference(), config);
+  subsystems->AddOrReplaceSubsystem(std::move(networking_peer));
+
+  auto endpoint_ref =
+      subsystems->RequireSubsystem<IMessageEndpoint>().ToReference();
 
   // setup service registry
-  SharedServiceRegistry registry =
-      std::make_shared<services::impl::RemoteServiceRegistry>(subsystems);
-  subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(registry);
+  common::memory::Owner<IServiceRegistry> registry =
+      common::memory::Owner<services::impl::RemoteServiceRegistry>(
+          subsystems.CreateReference());
+  auto registry_ref = registry.CreateReference();
+  subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(
+      std::move(registry));
 
-  return subsystems;
+  return Node{std::move(subsystems), job_manager_ref, endpoint_ref,
+              registry_ref, port};
 }
 
 #endif // SIMULATION_FRAMEWORK_PEERSETUP_H

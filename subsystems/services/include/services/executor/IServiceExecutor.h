@@ -1,6 +1,7 @@
 #ifndef ISERVICEEXECUTOR_H
 #define ISERVICEEXECUTOR_H
 
+#include "common/memory/ExclusiveOwnership.h"
 #include "jobsystem/manager/JobManager.h"
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
@@ -25,7 +26,7 @@ public:
    */
   virtual std::future<SharedServiceResponse>
   Call(SharedServiceRequest request,
-       jobsystem::SharedJobManager job_manager) = 0;
+       common::memory::Borrower<jobsystem::JobManager> job_manager) = 0;
 
   /**
    * Checks if the service can be currently called

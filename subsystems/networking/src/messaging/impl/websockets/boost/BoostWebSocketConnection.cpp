@@ -2,9 +2,9 @@
 #include "logging/LogManager.h"
 #include "networking/messaging/MessageConverter.h"
 #include <boost/asio.hpp>
-#include <utility>
 
-using namespace networking::websockets;
+using namespace networking::messaging;
+using namespace networking::messaging::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
@@ -104,7 +104,7 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
   std::future<void> sending_future = sending_promise.get_future();
 
   std::shared_ptr<std::string> payload = std::make_shared<std::string>(
-      networking::websockets::MessageConverter::ToMultipartFormData(message));
+      networking::messaging::MessageConverter::ToMultipartFormData(message));
 
   /*
    * The async_write must finish before another one can be called. This lock
@@ -148,7 +148,7 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
 void BoostWebSocketConnection::OnMessageSent(
     std::promise<void> &&promise, SharedMessage message,
     std::shared_ptr<std::string> sent_data,
-    std::unique_lock<jobsystem::mutex> lock,
+    std::unique_lock<jobsystem::recursive_mutex> lock,
     boost::beast::error_code error_code,
     [[maybe_unused]] std::size_t bytes_transferred) {
 
@@ -171,7 +171,7 @@ void BoostWebSocketConnection::OnMessageSent(
   }
 
   promise.set_value();
-  LOG_DEBUG("Sent message of type "
+  LOG_DEBUG("sent message of type "
             << message->GetType() << " (" << sent_data->size()
             << " bytes) via web-socket to host "
             << m_remote_endpoint_data.address().to_string() << ":"

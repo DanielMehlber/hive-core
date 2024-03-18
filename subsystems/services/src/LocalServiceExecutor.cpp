@@ -11,9 +11,9 @@ LocalServiceExecutor::LocalServiceExecutor(
     : m_func(std::move(func)), m_service_name(std::move(service_name)),
       m_id(common::uuid::UuidGenerator::Random()) {}
 
-std::future<SharedServiceResponse>
-LocalServiceExecutor::Call(SharedServiceRequest request,
-                           jobsystem::SharedJobManager job_manager) {
+std::future<SharedServiceResponse> LocalServiceExecutor::Call(
+    SharedServiceRequest request,
+    common::memory::Borrower<jobsystem::JobManager> job_manager) {
 
   // for when the job has resolved
   std::shared_ptr<std::promise<SharedServiceResponse>> completion_promise =

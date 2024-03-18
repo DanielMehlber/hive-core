@@ -7,7 +7,7 @@
 #include <boost/asio.hpp>
 #include <future>
 
-namespace networking::websockets {
+namespace networking::messaging::websockets {
 
 DECLARE_EXCEPTION(UrlMalformedException);
 DECLARE_EXCEPTION(CannotResolveHostException);
@@ -40,7 +40,7 @@ private:
       boost::beast::error_code error_code,
       boost::asio::ip::tcp::resolver::results_type results);
 
-  void ProcessEstablishedConnectionToServer(
+  void ProcessEstablishedTcpConnection(
       std::promise<void> &&connection_promise, std::string uri,
       std::shared_ptr<stream_type> stream, boost::beast::error_code error_code,
       boost::asio::ip::tcp::resolver::results_type::endpoint_type
@@ -65,6 +65,6 @@ public:
    */
   std::future<void> EstablishConnectionTo(const std::string &uri);
 };
-} // namespace networking::websockets
+} // namespace networking::messaging::websockets
 
 #endif /* BOOSTWEBSOCKETCONNECTIONESTABLISHER_H */

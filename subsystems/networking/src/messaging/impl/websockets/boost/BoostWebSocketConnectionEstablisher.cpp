@@ -5,9 +5,9 @@
 #include <boost/beast.hpp>
 #include <regex>
 #include <string>
-#include <utility>
 
-using namespace networking::websockets;
+using namespace networking::messaging::websockets;
+using namespace networking::messaging;
 using namespace networking;
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -74,13 +74,12 @@ void BoostWebSocketConnectionEstablisher::ProcessResolvedHostnameOfServer(
   // Make the connection on the IP address we get from a lookup
   beast::get_lowest_layer(*stream).async_connect(
       results,
-      beast::bind_front_handler(&BoostWebSocketConnectionEstablisher::
-                                    ProcessEstablishedConnectionToServer,
-                                shared_from_this(),
-                                std::move(connection_promise), uri, stream));
+      beast::bind_front_handler(
+          &BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection,
+          shared_from_this(), std::move(connection_promise), uri, stream));
 }
 
-void BoostWebSocketConnectionEstablisher::ProcessEstablishedConnectionToServer(
+void BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection(
     std::promise<void> &&connection_promise, std::string uri,
     std::shared_ptr<stream_type> stream, beast::error_code error_code,
     tcp::resolver::results_type::endpoint_type endpoint_type) {
@@ -132,21 +131,30 @@ void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
     std::promise<void> &&connection_promise, std::string uri,
     std::shared_ptr<stream_type> stream, beast::error_code error_code) {
 
-  auto address = stream->next_layer().socket().remote_endpoint().address();
-  auto port = stream->next_layer().socket().remote_endpoint().port();
+  auto remote_address =
+      stream->next_layer().socket().remote_endpoint().address();
+  auto remote_port = stream->next_layer().socket().remote_endpoint().port();
+  auto local_address = stream->next_layer().socket().local_endpoint().address();
+  auto local_port = stream->next_layer().socket().local_endpoint().port();
   if (error_code) {
-    LOG_WARN("web-socket handshake with remote host "
-             << address.to_string() << " failed: " << error_code.message())
+    LOG_ERR(
+        "web-socket handshake with remote host over established tcp connection "
+        << local_address.to_string() << ":" << local_port << "->"
+        << remote_address.to_string() << ":" << remote_port
+        << " failed: " << error_code.message())
     auto exception = BUILD_EXCEPTION(
-        ConnectionFailedException, "web-socket handshake with remote host "
-                                       << address.to_string()
-                                       << " failed: " << error_code.message());
+        ConnectionFailedException,
+        "web-socket handshake with remote host over established tcp connection "
+            << local_address.to_string() << ":" << local_port << "->"
+            << remote_address.to_string() << ":" << remote_port
+            << " failed: " << error_code.message());
     connection_promise.set_exception(std::make_exception_ptr(exception));
     return;
   }
 
-  LOG_INFO("established web-socket connection with remote peer "
-           << address.to_string() << " on port " << port)
+  LOG_INFO("successfully established outgoing web-socket connection "
+           << local_address.to_string() << ":" << local_port << "->"
+           << remote_address.to_string() << ":" << remote_port);
 
   // consume connection
   m_connection_consumer(uri, std::move(*stream));

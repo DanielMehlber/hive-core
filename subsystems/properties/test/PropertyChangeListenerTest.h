@@ -1,7 +1,8 @@
 #ifndef PROPERTYCHANGELISTENERTEST_H
 #define PROPERTYCHANGELISTENERTEST_H
 
-#include "events/EventFactory.h"
+#include "events/broker/impl/JobBasedEventBroker.h"
+#include "jobsystem/manager/JobManager.h"
 #include "logging/LogManager.h"
 #include "properties/PropertyChangeListener.h"
 #include "properties/PropertyProvider.h"
@@ -27,18 +28,18 @@ public:
   }
 };
 
-common::subsystems::SharedSubsystemManager SetupSubsystems() {
-  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+common::memory::Owner<common::subsystems::SubsystemManager> SetupSubsystems() {
+  auto subsystems =
+      common::memory::Owner<common::subsystems::SubsystemManager>();
   auto config = std::make_shared<common::config::Configuration>();
-  jobsystem::SharedJobManager job_manager =
-      std::make_shared<jobsystem::JobManager>(config);
+  auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
 
-  subsystems->AddOrReplaceSubsystem(job_manager);
+  subsystems->AddOrReplaceSubsystem(std::move(job_manager));
 
-  events::SharedEventBroker broker =
-      events::EventFactory::CreateBroker(subsystems);
+  auto broker = common::memory::Owner<events::brokers::JobBasedEventBroker>(
+      subsystems.CreateReference());
 
-  subsystems->AddOrReplaceSubsystem(broker);
+  subsystems->AddOrReplaceSubsystem<events::IEventBroker>(std::move(broker));
   return subsystems;
 }
 
@@ -48,7 +49,7 @@ TEST(PropertyTest, simple_prop_listener) {
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
   job_manager->StartExecution();
 
-  PropertyProvider provider(subsystems);
+  PropertyProvider provider(subsystems.CreateReference());
 
   auto listener = std::make_shared<VerificationListener>();
   provider.RegisterListener("example.prop.value", listener);
@@ -65,7 +66,7 @@ TEST(PropertyTest, sub_prop_listener) {
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
   job_manager->StartExecution();
 
-  PropertyProvider provider(subsystems);
+  PropertyProvider provider(subsystems.CreateReference());
 
   auto listener = std::make_shared<VerificationListener>();
   provider.RegisterListener("example.prop", listener);
@@ -83,7 +84,7 @@ TEST(PropertyTest, listener_destroyed) {
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
   job_manager->StartExecution();
 
-  PropertyProvider provider(subsystems);
+  PropertyProvider provider(subsystems.CreateReference());
 
   // this just assures that there is no segfault happening when the listener is
   // deleted because it went out of scope.
@@ -101,7 +102,7 @@ TEST(PropertyTest, listener_unregistered) {
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
   job_manager->StartExecution();
 
-  PropertyProvider provider(subsystems);
+  PropertyProvider provider(subsystems.CreateReference());
 
   // this just assures that there is no segfault happening when the listener is
   // deleted because it went out of scope.

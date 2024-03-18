@@ -20,7 +20,7 @@ namespace plugins {
  */
 class BoostPluginManager
     : public IPluginManager,
-      public std::enable_shared_from_this<BoostPluginManager> {
+      public common::memory::EnableBorrowFromThis<BoostPluginManager> {
 protected:
   /** Context for plugins of this plugin manager */
   SharedPluginContext m_context;
@@ -29,13 +29,15 @@ protected:
   std::map<std::string, boost::shared_ptr<IPlugin>> m_plugins;
   mutable jobsystem::mutex m_plugins_mutex;
 
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
 public:
   explicit BoostPluginManager(
       SharedPluginContext context,
-      const common::subsystems::SharedSubsystemManager &subsystems)
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems)
       : m_context(std::move(context)), m_subsystems(subsystems){};
+
   void InstallPlugin(const std::string &path) override;
   void InstallPlugin(boost::shared_ptr<IPlugin> plugin) override;
   void UninstallPlugin(const std::string &name) override;

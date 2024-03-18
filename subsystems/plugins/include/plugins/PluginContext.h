@@ -1,6 +1,7 @@
 #ifndef PLUGINCONTEXT_H
 #define PLUGINCONTEXT_H
 
+#include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "events/broker/IEventBroker.h"
 #include "graphics/renderer/IRenderer.h"
@@ -16,19 +17,21 @@ namespace plugins {
 
 class PluginContext {
 protected:
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
 public:
   explicit PluginContext(
-      const common::subsystems::SharedSubsystemManager &subsystems)
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems)
       : m_subsystems(subsystems){};
 
-  common::subsystems::SharedSubsystemManager GetKernelSubsystems() const;
+  common::memory::Reference<common::subsystems::SubsystemManager>
+  GetKernelSubsystems() const;
 };
 
-inline common::subsystems::SharedSubsystemManager
+inline common::memory::Reference<common::subsystems::SubsystemManager>
 PluginContext::GetKernelSubsystems() const {
-  return m_subsystems.lock();
+  return m_subsystems;
 }
 
 typedef std::shared_ptr<PluginContext> SharedPluginContext;

@@ -1,9 +1,9 @@
 #include "core/Core.h"
-#include "events/EventFactory.h"
+#include "events/broker/impl/JobBasedEventBroker.h"
 #include "graphics/service/RenderService.h"
 #include "plugins/impl/BoostPluginManager.h"
-#include "resourcemgmt/ResourceFactory.h"
 #include "resourcemgmt/loader/impl/FileLoader.h"
+#include "resourcemgmt/manager/impl/ThreadPoolResourceManager.h"
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
@@ -14,60 +14,68 @@ using namespace props;
 using namespace resourcemgmt;
 using namespace services;
 using namespace plugins;
+using namespace networking;
+using namespace graphics;
 
 Core::Core(common::config::SharedConfiguration config, bool only_local)
-    : m_subsystems(std::make_shared<common::subsystems::SubsystemManager>()) {
+    : m_subsystems(
+          common::memory::Owner<common::subsystems::SubsystemManager>()) {
 
-  auto job_manager = std::make_shared<JobManager>(config);
-  m_subsystems->AddOrReplaceSubsystem(job_manager);
+  // setup job manager subsystem
+  auto job_manager = common::memory::Owner<JobManager>(config);
+  m_subsystems->AddOrReplaceSubsystem(std::move(job_manager));
   job_manager->StartExecution();
 
-  auto message_broker = EventFactory::CreateBroker(m_subsystems);
-  m_subsystems->AddOrReplaceSubsystem(message_broker);
+  // setup event broker subsystem
+  SetEventBroker(common::memory::Owner<events::brokers::JobBasedEventBroker>(
+      m_subsystems.CreateReference()));
 
-  auto property_provider = std::make_shared<PropertyProvider>(m_subsystems);
-  m_subsystems->AddOrReplaceSubsystem(property_provider);
+  // setup property provider
+  SetPropertyProvider(
+      common::memory::Owner<PropertyProvider>(m_subsystems.CreateReference()));
 
-  auto resource_manager = ResourceFactory::CreateResourceManager();
-  m_subsystems->AddOrReplaceSubsystem(resource_manager);
+  // setup resource manager
+  auto resource_manager =
+      common::memory::Owner<resourcemgmt::ThreadPoolResourceManager>();
   auto file_resource_loader =
       std::make_shared<resourcemgmt::loaders::FileLoader>();
   resource_manager->RegisterLoader(file_resource_loader);
+  SetResourceManager(std::move(resource_manager));
 
   if (only_local) {
-    auto service_registry =
-        std::make_shared<services::impl::LocalOnlyServiceRegistry>();
-    m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(service_registry);
+    // only setup local service registry
+    SetServiceRegistry(
+        common::memory::Owner<services::impl::LocalOnlyServiceRegistry>());
   } else {
-    auto network_manager =
-        std::make_shared<networking::NetworkingManager>(m_subsystems, config);
-    m_subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
-        network_manager);
+    // setup networking system for remote service calls
+    SetNetworkingManager(common::memory::Owner<networking::NetworkingManager>(
+        m_subsystems.CreateReference(), config));
 
-    auto service_registry =
-        std::make_shared<services::impl::RemoteServiceRegistry>(m_subsystems);
-    m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(service_registry);
+    // setup remote-capable service registry
+    SetServiceRegistry(
+        common::memory::Owner<services::impl::RemoteServiceRegistry>(
+            m_subsystems.CreateReference()));
   }
 
-  auto plugin_context = std::make_shared<PluginContext>(m_subsystems);
-  auto plugin_manager = std::make_shared<plugins::BoostPluginManager>(
-      plugin_context, m_subsystems);
-  m_subsystems->AddOrReplaceSubsystem<IPluginManager>(plugin_manager);
+  auto plugin_context =
+      std::make_shared<PluginContext>(m_subsystems.CreateReference());
+  SetPluginManager(common::memory::Owner<plugins::BoostPluginManager>(
+      plugin_context, m_subsystems.CreateReference()));
 }
 
-Core::~Core() {}
+Core::~Core() = default;
 
 void Core::EnableRenderingJob() {
   auto job_manager = m_subsystems->RequireSubsystem<jobsystem::JobManager>();
 
   // enabling the renderer is a job: this results in a job-in-job creation
   auto enable_rendering_job_job = std::make_shared<jobsystem::job::Job>(
-      [subsystems = m_subsystems](JobContext *context) {
+      [subsystems = m_subsystems.Borrow()](JobContext *context) mutable {
         auto job_manager =
             subsystems->RequireSubsystem<jobsystem::JobManager>();
         job_manager->DetachJob("render-job");
         auto rendering_job = std::make_shared<jobsystem::job::TimerJob>(
-            [subsystems](jobsystem::JobContext *context) {
+            [subsystems](jobsystem::JobContext *context) mutable {
               auto maybe_rendering_subsystem =
                   subsystems->GetSubsystem<graphics::IRenderer>();
               if (maybe_rendering_subsystem.has_value()) {
@@ -94,88 +102,94 @@ void Core::EnableRenderingJob() {
   job_manager->KickJob(enable_rendering_job_job);
 }
 
-void Core::EnableRenderingService(graphics::SharedRenderer service_renderer) {
-  graphics::SharedRenderer renderer;
+void Core::EnableRenderingService(
+    common::memory::Reference<IRenderer> service_renderer) {
+  common::memory::Reference<IRenderer> renderer;
   if (service_renderer) {
     renderer = service_renderer;
   } else {
-    renderer = m_subsystems->RequireSubsystem<graphics::IRenderer>();
+    renderer =
+        m_subsystems->RequireSubsystem<graphics::IRenderer>().ToReference();
   }
-  auto render_service =
-      std::make_shared<graphics::RenderService>(m_subsystems, renderer);
+  auto render_service = std::make_shared<graphics::RenderService>(
+      m_subsystems.CreateReference(), renderer);
   auto service_registry = m_subsystems->RequireSubsystem<IServiceRegistry>();
   service_registry->Register(render_service);
 }
 
-common::subsystems::SharedSubsystemManager Core::GetSubsystemsManager() const {
-  return m_subsystems;
-}
-
-jobsystem::SharedJobManager Core::GetJobManager() const {
-  return m_subsystems->GetSubsystem<jobsystem::JobManager>().value();
-}
-
-props::SharedPropertyProvider Core::GetPropertyProvider() const {
-  return m_subsystems->GetSubsystem<props::PropertyProvider>().value();
-}
-
-resourcemgmt::SharedResourceManager Core::GetResourceManager() const {
-  return m_subsystems->GetSubsystem<resourcemgmt::IResourceManager>().value();
-}
-
-events::SharedEventBroker Core::GetMessageBroker() const {
-  return m_subsystems->GetSubsystem<events::IEventBroker>().value();
-}
-
-void Core::SetResourceManager(
-    const resourcemgmt::SharedResourceManager &resourceManager) {
-  m_subsystems->AddOrReplaceSubsystem<resourcemgmt::IResourceManager>(
-      resourceManager);
-}
-
-services::SharedServiceRegistry Core::GetServiceRegistry() const {
-  return m_subsystems->GetSubsystem<services::IServiceRegistry>().value();
-}
-
-void Core::SetServiceRegistry(
-    const services::SharedServiceRegistry &serviceRegistry) {
-  m_subsystems->GetSubsystem<services::IServiceRegistry>().value();
-}
-
-networking::SharedNetworkingManager Core::GetNetworkingManager() const {
-  return m_subsystems->GetSubsystem<networking::NetworkingManager>().value();
-}
-
-void Core::SetNetworkingManager(
-    const networking::SharedNetworkingManager &networkingManager) {
-  m_subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
-      networkingManager);
-}
-
-plugins::SharedPluginManager Core::GetPluginManager() const {
-  return m_subsystems->GetSubsystem<plugins::IPluginManager>().value();
-}
-
-void Core::SetPluginManager(const plugins::SharedPluginManager &pluginManager) {
-  m_subsystems->AddOrReplaceSubsystem<plugins::IPluginManager>(pluginManager);
-}
-
-scene::SharedScene Core::GetScene() const {
-  return m_subsystems->GetSubsystem<scene::SceneManager>().value();
-}
-
-void Core::SetScene(const scene::SharedScene &scene) {
-  m_subsystems->AddOrReplaceSubsystem<scene::SceneManager>(scene);
-}
-
-graphics::SharedRenderer Core::GetRenderer() const {
-  return m_subsystems->GetSubsystem<graphics::IRenderer>().value();
-}
-
-void Core::SetRenderer(const graphics::SharedRenderer &renderer) {
-  m_subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(renderer);
+common::memory::Borrower<common::subsystems::SubsystemManager>
+Core::GetSubsystemsManager() {
+  return m_subsystems.Borrow();
 }
 
 bool Core::ShouldShutdown() const { return m_should_shutdown; }
 
 void Core::Shutdown(bool value) { m_should_shutdown = value; }
+
+void Core::SetEventBroker(
+    common::memory::Owner<events::IEventBroker> &&broker) {
+  m_subsystems->AddOrReplaceSubsystem<IEventBroker>(std::move(broker));
+}
+
+common::memory::Borrower<events::IEventBroker> Core::GetEventBroker() {
+  return m_subsystems->RequireSubsystem<IEventBroker>();
+}
+
+void Core::SetPropertyProvider(
+    common::memory::Owner<props::PropertyProvider> &&broker) {
+  m_subsystems->AddOrReplaceSubsystem<PropertyProvider>(std::move(broker));
+}
+common::memory::Borrower<props::PropertyProvider> Core::GetPropertyProvider() {
+  return m_subsystems->RequireSubsystem<PropertyProvider>();
+}
+
+void Core::SetResourceManager(
+    common::memory::Owner<resourcemgmt::IResourceManager> &&broker) {
+  m_subsystems->AddOrReplaceSubsystem<IResourceManager>(std::move(broker));
+}
+
+common::memory::Borrower<resourcemgmt::IResourceManager>
+Core::GetResourceManager() {
+  return m_subsystems->RequireSubsystem<IResourceManager>();
+}
+
+void Core::SetServiceRegistry(
+    common::memory::Owner<services::IServiceRegistry> &&registry) {
+  m_subsystems->AddOrReplaceSubsystem<IServiceRegistry>(std::move(registry));
+}
+
+common::memory::Borrower<services::IServiceRegistry>
+Core::GetServiceRegistry() {
+  return m_subsystems->RequireSubsystem<IServiceRegistry>();
+}
+
+void Core::SetNetworkingManager(
+    common::memory::Owner<networking::NetworkingManager> &&manager) {
+  m_subsystems->AddOrReplaceSubsystem<NetworkingManager>(std::move(manager));
+}
+
+common::memory::Borrower<networking::NetworkingManager>
+Core::GetNetworkingManager() {
+  return m_subsystems->RequireSubsystem<NetworkingManager>();
+}
+
+void Core::SetPluginManager(
+    common::memory::Owner<plugins::IPluginManager> &&manager) {
+  m_subsystems->AddOrReplaceSubsystem<IPluginManager>(std::move(manager));
+}
+
+common::memory::Borrower<plugins::IPluginManager> Core::GetPluginManager() {
+  return m_subsystems->RequireSubsystem<IPluginManager>();
+}
+
+void Core::SetRenderer(common::memory::Owner<graphics::IRenderer> &&renderer) {
+  m_subsystems->AddOrReplaceSubsystem<IRenderer>(std::move(renderer));
+}
+
+common::memory::Borrower<graphics::IRenderer> Core::GetRenderer() {
+  return m_subsystems->RequireSubsystem<IRenderer>();
+}
+
+common::memory::Borrower<jobsystem::JobManager> Core::GetJobManager() {
+  return m_subsystems->RequireSubsystem<JobManager>();
+}

@@ -21,57 +21,73 @@ SharedServiceRequest GenerateRenderingRequest(int width, int height) {
 
 TEST(GraphicsTests, remote_render_service) {
   auto config = std::make_shared<common::config::Configuration>();
-  auto job_manager = std::make_shared<jobsystem::JobManager>(config);
-  job_manager->StartExecution();
 
-  auto peer_1 = setupNode(job_manager, config, 9005);
-  auto peer_1_networking_subsystem =
-      peer_1->RequireSubsystem<IMessageEndpoint>();
-  auto peer_1_service_registry = peer_1->RequireSubsystem<IServiceRegistry>();
+  auto node_1 = setupNode(config, 9005);
+  auto node_2 = setupNode(config, 9006);
 
-  auto peer_2 = setupNode(job_manager, config, 9006);
-  auto peer_2_service_registry = peer_2->RequireSubsystem<IServiceRegistry>();
+  auto encoder = common::memory::Owner<graphics::PlainRenderResultEncoder>();
+  node_1.subsystems->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(
+      common::memory::Owner<graphics::PlainRenderResultEncoder>());
+  node_2.subsystems->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(
+      common::memory::Owner<graphics::PlainRenderResultEncoder>());
 
-  auto encoder = std::make_shared<graphics::PlainRenderResultEncoder>();
-  peer_1->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(encoder);
-  peer_2->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(encoder);
-
-  SharedRenderer renderer = std::make_shared<OffscreenRenderer>();
-  peer_2->AddOrReplaceSubsystem<IRenderer>(renderer);
+  common::memory::Owner<IRenderer> renderer =
+      common::memory::Owner<OffscreenRenderer>();
+  node_2.subsystems->AddOrReplaceSubsystem<IRenderer>(std::move(renderer));
 
   // first establish connection in order to broadcast the connection
   auto connection_progress =
-      peer_1_networking_subsystem->EstablishConnectionTo("127.0.0.1:9006");
+      node_1.endpoint.Borrow()->EstablishConnectionTo("127.0.0.1:9006");
 
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
 
+  // process established connection
+  node_1.job_manager.Borrow()->InvokeCycleAndWait();
+  node_2.job_manager.Borrow()->InvokeCycleAndWait();
+
   SharedServiceExecutor render_service =
       std::static_pointer_cast<services::impl::LocalServiceExecutor>(
-          std::make_shared<RenderService>(peer_1));
+          std::make_shared<RenderService>(node_1.subsystems.CreateReference()));
 
-  peer_1_service_registry->Register(render_service);
-  job_manager->InvokeCycleAndWait();
+  node_1.registry.Borrow()->Register(render_service);
+  node_1.job_manager.Borrow()->InvokeCycleAndWait();
+  node_2.job_manager.Borrow()->InvokeCycleAndWait();
 
   // wait until rendering job has been registered
   TryAssertUntilTimeout(
-      [&peer_2_service_registry, job_manager] {
-        job_manager->InvokeCycleAndWait();
-        return peer_2_service_registry->Find("render").get().has_value();
+      [&node_1, &node_2] {
+        node_1.job_manager.Borrow()->InvokeCycleAndWait();
+        node_2.job_manager.Borrow()->InvokeCycleAndWait();
+        return node_2.registry.Borrow()->Find("render").get().has_value();
       },
       10s);
 
   SharedServiceCaller caller =
-      peer_2_service_registry->Find("render").get().value();
+      node_2.registry.Borrow()->Find("render").get().value();
 
   std::vector<long> times;
   times.resize(10);
   for (int i = 0; i < 10; i++) {
-    auto result_fut =
-        caller->Call(GenerateRenderingRequest(1000, 1000), job_manager);
+    auto result_fut = caller->Call(GenerateRenderingRequest(1000, 1000),
+                                   node_2.job_manager.Borrow());
 
     auto start_point = std::chrono::high_resolution_clock::now();
-    job_manager->InvokeCycleAndWait();
+
+    // we need a second thread here: while the requesting node waits, the
+    // processing node must resolve its service request. This can't be done in
+    // the same thread sequentially, but only in parallel.
+    std::atomic_bool finished = false;
+    auto request_processing_thread = std::thread([&node_1, &finished]() {
+      while (!finished.load()) {
+        node_1.job_manager.Borrow()->InvokeCycleAndWait();
+      }
+    });
+
+    node_2.job_manager.Borrow()->InvokeCycleAndWait();
+    finished = true;
+    request_processing_thread.join();
+
     auto end_point = std::chrono::high_resolution_clock::now();
 
     auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -88,31 +104,34 @@ TEST(GraphicsTests, remote_render_service) {
 
 TEST(GraphicsTest, offscreen_rendering_sphere) {
 
-  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+  auto subsystems =
+      common::memory::Owner<common::subsystems::SubsystemManager>();
   auto config = std::make_shared<common::config::Configuration>();
-  auto job_manager = std::make_shared<JobManager>(config);
+
+  auto job_manager = common::memory::Owner<JobManager>(config);
+  auto job_manager_ref = job_manager.CreateReference();
   job_manager->StartExecution();
-  subsystems->AddOrReplaceSubsystem<JobManager>(job_manager);
+  subsystems->AddOrReplaceSubsystem<JobManager>(std::move(job_manager));
 
   vsg::Builder builder;
   auto scene = std::make_shared<scene::SceneManager>();
   scene->GetRoot()->addChild(builder.createSphere());
 
   graphics::RendererSetup info;
-  SharedRenderer renderer = std::make_shared<OffscreenRenderer>(info, scene);
-  subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(renderer);
+  auto renderer = common::memory::Owner<OffscreenRenderer>(info, scene);
+  subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(std::move(renderer));
 
   SharedServiceExecutor render_service =
       std::static_pointer_cast<services::impl::LocalServiceExecutor>(
-          std::make_shared<RenderService>(subsystems));
+          std::make_shared<RenderService>(subsystems.CreateReference()));
 
   RenderServiceRequest request_generator;
   request_generator.SetExtend({10, 10});
-  auto response =
-      render_service->Call(request_generator.GetRequest(), job_manager);
+  auto response = render_service->Call(request_generator.GetRequest(),
+                                       job_manager_ref.Borrow());
 
-  job_manager->InvokeCycleAndWait();
-  job_manager->WaitForCompletion(response);
+  job_manager_ref.Borrow()->InvokeCycleAndWait();
+  job_manager_ref.Borrow()->WaitForCompletion(response);
 
   auto decoder = subsystems->RequireSubsystem<graphics::IRenderResultEncoder>();
   auto encoded_color_buffer = response.get()->GetResult("color").value();

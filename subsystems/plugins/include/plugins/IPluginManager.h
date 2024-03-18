@@ -41,9 +41,9 @@ public:
    * @param path to the directory
    */
   virtual void InstallPlugins(const std::string &path) = 0;
-};
 
-typedef std::shared_ptr<IPluginManager> SharedPluginManager;
+  virtual ~IPluginManager() = default;
+};
 
 } // namespace plugins
 

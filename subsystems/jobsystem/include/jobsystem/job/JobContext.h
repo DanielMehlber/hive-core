@@ -1,9 +1,9 @@
 #ifndef JOBCONTEXT_H
 #define JOBCONTEXT_H
 
+#include "common/memory/ExclusiveOwnership.h"
 #include <chrono>
 #include <memory>
-#include <utility>
 
 namespace jobsystem {
 
@@ -17,11 +17,11 @@ class JobManager;
 class JobContext {
 protected:
   size_t m_cycle_number;
-  std::weak_ptr<JobManager> m_job_manager;
+  common::memory::Reference<JobManager> m_job_manager;
 
 public:
-  JobContext(size_t frame_number, const std::shared_ptr<JobManager> &manager)
-      : m_cycle_number{frame_number}, m_job_manager{manager} {}
+  JobContext(size_t frame_number, common::memory::Borrower<JobManager> manager)
+      : m_cycle_number{frame_number}, m_job_manager{manager.ToReference()} {}
 
   /**
    * GetAsInt number of current job cycle
@@ -33,15 +33,15 @@ public:
    * GetAsInt the managing instance of the current job execution
    * @return managing instance of the current job execution
    */
-  std::shared_ptr<JobManager> GetJobManager();
+  common::memory::Borrower<JobManager> GetJobManager();
 };
 
 inline size_t jobsystem::JobContext::GetCycleNumber() const {
   return m_cycle_number;
 }
 
-inline std::shared_ptr<JobManager> JobContext::GetJobManager() {
-  return m_job_manager.lock();
+inline common::memory::Borrower<JobManager> JobContext::GetJobManager() {
+  return m_job_manager.Borrow();
 }
 
 } // namespace jobsystem

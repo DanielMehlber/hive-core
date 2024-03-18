@@ -34,9 +34,9 @@ public:
    */
   virtual std::future<std::optional<SharedServiceCaller>>
   Find(const std::string &name, bool only_local = false) noexcept = 0;
-};
 
-typedef std::shared_ptr<IServiceRegistry> SharedServiceRegistry;
+  virtual ~IServiceRegistry() = default;
+};
 
 } // namespace services
 

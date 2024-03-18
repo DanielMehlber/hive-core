@@ -5,10 +5,10 @@
 #include "networking/messaging/events/ConnectionEstablishedEvent.h"
 #include "networking/util/UrlParser.h"
 #include <regex>
-#include <utility>
 
 using namespace networking;
-using namespace networking::websockets;
+using namespace networking::messaging;
+using namespace networking::messaging::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
@@ -17,7 +17,8 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 using namespace std::chrono_literals;
 
 BoostWebSocketEndpoint::BoostWebSocketEndpoint(
-    const common::subsystems::SharedSubsystemManager &subsystems,
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems,
     const common::config::SharedConfiguration &config)
     : m_subsystems(subsystems), m_config(config) {
 
@@ -49,49 +50,52 @@ BoostWebSocketEndpoint::BoostWebSocketEndpoint(
     m_execution_threads.push_back(std::move(execution));
   }
 
+  m_this_pointer = std::make_shared<BoostWebSocketEndpoint *>(this);
   SetupCleanUpJob();
 }
 
 void BoostWebSocketEndpoint::SetupCleanUpJob() {
+  std::weak_ptr<BoostWebSocketEndpoint *> weak_endpoint = m_this_pointer;
   SharedJob clean_up_job = jobsystem::JobSystemFactory::CreateJob<TimerJob>(
-      [weak_this = weak_from_this()](jobsystem::JobContext *context) {
-        if (weak_this.expired()) {
+      [weak_endpoint](jobsystem::JobContext *context) mutable {
+        if (auto shared_ptr_to_endpoint = weak_endpoint.lock()) {
+          auto endpoint = *shared_ptr_to_endpoint;
+
+          for (auto &consumer : endpoint->m_consumers) {
+            endpoint->CleanUpConsumersOfMessageType(consumer.first);
+          }
+
+          // clean up connections that are not usable anymore
+          std::unique_lock lock(endpoint->m_connections_mutex);
+          size_t size_before = endpoint->m_connections.size();
+          for (auto it = endpoint->m_connections.begin();
+               it != endpoint->m_connections.end();
+               /* no increment here */) {
+            if (!it->second->IsUsable()) {
+              endpoint->OnConnectionClose(it->first);
+              it = endpoint->m_connections.erase(it);
+            } else {
+              ++it;
+            }
+          }
+
+          size_t difference = size_before - endpoint->m_connections.size();
+          if (difference > 0) {
+            LOG_INFO("cleaned up " << difference
+                                   << " unusable or dead connections")
+          }
+
+          return REQUEUE;
+        } else {
           return DISPOSE;
         }
-
-        // clean up consumers that are not referencing any valid ones
-        auto _this = weak_this.lock();
-        for (auto &consumer : _this->m_consumers) {
-          _this->CleanUpConsumersOfMessageType(consumer.first);
-        }
-
-        // clean up connections that are not usable anymore
-        std::unique_lock lock(_this->m_connections_mutex);
-        size_t size_before = _this->m_connections.size();
-        for (auto it = _this->m_connections.begin();
-             it != _this->m_connections.end();
-             /* no increment here */) {
-          if (!it->second->IsUsable()) {
-            _this->OnConnectionClose(it->first);
-            it = _this->m_connections.erase(it);
-          } else {
-            ++it;
-          }
-        }
-
-        size_t difference = size_before - _this->m_connections.size();
-        if (difference > 0) {
-          LOG_INFO("cleaned up " << difference
-                                 << " unusable or dead connections")
-        }
-
-        return REQUEUE;
       },
       "boost-web-socket-peer-clean-up-" +
           std::to_string(m_local_endpoint->port()),
       1s, CLEAN_UP);
 
-  if (auto subsystems = m_subsystems.lock()) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
     job_manager->KickJob(clean_up_job);
   } else /* if subsystems are not available */ {
@@ -115,6 +119,8 @@ BoostWebSocketEndpoint::~BoostWebSocketEndpoint() {
 
   // wait until all worker threads have returned
   for (auto &execution : m_execution_threads) {
+    ASSERT(execution.get_id() != std::this_thread::get_id(),
+           "Execution thread should not join itself")
     execution.join();
   }
 
@@ -176,7 +182,8 @@ void BoostWebSocketEndpoint::CleanUpConsumersOfMessageType(
 void BoostWebSocketEndpoint::ProcessReceivedMessage(
     std::string data, SharedBoostWebSocketConnection over_connection) {
 
-  if (auto subsystems = m_subsystems.lock()) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
 
     std::unique_lock running_lock(m_running_mutex);
@@ -188,7 +195,7 @@ void BoostWebSocketEndpoint::ProcessReceivedMessage(
     SharedMessage message;
     try {
       message =
-          networking::websockets::MessageConverter::FromMultipartFormData(data);
+          networking::messaging::MessageConverter::FromMultipartFormData(data);
     } catch (const MessagePayloadInvalidException &ex) {
       LOG_WARN("message received from host "
                << over_connection->GetRemoteHostAddress()
@@ -242,9 +249,8 @@ void BoostWebSocketEndpoint::AddConnection(const std::string &url,
   std::unique_lock conn_lock(m_connections_mutex);
   m_connections[connection_id] = connection;
 
-  bool subsystems_usable = !m_subsystems.expired();
-  if (subsystems_usable) {
-    auto subsystems = m_subsystems.lock();
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
 
     // fire event if event subsystem is found
     if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {
@@ -259,8 +265,7 @@ void BoostWebSocketEndpoint::AddConnection(const std::string &url,
 }
 
 std::optional<SharedBoostWebSocketConnection>
-networking::websockets::BoostWebSocketEndpoint::GetConnection(
-    const std::string &uri) {
+BoostWebSocketEndpoint::GetConnection(const std::string &uri) {
 
   const std::string connection_id = connectionIdFromUrl(uri).value();
   std::unique_lock lock(m_connections_mutex);
@@ -357,7 +362,7 @@ BoostWebSocketEndpoint::Broadcast(const SharedMessage &message) {
   std::future<size_t> future = promise->get_future();
 
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
-      [_this = shared_from_this(), message,
+      [_this = BorrowFromThis(), message,
        promise](jobsystem::JobContext *context) {
         std::list<std::future<void>> futures;
         size_t count{};
@@ -393,8 +398,8 @@ BoostWebSocketEndpoint::Broadcast(const SharedMessage &message) {
         return JobContinuation::DISPOSE;
       });
 
-  auto job_manager =
-      m_subsystems.lock()->RequireSubsystem<jobsystem::JobManager>();
+  auto subsystems = m_subsystems.Borrow();
+  auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
   job_manager->KickJob(job);
   return future;
 }
@@ -412,9 +417,8 @@ size_t BoostWebSocketEndpoint::GetActiveConnectionCount() const {
 }
 
 void BoostWebSocketEndpoint::OnConnectionClose(const std::string &id) {
-  bool subsystems_still_active = !m_subsystems.expired();
-  if (subsystems_still_active) {
-    auto subsystems = m_subsystems.lock();
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
 
     // trigger event notifying other parties that a connection has closed
     if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {

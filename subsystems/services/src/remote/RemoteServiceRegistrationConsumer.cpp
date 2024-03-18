@@ -8,10 +8,10 @@ using namespace services::impl;
 RemoteServiceRegistrationConsumer::RemoteServiceRegistrationConsumer(
     std::function<void(SharedServiceExecutor)> consumer,
     std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
-    std::weak_ptr<IMessageEndpoint> web_socket_peer)
+    common::memory::Reference<IMessageEndpoint> web_socket_peer)
     : m_consumer(std::move(consumer)),
       m_response_consumer(std::move(response_consumer)),
-      m_web_socket_peer(std::move(web_socket_peer)) {}
+      m_message_endpoint(std::move(web_socket_peer)) {}
 
 void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
     SharedMessage received_message, ConnectionInfo connection_info) noexcept {
@@ -25,7 +25,7 @@ void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
   auto service_name = registration_message.GetServiceName();
 
   SharedServiceExecutor stub = std::make_shared<RemoteServiceExecutor>(
-      service_name, m_web_socket_peer, connection_info.GetHostname(),
+      service_name, m_message_endpoint, connection_info.GetHostname(),
       service_id, m_response_consumer);
 
   m_consumer(stub);

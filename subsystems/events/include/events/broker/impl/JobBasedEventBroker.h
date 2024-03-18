@@ -1,6 +1,7 @@
 #ifndef JOBBASEDMESSAGEBROKER_H
 #define JOBBASEDMESSAGEBROKER_H
 
+#include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "events/broker/IEventBroker.h"
 #include "events/listener/IEventListener.h"
@@ -24,11 +25,11 @@ private:
    * destroyed).
    */
   std::map<std::string, std::vector<std::weak_ptr<IEventListener>>>
-      m_topic_subscribers;
-  mutable jobsystem::mutex m_topic_subscribers_mutex;
+      m_event_listeners;
+  mutable jobsystem::mutex m_event_listeners_mutex;
 
   /** Contains required subsystems */
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
   /**
    * Goes through all subscribers of all topics and checks if they are
@@ -39,7 +40,8 @@ private:
 
 public:
   explicit JobBasedEventBroker(
-      const common::subsystems::SharedSubsystemManager &subsystems);
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems);
   ~JobBasedEventBroker() override;
 
   void FireEvent(SharedEvent event) override;

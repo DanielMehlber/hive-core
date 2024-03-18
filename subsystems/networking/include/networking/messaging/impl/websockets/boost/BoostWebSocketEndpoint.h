@@ -4,6 +4,7 @@
 #include "BoostWebSocketConnection.h"
 #include "BoostWebSocketConnectionEstablisher.h"
 #include "BoostWebSocketConnectionListener.h"
+#include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
@@ -15,7 +16,7 @@
 #include <list>
 #include <map>
 
-namespace networking::websockets {
+namespace networking::messaging::websockets {
 
 DECLARE_EXCEPTION(NoSuchPeerException);
 
@@ -25,7 +26,7 @@ DECLARE_EXCEPTION(NoSuchPeerException);
  */
 class BoostWebSocketEndpoint
     : public IMessageEndpoint,
-      public std::enable_shared_from_this<BoostWebSocketEndpoint> {
+      public common::memory::EnableBorrowFromThis<BoostWebSocketEndpoint> {
 private:
   /**
    * Indicates if the web socket endpoint is currently running
@@ -33,11 +34,16 @@ private:
    * configuration says so.
    */
   bool m_running{false};
-  mutable jobsystem::mutex m_running_mutex;
-
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
-
+  mutable jobsystem::recursive_mutex m_running_mutex;
+  
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
   common::config::SharedConfiguration m_config;
+
+  /**
+   * Used for clean-up jobs because they are kicked in the constructor, where
+   * shared_from_this() is not available yet.
+   */
+  std::shared_ptr<BoostWebSocketEndpoint *> m_this_pointer;
 
   /**
    * maps message type names to their consumers
@@ -55,7 +61,7 @@ private:
    * Maps host addresses to the connection established with the host.
    */
   std::map<std::string, SharedBoostWebSocketConnection> m_connections;
-  mutable jobsystem::mutex m_connections_mutex;
+  mutable jobsystem::recursive_mutex m_connections_mutex;
 
   std::shared_ptr<BoostWebSocketConnectionEstablisher> m_connection_establisher;
   std::shared_ptr<BoostWebSocketConnectionListener> m_connection_listener;
@@ -104,7 +110,8 @@ private:
 
 public:
   BoostWebSocketEndpoint(
-      const common::subsystems::SharedSubsystemManager &subsystems,
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems,
       const common::config::SharedConfiguration &config);
   virtual ~BoostWebSocketEndpoint();
 
@@ -127,6 +134,6 @@ public:
 
   size_t GetActiveConnectionCount() const override;
 };
-} // namespace networking::websockets
+} // namespace networking::messaging::websockets
 
 #endif /* BOOSTWEBSOCKETPEER_H */

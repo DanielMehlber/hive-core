@@ -124,7 +124,7 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
     queue.pop();
 
     // if job is not ready yet, queue it for next cycle
-    JobContext context(m_total_cycle_count, shared_from_this());
+    JobContext context(m_total_cycle_count, BorrowFromThis());
     if (!job->IsReadyForExecution(context)) {
       KickJobForNextCycle(job);
       continue;
@@ -253,5 +253,5 @@ void JobManager::DetachJob(const std::string &job_id) {
   tryRemoveJobWithIdFromQueue(job_id, m_clean_up_queue, m_clean_up_queue_mutex);
 }
 
-void JobManager::StartExecution() { m_execution.Start(weak_from_this()); }
+void JobManager::StartExecution() { m_execution.Start(BorrowFromThis()); }
 void JobManager::StopExecution() { m_execution.Stop(); }

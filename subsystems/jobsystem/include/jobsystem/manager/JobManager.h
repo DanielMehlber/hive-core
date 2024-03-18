@@ -21,8 +21,8 @@
 #include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
 typedef impl::SingleThreadedExecutionImpl JobExecutionImpl;
 #else
-#include "jobsystem/execution/impl/fiber/FiberExecutionImpl.h"
-typedef jobsystem::execution::impl::FiberExecutionImpl JobExecutionImpl;
+#include "jobsystem/execution/impl/fiber/BoostFiberExecution.h"
+typedef jobsystem::execution::impl::BoostFiberExecution JobExecutionImpl;
 #endif
 
 namespace jobsystem {
@@ -32,7 +32,7 @@ namespace jobsystem {
  * holds all job instances that must be executed in the current or following
  * execution cycles.
  */
-class JobManager : public std::enable_shared_from_this<JobManager> {
+class JobManager : public common::memory::EnableBorrowFromThis<JobManager> {
 private:
   common::config::SharedConfiguration m_config;
 
@@ -206,8 +206,6 @@ inline void
 JobManager::WaitForCompletion(const std::future<FutureType> &future) {
   m_execution.WaitForCompletion(future);
 }
-
-typedef std::shared_ptr<JobManager> SharedJobManager;
 
 } // namespace jobsystem
 

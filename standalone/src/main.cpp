@@ -104,24 +104,34 @@ int main(int argc, const char **argv) {
   /* SETUP REQUESTED RENDERER AND ADD IT AS SUBSYSTEM TO KERNEL */
   if (renderer_type == "onscreen") {
     auto renderer =
-        std::make_shared<graphics::OnscreenRenderer>(scene, width, height);
-    core.SetRenderer(renderer);
+        common::memory::Owner<graphics::OnscreenRenderer>(scene, width, height);
+    core.SetRenderer(std::move(renderer));
 
     if (enable_rendering_job) {
       core.EnableRenderingJob();
     }
 
     if (enable_rendering_service) {
-      auto offscreen_renderer = std::make_shared<graphics::OffscreenRenderer>(
-          renderer->GetSetup(), scene);
+      auto offscreen_renderer =
+          common::memory::Owner<graphics::OffscreenRenderer>(
+              renderer->GetSetup(), scene);
+      auto offscreen_renderer_ref = offscreen_renderer.CreateReference();
 
-      core.EnableRenderingService(offscreen_renderer);
+      /* We need to transfer the ownership of offscreen renderer somewhere. Use
+       * the subsystem manager and instead of IRenderer (used by the main
+       * renderer), use OffscreenRenderer type (for the service renderer). As a
+       * result, the subsystem manager owns 2 renderers. */
+      core.GetSubsystemsManager()
+          ->AddOrReplaceSubsystem<graphics::OffscreenRenderer>(
+              std::move(offscreen_renderer));
+
+      core.EnableRenderingService(offscreen_renderer_ref);
       offscreen_renderer->Resize(width, height);
     }
   } else if (renderer_type == "offscreen") {
     auto renderer =
-        std::make_shared<graphics::OffscreenRenderer>(std::nullopt, scene);
-    core.SetRenderer(renderer);
+        common::memory::Owner<graphics::OffscreenRenderer>(std::nullopt, scene);
+    core.SetRenderer(std::move(renderer));
 
     renderer->Resize(width, height);
 
@@ -140,9 +150,11 @@ int main(int argc, const char **argv) {
   }
 
   /* CONNECT TO OTHER PEERS (IF ANY WERE SPECIFIED AND SUBSYSTEM IS PROVIDED) */
-  if (core.GetSubsystemsManager()->ProvidesSubsystem<IMessageEndpoint>()) {
+  if (core.GetSubsystemsManager()
+          ->ProvidesSubsystem<networking::messaging::IMessageEndpoint>()) {
     auto peer_networking_subsystem =
-        core.GetSubsystemsManager()->RequireSubsystem<IMessageEndpoint>();
+        core.GetSubsystemsManager()
+            ->RequireSubsystem<networking::messaging::IMessageEndpoint>();
     for (const auto &connection_url : connections_to_establish) {
       peer_networking_subsystem->EstablishConnectionTo(connection_url);
     }

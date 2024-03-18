@@ -24,7 +24,8 @@ private:
 
 public:
   std::future<SharedServiceResponse>
-  Call(SharedServiceRequest request, jobsystem::SharedJobManager job_manager,
+  Call(SharedServiceRequest request,
+       common::memory::Borrower<jobsystem::JobManager> job_manager,
        bool only_local) noexcept override;
 
   bool IsCallable() const noexcept override;

@@ -5,7 +5,7 @@
 #include "Message.h"
 #include <memory>
 
-namespace networking::websockets {
+namespace networking::messaging {
 
 /**
  * Generic interface for receiving events that are sent over the
@@ -30,6 +30,6 @@ public:
 
 typedef std::shared_ptr<IMessageConsumer> SharedMessageConsumer;
 
-} // namespace networking::websockets
+} // namespace networking::messaging
 
 #endif /* IWEBSOCKETMESSAGECONSUMER_H */

@@ -6,7 +6,7 @@
 #include "networking/messaging/IMessageEndpoint.h"
 #include "services/caller/IServiceCaller.h"
 
-using namespace networking::websockets;
+using namespace networking::messaging;
 
 namespace services::impl {
 
@@ -16,7 +16,7 @@ namespace services::impl {
  */
 class RemoteServiceRequestConsumer : public IMessageConsumer {
 private:
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
   typedef std::function<std::future<std::optional<SharedServiceCaller>>(
       const std::string &, bool)>
@@ -26,13 +26,14 @@ private:
   query_func_type m_service_query_func;
 
   /** Used to send responses */
-  std::weak_ptr<IMessageEndpoint> m_web_socket_peer;
+  common::memory::Reference<IMessageEndpoint> m_endpoint;
 
 public:
   RemoteServiceRequestConsumer(
-      const common::subsystems::SharedSubsystemManager &subsystems,
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems,
       RemoteServiceRequestConsumer::query_func_type query_func,
-      const SharedMessageEndpoint &web_socket_peer);
+      const common::memory::Reference<IMessageEndpoint> &endpoint);
 
   std::string GetMessageType() const noexcept override;
 

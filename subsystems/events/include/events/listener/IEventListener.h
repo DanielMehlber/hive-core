@@ -15,7 +15,7 @@ public:
    * registered its interest in.
    * @param event event that must be handled
    */
-  virtual void HandleMessage(SharedEvent event) = 0;
+  virtual void HandleEvent(SharedEvent event) = 0;
 
   /**
    * GetAsInt id of this listener instance

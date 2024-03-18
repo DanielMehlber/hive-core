@@ -1,6 +1,7 @@
 #ifndef WEBSOCKETSERVICEREGISTRY_H
 #define WEBSOCKETSERVICEREGISTRY_H
 
+#include "common/memory/ExclusiveOwnership.h"
 #include "events/listener/impl/FunctionalEventListener.h"
 #include "networking/messaging/IMessageEndpoint.h"
 #include "services/registry/IServiceRegistry.h"
@@ -18,7 +19,7 @@ protected:
   mutable jobsystem::mutex m_registered_callers_mutex;
   std::map<std::string, SharedServiceCaller> m_registered_callers;
 
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
   SharedMessageConsumer m_registration_consumer;
   SharedMessageConsumer m_response_consumer;
@@ -28,17 +29,18 @@ protected:
 
   static SharedJob CreateRemoteServiceRegistrationJob(
       const std::string &peer_id, const std::string &service_name,
-      const std::weak_ptr<networking::websockets::IMessageEndpoint>
-          &sending_peer);
+      common::memory::Reference<networking::messaging::IMessageEndpoint>
+          sending_peer);
 
 public:
   explicit RemoteServiceRegistry(
-      const common::subsystems::SharedSubsystemManager &subsystems);
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems);
 
   void Register(const SharedServiceExecutor &stub) override;
   void Unregister(const std::string &name) override;
 
-  void SendServicePortfolioToPeer(const std::string &id) const;
+  void SendServicePortfolioToPeer(const std::string &id);
 
   std::future<std::optional<SharedServiceCaller>>
   Find(const std::string &name, bool only_local) noexcept override;

@@ -57,6 +57,8 @@ public:
    * @return current Vulkan setup (instance, device, ...)
    */
   virtual RendererSetup GetSetup() const = 0;
+
+  virtual ~IRenderer() = default;
 };
 
 typedef std::shared_ptr<IRenderer> SharedRenderer;

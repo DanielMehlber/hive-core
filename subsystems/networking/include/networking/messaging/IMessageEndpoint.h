@@ -8,7 +8,7 @@
 #include <list>
 #include <memory>
 
-namespace networking::websockets {
+namespace networking::messaging {
 
 DECLARE_EXCEPTION(DuplicateConsumerTypeException);
 DECLARE_EXCEPTION(EndpointSetupException);
@@ -94,10 +94,10 @@ public:
    */
   virtual bool
   HasConnectionTo(const std::string &endpoint_id) const noexcept = 0;
+
+  virtual ~IMessageEndpoint() = default;
 };
 
-typedef std::shared_ptr<IMessageEndpoint> SharedMessageEndpoint;
-
-} // namespace networking::websockets
+} // namespace networking::messaging
 
 #endif /* IWEBSOCKETSERVER_H */

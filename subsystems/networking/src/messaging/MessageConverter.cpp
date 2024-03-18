@@ -3,11 +3,11 @@
 #include "networking/util/MultipartFormdata.h"
 #include <boost/json.hpp>
 
-using namespace networking::websockets;
+using namespace networking::messaging;
 using namespace boost;
 
 SharedMessage
-networking::websockets::MessageConverter::FromJson(const std::string &json) {
+networking::messaging::MessageConverter::FromJson(const std::string &json) {
   json::error_code err;
   json::value message_body = boost::json::parse(json, err);
 

@@ -2,6 +2,7 @@
 #define KERNEL_H
 
 #include "common/config/Configuration.h"
+#include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "events/broker/IEventBroker.h"
 #include "graphics/renderer/IRenderer.h"
@@ -12,7 +13,6 @@
 #include "resourcemgmt/manager/IResourceManager.h"
 #include "scene/SceneManager.h"
 #include "services/registry/IServiceRegistry.h"
-#include <memory>
 
 #ifdef _WIN32
 // Windows specific
@@ -35,7 +35,7 @@ namespace core {
  */
 class CORE_API Core {
 protected:
-  std::shared_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Owner<common::subsystems::SubsystemManager> m_subsystems;
   bool m_should_shutdown{false};
 
 public:
@@ -69,39 +69,42 @@ public:
    * @param service_renderer renderer to use in service. If nullptr, the current
    * rendering subsystem will be used.
    */
-  void
-  EnableRenderingService(graphics::SharedRenderer service_renderer = nullptr);
+  void EnableRenderingService(
+      common::memory::Reference<graphics::IRenderer> service_renderer = {});
 
-  // vvv getters and setters vvv
+  // vvv getters and setters (for convenience) vvv
 
-  jobsystem::SharedJobManager GetJobManager() const;
+  void SetEventBroker(common::memory::Owner<events::IEventBroker> &&broker);
+  common::memory::Borrower<events::IEventBroker> GetEventBroker();
 
-  props::SharedPropertyProvider GetPropertyProvider() const;
+  void SetPropertyProvider(
+      common::memory::Owner<props::PropertyProvider> &&provider);
+  common::memory::Borrower<props::PropertyProvider> GetPropertyProvider();
 
-  events::SharedEventBroker GetMessageBroker() const;
-
-  resourcemgmt::SharedResourceManager GetResourceManager() const;
   void SetResourceManager(
-      const resourcemgmt::SharedResourceManager &resourceManager);
+      common::memory::Owner<resourcemgmt::IResourceManager> &&manager);
+  common::memory::Borrower<resourcemgmt::IResourceManager> GetResourceManager();
 
-  services::SharedServiceRegistry GetServiceRegistry() const;
-  void
-  SetServiceRegistry(const services::SharedServiceRegistry &serviceRegistry);
+  void SetServiceRegistry(
+      common::memory::Owner<services::IServiceRegistry> &&registry);
+  common::memory::Borrower<services::IServiceRegistry> GetServiceRegistry();
 
-  networking::SharedNetworkingManager GetNetworkingManager() const;
   void SetNetworkingManager(
-      const networking::SharedNetworkingManager &networkingManager);
+      common::memory::Owner<networking::NetworkingManager> &&manager);
+  common::memory::Borrower<networking::NetworkingManager>
+  GetNetworkingManager();
 
-  plugins::SharedPluginManager GetPluginManager() const;
-  void SetPluginManager(const plugins::SharedPluginManager &pluginManager);
+  void
+  SetPluginManager(common::memory::Owner<plugins::IPluginManager> &&registry);
+  common::memory::Borrower<plugins::IPluginManager> GetPluginManager();
 
-  scene::SharedScene GetScene() const;
-  void SetScene(const scene::SharedScene &scene);
+  void SetRenderer(common::memory::Owner<graphics::IRenderer> &&renderer);
+  common::memory::Borrower<graphics::IRenderer> GetRenderer();
 
-  graphics::SharedRenderer GetRenderer() const;
-  void SetRenderer(const graphics::SharedRenderer &renderer);
+  common::memory::Borrower<jobsystem::JobManager> GetJobManager();
 
-  common::subsystems::SharedSubsystemManager GetSubsystemsManager() const;
+  common::memory::Borrower<common::subsystems::SubsystemManager>
+  GetSubsystemsManager();
 };
 } // namespace core
 

@@ -4,7 +4,7 @@
 #include "Message.h"
 #include "common/exceptions/ExceptionsBase.h"
 
-namespace networking::websockets {
+namespace networking::messaging {
 
 DECLARE_EXCEPTION(MessagePayloadInvalidException);
 
@@ -46,6 +46,6 @@ public:
    */
   static std::string ToMultipartFormData(const SharedMessage &message);
 };
-} // namespace networking::websockets
+} // namespace networking::messaging
 
 #endif /* WEBSOCKETMESSAGECONVERTER_H */

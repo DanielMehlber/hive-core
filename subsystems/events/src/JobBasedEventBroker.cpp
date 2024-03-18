@@ -6,7 +6,8 @@ using namespace std::chrono_literals;
 using namespace jobsystem;
 
 JobBasedEventBroker::JobBasedEventBroker(
-    const common::subsystems::SharedSubsystemManager &subsystems)
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems)
     : m_subsystems(subsystems), m_this_alive_checker{std::make_shared<bool>()} {
 
   // when this shared pointer expired, this has been destroyed
@@ -23,22 +24,23 @@ JobBasedEventBroker::JobBasedEventBroker(
       },
       "events-listener-clean-up", 5s, JobExecutionPhase::INIT);
 
-  auto job_manager = subsystems->RequireSubsystem<JobManager>();
+  auto job_manager = m_subsystems.Borrow()->RequireSubsystem<JobManager>();
   job_manager->KickJob(clean_up_job);
 }
 
 JobBasedEventBroker::~JobBasedEventBroker() {
-  if (auto subsystems = m_subsystems.lock()) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     auto job_manager = subsystems->RequireSubsystem<JobManager>();
     job_manager->DetachJob("events-listener-clean-up");
   }
-  
+
   RemoveAllListeners();
 }
 
 void JobBasedEventBroker::CleanUpSubscribers() {
-  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
-  for (auto &[topic, original_subscribers] : m_topic_subscribers) {
+  std::unique_lock subscriber_lock(m_event_listeners_mutex);
+  for (auto &[topic, original_subscribers] : m_event_listeners) {
     std::vector<std::weak_ptr<IEventListener>> new_subscribers;
     for (auto &subscriber : original_subscribers) {
       if (!subscriber.expired()) {
@@ -51,31 +53,31 @@ void JobBasedEventBroker::CleanUpSubscribers() {
 }
 
 void JobBasedEventBroker::FireEvent(SharedEvent event) {
-  if (auto subsystems = m_subsystems.lock()) {
-
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     const auto &topic_name = event->GetTopic();
 
-    std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
-    if (m_topic_subscribers.contains(topic_name)) {
-      auto &subscribers_of_topic = m_topic_subscribers.at(topic_name);
+    std::unique_lock subscriber_lock(m_event_listeners_mutex);
+    if (m_event_listeners.contains(topic_name)) {
+      auto &subscribers_of_topic = m_event_listeners.at(topic_name);
       for (auto &subscriber : subscribers_of_topic) {
         if (!subscriber.expired()) {
-          SharedJob message_job =
+          SharedJob event_job =
               std::make_shared<Job>([subscriber, event](JobContext *) {
                 if (!subscriber.expired()) {
-                  subscriber.lock()->HandleMessage(event);
+                  subscriber.lock()->HandleEvent(event);
                 }
                 return JobContinuation::DISPOSE;
               });
 
           auto job_manager = subsystems->RequireSubsystem<JobManager>();
-          job_manager->KickJob(message_job);
+          job_manager->KickJob(event_job);
         }
       }
 
-      LOG_DEBUG("message of topic '" << topic_name << "' published to "
-                                     << subscribers_of_topic.size()
-                                     << " subscribers")
+      LOG_DEBUG("event of topic '" << topic_name << "' published to "
+                                   << subscribers_of_topic.size()
+                                   << " subscribers")
     }
   } else {
     LOG_ERR("cannot fire event of topic '"
@@ -86,8 +88,8 @@ void JobBasedEventBroker::FireEvent(SharedEvent event) {
 
 bool JobBasedEventBroker::HasListener(const std::string &subscriber_id,
                                       const std::string &topic) const {
-  if (m_topic_subscribers.contains(topic)) {
-    const auto &subscriber_list = m_topic_subscribers.at(topic);
+  if (m_event_listeners.contains(topic)) {
+    const auto &subscriber_list = m_event_listeners.at(topic);
     for (const auto &subscriber : subscriber_list) {
       if (!subscriber.expired() &&
           subscriber.lock()->GetId() == subscriber_id) {
@@ -101,28 +103,28 @@ bool JobBasedEventBroker::HasListener(const std::string &subscriber_id,
 
 void JobBasedEventBroker::RegisterListener(
     std::weak_ptr<IEventListener> listener, const std::string &topic) {
-  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
+  std::unique_lock subscriber_lock(m_event_listeners_mutex);
   if (!HasListener(listener.lock()->GetId(), topic)) {
-    if (!m_topic_subscribers.contains(topic)) {
+    if (!m_event_listeners.contains(topic)) {
       std::vector<std::weak_ptr<IEventListener>> vec;
-      m_topic_subscribers[topic] = vec;
+      m_event_listeners[topic] = vec;
     }
-    m_topic_subscribers[topic].push_back(listener);
+    m_event_listeners[topic].push_back(listener);
   }
 }
 
 void JobBasedEventBroker::UnregisterListener(
     std::weak_ptr<IEventListener> listener) {
-  for (const auto &[topic, listener_set] : m_topic_subscribers) {
+  for (const auto &[topic, listener_set] : m_event_listeners) {
     RemoveListenerFromTopic(listener, topic);
   }
 }
 
 void JobBasedEventBroker::RemoveListenerFromTopic(
     std::weak_ptr<IEventListener> subscriber, const std::string &topic) {
-  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
-  if (m_topic_subscribers.contains(topic)) {
-    auto &subscriber_list = m_topic_subscribers.at(topic);
+  std::unique_lock subscriber_lock(m_event_listeners_mutex);
+  if (m_event_listeners.contains(topic)) {
+    auto &subscriber_list = m_event_listeners.at(topic);
     for (auto subscriber_iter = subscriber_list.begin();
          subscriber_iter != subscriber_list.end(); subscriber_iter++) {
       // always check if listener is still valid
@@ -138,6 +140,6 @@ void JobBasedEventBroker::RemoveListenerFromTopic(
 }
 
 void JobBasedEventBroker::RemoveAllListeners() {
-  std::unique_lock subscriber_lock(m_topic_subscribers_mutex);
-  m_topic_subscribers.clear();
+  std::unique_lock subscriber_lock(m_event_listeners_mutex);
+  m_event_listeners.clear();
 }

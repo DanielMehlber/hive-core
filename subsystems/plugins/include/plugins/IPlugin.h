@@ -2,8 +2,11 @@
 #define IPLUGIN_H
 
 #include "PluginContext.h"
+#include "common/exceptions/ExceptionsBase.h"
 
 namespace plugins {
+
+DECLARE_EXCEPTION(PluginSetupFailedException);
 
 /**
  * A plugin that can be loaded by the plugin manager.

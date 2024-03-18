@@ -5,7 +5,7 @@
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
 
-using namespace networking::websockets;
+using namespace networking::messaging;
 
 namespace services::impl {
 

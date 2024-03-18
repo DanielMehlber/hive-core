@@ -2,6 +2,7 @@
 #define PROPERTYPROVIDER_H
 
 #include "PropertyChangeListener.h"
+#include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "events/broker/IEventBroker.h"
 #include <boost/property_tree/ptree.hpp>
@@ -17,17 +18,19 @@ namespace props {
  * every property has a path in the hierarchy. This enables grouping and
  * listening to subsets of properties.
  */
-class PropertyProvider : std::enable_shared_from_this<PropertyProvider> {
+class PropertyProvider
+    : public common::memory::EnableBorrowFromThis<PropertyProvider> {
 protected:
-  std::weak_ptr<common::subsystems::SubsystemManager> m_subsystems;
+  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
   boost::property_tree::ptree m_property_tree;
 
-  void NotifyListenersAboutChange(const std::string &path) const;
+  void NotifyListenersAboutChange(const std::string &path);
 
 public:
   explicit PropertyProvider(
-      const common::subsystems::SharedSubsystemManager &subsystems);
+      const common::memory::Reference<common::subsystems::SubsystemManager>
+          &subsystems);
   virtual ~PropertyProvider();
 
   /**
@@ -115,7 +118,6 @@ inline PropType PropertyProvider::GetOrElse(const std::string &key,
   }
 }
 
-typedef std::shared_ptr<PropertyProvider> SharedPropertyProvider;
 } // namespace props
 
 #endif /* PROPERTYPROVIDER_H */

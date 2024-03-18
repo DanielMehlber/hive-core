@@ -4,16 +4,18 @@
 using namespace services::impl;
 
 RemoteServiceRequestConsumer::RemoteServiceRequestConsumer(
-    const common::subsystems::SharedSubsystemManager &subsystems,
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems,
     RemoteServiceRequestConsumer::query_func_type query_func,
-    const SharedMessageEndpoint &web_socket_peer)
+    const common::memory::Reference<IMessageEndpoint> &endpoint)
     : m_subsystems(subsystems), m_service_query_func(std::move(query_func)),
-      m_web_socket_peer(web_socket_peer) {}
+      m_endpoint(endpoint) {}
 
 void RemoteServiceRequestConsumer::ProcessReceivedMessage(
     SharedMessage received_message, ConnectionInfo connection_info) noexcept {
 
-  if (auto subsystems = m_subsystems.lock()) {
+  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
+    auto subsystems = maybe_subsystems.value();
     auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
 
     auto maybe_request =
@@ -32,7 +34,8 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
         [_this = std::static_pointer_cast<RemoteServiceRequestConsumer>(
              shared_from_this()),
          request, connection_info](jobsystem::JobContext *context) {
-          auto job_manager = _this->m_subsystems.lock()
+          auto job_manager = _this->m_subsystems.TryBorrow()
+                                 .value()
                                  ->RequireSubsystem<jobsystem::JobManager>();
 
           auto future_service_caller =
@@ -79,13 +82,10 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
               RemoteServiceMessagesConverter::FromServiceResponse(
                   std::move(*response));
 
-          if (_this->m_web_socket_peer.expired()) {
-            LOG_ERR("cannot send service response for request "
-                    << request->GetTransactionId()
-                    << " because web-socket peer has shut down")
-          } else {
-            auto sending_progress = _this->m_web_socket_peer.lock()->Send(
-                connection_info.GetHostname(), response_message);
+          if (auto maybe_endpoint = _this->m_endpoint.TryBorrow()) {
+            auto endpoint = maybe_endpoint.value();
+            auto sending_progress =
+                endpoint->Send(connection_info.GetHostname(), response_message);
             context->GetJobManager()->WaitForCompletion(sending_progress);
 
             try {
@@ -96,6 +96,10 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
                       << request->GetServiceName()
                       << " due to sending error: " << exception.what())
             }
+          } else {
+            LOG_ERR("cannot send service response for request "
+                    << request->GetTransactionId()
+                    << " because web-socket peer has shut down")
           }
 
           return JobContinuation::DISPOSE;
@@ -103,7 +107,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
 
     job_manager->KickJob(job);
   } else /* if subsystems are not available */ {
-    if (m_subsystems.expired()) {
+    if (!m_subsystems.CanBorrow()) {
       LOG_ERR("Cannot process received message because required subsystems are "
               "not available or have been shut down")
     }

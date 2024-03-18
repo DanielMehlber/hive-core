@@ -1,22 +1,30 @@
-#include "events/EventFactory.h"
+#include "common/memory/ExclusiveOwnership.h"
+#include "events/broker/IEventBroker.h"
+#include "events/broker/impl/JobBasedEventBroker.h"
+#include "events/listener/impl/FunctionalEventListener.h"
 #include <gtest/gtest.h>
 
 using namespace events;
 using namespace jobsystem;
 
-common::subsystems::SharedSubsystemManager SetupSubsystems() {
-  auto subsystems = std::make_shared<common::subsystems::SubsystemManager>();
+common::memory::Owner<common::subsystems::SubsystemManager> SetupSubsystems() {
+  auto subsystems =
+      common::memory::Owner<common::subsystems::SubsystemManager>();
   auto config = std::make_shared<common::config::Configuration>();
-  auto job_manager = std::make_shared<jobsystem::JobManager>(config);
+
+  auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);
   job_manager->StartExecution();
-  subsystems->AddOrReplaceSubsystem<jobsystem::JobManager>(job_manager);
+
+  subsystems->AddOrReplaceSubsystem<jobsystem::JobManager>(
+      std::move(job_manager));
   return subsystems;
 }
 
 TEST(Messaging, receive_event) {
   auto subsystems = SetupSubsystems();
 
-  auto broker = events::EventFactory::CreateBroker(subsystems);
+  auto broker = common::memory::Owner<events::brokers::JobBasedEventBroker>(
+      subsystems.CreateReference());
 
   bool event_received_a = false;
   bool event_received_b = false;
@@ -45,7 +53,8 @@ TEST(Messaging, receive_event) {
 
 TEST(Messaging, subscriber_unsubscribe) {
   auto subsystems = SetupSubsystems();
-  auto broker = events::EventFactory::CreateBroker(subsystems);
+  auto broker = common::memory::Owner<events::brokers::JobBasedEventBroker>(
+      subsystems.CreateReference());
 
   std::atomic_int event_received_counter_a = 0;
   std::atomic_int event_received_counter_b = 0;
@@ -75,7 +84,8 @@ TEST(Messaging, subscriber_unsubscribe) {
 
 TEST(Messaging, subscriber_destroyed) {
   auto subsystems = SetupSubsystems();
-  auto broker = events::EventFactory::CreateBroker(subsystems);
+  auto broker = common::memory::Owner<events::brokers::JobBasedEventBroker>(
+      subsystems.CreateReference());
 
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
 

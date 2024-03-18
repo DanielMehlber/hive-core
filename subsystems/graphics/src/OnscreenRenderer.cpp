@@ -1,7 +1,7 @@
-#include <utility>
 
-#include "common/profiling/Timer.h"
+
 #include "graphics/renderer/impl/OnscreenRenderer.h"
+#include "common/profiling/Timer.h"
 #include "logging/LogManager.h"
 
 using namespace graphics;

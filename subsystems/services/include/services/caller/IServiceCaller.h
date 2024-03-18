@@ -2,6 +2,7 @@
 #define SERVICECALLER_H
 
 #include "common/exceptions/ExceptionsBase.h"
+#include "common/memory/ExclusiveOwnership.h"
 #include "jobsystem/manager/JobManager.h"
 #include "services/executor/IServiceExecutor.h"
 #include <future>
@@ -28,7 +29,8 @@ public:
    * @return future response from service
    */
   virtual std::future<SharedServiceResponse>
-  Call(SharedServiceRequest request, jobsystem::SharedJobManager job_manager,
+  Call(SharedServiceRequest request,
+       common::memory::Borrower<jobsystem::JobManager> job_manager,
        bool only_local = false) noexcept = 0;
 
   /**

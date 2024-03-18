@@ -6,16 +6,16 @@ find_package(Boost REQUIRED COMPONENTS json log)
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(networking SHARED
-        src/UrlParser.cpp
-        src/Message.cpp
-        src/MessageConsumerJob.cpp
-        src/MessageConverter.cpp
+        src/util/UrlParser.cpp
+        src/messaging/Message.cpp
+        src/messaging/MessageConsumerJob.cpp
+        src/messaging/MessageConverter.cpp
         src/NetworkingManager.cpp
-        src/BoostWebSocketEndpoint.cpp
-        src/BoostWebSocketConnection.cpp
-        src/BoostWebSocketConnectionListener.cpp
-        src/BoostWebSocketConnectionEstablisher.cpp
-        src/MultipartFormdata.cpp
+        src/messaging/impl/websockets/boost/BoostWebSocketEndpoint.cpp
+        src/messaging/impl/websockets/boost/BoostWebSocketConnection.cpp
+        src/messaging/impl/websockets/boost/BoostWebSocketConnectionListener.cpp
+        src/messaging/impl/websockets/boost/BoostWebSocketConnectionEstablisher.cpp
+        src/messaging/MultipartFormdata.cpp
 )
 
 target_include_directories(networking PUBLIC
