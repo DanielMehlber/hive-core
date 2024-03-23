@@ -1,11 +1,9 @@
 #ifndef SIMULATION_FRAMEWORK_ASSERT_H
 #define SIMULATION_FRAMEWORK_ASSERT_H
 
-#include "common/exceptions/ExceptionsBase.h"
-
 #ifndef NDEBUG
 #include <iostream>
-#define ASSERT(x, message)                                                     \
+#define DEBUG_ASSERT(x, message)                                               \
   {                                                                            \
     try {                                                                      \
       if (!(x)) {                                                              \

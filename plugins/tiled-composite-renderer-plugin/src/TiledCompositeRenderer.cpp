@@ -140,13 +140,13 @@ bool TiledCompositeRenderer::Render() {
 
     Tile current_tile = m_tile_infos[i];
 
-    ASSERT(current_tile.projection.valid(),
-           "tile information must contain valid projection")
-    ASSERT(current_tile.relative_view_matrix.valid(),
-           "tile information must contain valid relative view matrix")
+    DEBUG_ASSERT(current_tile.projection.valid(),
+                 "tile information must contain valid projection")
+    DEBUG_ASSERT(current_tile.relative_view_matrix.valid(),
+                 "tile information must contain valid relative view matrix")
 
     auto perspective = current_tile.projection.cast<vsg::Perspective>();
-    ASSERT(perspective.valid(), "tile must have valid perspective")
+    DEBUG_ASSERT(perspective.valid(), "tile must have valid perspective")
 
     auto view_matrix = current_tile.relative_view_matrix->transform() *
                        m_camera->viewMatrix->transform();
@@ -225,7 +225,7 @@ void subdividePerspectiveFrustum(
     int width, int height,
     const vsg::ref_ptr<vsg::ProjectionMatrix> &projection, Tile &tile) {
 
-  ASSERT(projection.valid(), "projection matrix should not be null")
+  DEBUG_ASSERT(projection.valid(), "projection matrix should not be null")
 
   float width_percentage = (float)tile.width / (float)width;
 

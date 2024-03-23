@@ -23,8 +23,8 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
 
   // setup job manager subsystem
   auto job_manager = common::memory::Owner<JobManager>(config);
-  m_subsystems->AddOrReplaceSubsystem(std::move(job_manager));
   job_manager->StartExecution();
+  m_subsystems->AddOrReplaceSubsystem(std::move(job_manager));
 
   // setup event broker subsystem
   SetEventBroker(common::memory::Owner<events::brokers::JobBasedEventBroker>(

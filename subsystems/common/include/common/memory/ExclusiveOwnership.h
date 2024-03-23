@@ -162,6 +162,8 @@ public:
    */
   template <typename Other> Reference(Reference<Other> &other);
 
+  template <typename Other> Reference(Reference<Other> &&other);
+
   /**
    * Checks if the Owner is still alive and its data can be borrowed.
    * @return true, if a borrow operation can be performed.
@@ -206,6 +208,13 @@ Reference<T>::Reference(Reference<Other> &other)
 }
 
 template <typename T>
+template <typename Other>
+Reference<T>::Reference(Reference<Other> &&other)
+    : _shared_ownership_state(std::move(other.GetState())) {
+  static_assert(std::is_base_of<T, Other>());
+}
+
+template <typename T>
 Reference<T>::Reference() : _shared_ownership_state(nullptr) {}
 
 template <typename T> inline Reference<T>::operator bool() const {
@@ -215,27 +224,30 @@ template <typename T> inline Reference<T>::operator bool() const {
 template <typename T>
 Reference<T>::Reference(Owner<T> *owner)
     : _shared_ownership_state(owner->_state) {
-  ASSERT(owner != nullptr, "cannot create reference from null borrow")
-  ASSERT(_shared_ownership_state, "shared state is broken")
-  ASSERT(_shared_ownership_state->alive.load(),
-         "cannot create reference to dead owner")
-  ASSERT(_shared_ownership_state->owner != nullptr, "owner cannot be nullptr")
+  DEBUG_ASSERT(owner != nullptr, "cannot create reference from null borrow")
+  DEBUG_ASSERT(_shared_ownership_state, "shared state is broken")
+  DEBUG_ASSERT(_shared_ownership_state->alive.load(),
+               "cannot create reference to dead owner")
+  DEBUG_ASSERT(_shared_ownership_state->owner != nullptr,
+               "owner cannot be nullptr")
 }
 
 template <typename T>
 Reference<T>::Reference(Borrower<T> *borrow)
     : _shared_ownership_state(borrow->_shared_ownership_state) {
-  ASSERT(borrow != nullptr, "cannot create reference from null borrow")
-  ASSERT(_shared_ownership_state, "shared state is broken")
-  ASSERT(_shared_ownership_state->alive.load(),
-         "cannot create reference to dead owner")
-  ASSERT(_shared_ownership_state->owner != nullptr, "owner cannot be nullptr")
+  DEBUG_ASSERT(borrow != nullptr, "cannot create reference from null borrow")
+  DEBUG_ASSERT(_shared_ownership_state, "shared state is broken")
+  DEBUG_ASSERT(_shared_ownership_state->alive.load(),
+               "cannot create reference to dead owner")
+  DEBUG_ASSERT(_shared_ownership_state->owner != nullptr,
+               "owner cannot be nullptr")
 }
 
 template <typename T> std::optional<Borrower<T>> Reference<T>::TryBorrow() {
   if (_shared_ownership_state) {
     common::sync::ScopedLock lock(_shared_ownership_state->state_lock);
-    ASSERT(_shared_ownership_state->owner != nullptr, "owner cannot be nullptr")
+    DEBUG_ASSERT(_shared_ownership_state->owner != nullptr,
+                 "owner cannot be nullptr")
     if (_shared_ownership_state->alive.load()) {
       return PerformBorrow(true);
     }
@@ -253,9 +265,9 @@ Borrower<T> Reference<T>::PerformBorrow(bool already_locked) {
           _shared_ownership_state->state_lock);
     }
     if (CanBorrow()) {
-      ASSERT(_shared_ownership_state, "shared state is broken")
-      ASSERT(_shared_ownership_state->owner != nullptr,
-             "owner cannot be nullptr")
+      DEBUG_ASSERT(_shared_ownership_state, "shared state is broken")
+      DEBUG_ASSERT(_shared_ownership_state->owner != nullptr,
+                   "owner cannot be nullptr")
       auto owner = (Owner<T> *)_shared_ownership_state->owner.load();
       return owner->PerformBorrow(true);
     }
@@ -267,7 +279,8 @@ Borrower<T> Reference<T>::PerformBorrow(bool already_locked) {
 
 template <typename T> bool Reference<T>::CanBorrow() const {
   if (_shared_ownership_state) {
-    ASSERT(_shared_ownership_state->owner != nullptr, "owner cannot be nullptr")
+    DEBUG_ASSERT(_shared_ownership_state->owner != nullptr,
+                 "owner cannot be nullptr")
     return _shared_ownership_state->alive.load();
   } else {
     return false;
@@ -313,20 +326,21 @@ public:
 
 template <typename T>
 Reference<T> EnableBorrowFromThis<T>::ReferenceFromThis() {
-  ASSERT(_this_reference && _this_reference != nullptr,
-         "cannot create reference because this is currently not owned")
+  DEBUG_ASSERT(_this_reference && _this_reference != nullptr,
+               "cannot create reference because this is currently not owned")
   return *_this_reference;
 }
 
 template <typename T>
 void EnableBorrowFromThis<T>::SetOwnerOfThis(Owner<T> *owner) {
-  ASSERT(owner != nullptr, "owner cannot be nullptr")
+  DEBUG_ASSERT(owner != nullptr, "owner cannot be nullptr")
   _this_reference =
       std::make_unique<Reference<T>>(owner->CreateReference(true));
 }
 
 template <typename T> Borrower<T> EnableBorrowFromThis<T>::BorrowFromThis() {
-  ASSERT(_this_reference, "cannot borrow because there is no owner of this")
+  DEBUG_ASSERT(_this_reference,
+               "cannot borrow because there is no owner of this")
   if (auto maybe_borrower = _this_reference->TryBorrow()) {
     return maybe_borrower.value();
   } else /* if borrow operation failed */ {
@@ -393,9 +407,9 @@ public:
           _state->state_lock);
     }
 
-    ASSERT(_state, "shared state is broken")
-    ASSERT(_state->alive, "cannot borrow from a destroyed owner")
-    ASSERT(_state->owner != nullptr, "owner cannot be a nullptr")
+    DEBUG_ASSERT(_state, "shared state is broken")
+    DEBUG_ASSERT(_state->alive, "cannot borrow from a destroyed owner")
+    DEBUG_ASSERT(_state->owner != nullptr, "owner cannot be a nullptr")
     return Reference<T>(this);
   }
 
@@ -404,13 +418,20 @@ public:
    */
   ~Owner();
 
-  T *operator->() const { return _owned.get(); }
+  T *operator->() const;
   T &operator*() const { return *this->operator->(); }
   Owner<T> &operator=(Owner<T> &&) = delete;
 
   std::shared_ptr<OwnershipState> &GetState();
   std::unique_ptr<T> &GetPointer();
 };
+
+template <typename T> inline T *Owner<T>::operator->() const {
+  DEBUG_ASSERT(_state, "cannot access data because owner is invalid")
+  DEBUG_ASSERT(_state->alive,
+               "cannot access data because owner is already dead")
+  return _owned.get();
+}
 
 template <typename T> Borrower<T> Owner<T>::PerformBorrow(bool already_locked) {
   // if there is no lock, lock it.
@@ -420,9 +441,9 @@ template <typename T> Borrower<T> Owner<T>::PerformBorrow(bool already_locked) {
         _state->state_lock);
   }
 
-  ASSERT(_state, "shared state is broken")
-  ASSERT(_state->alive, "cannot borrow from a destroyed owner")
-  ASSERT(_state->owner != nullptr, "owner cannot be a nullptr")
+  DEBUG_ASSERT(_state, "shared state is broken")
+  DEBUG_ASSERT(_state->alive, "cannot borrow from a destroyed owner")
+  DEBUG_ASSERT(_state->owner != nullptr, "owner cannot be a nullptr")
   return Borrower<T>(this, true);
 }
 
@@ -455,12 +476,14 @@ Owner<T>::Owner(Owner<Other> &&other) {
   _state = std::move(other.GetState());
   _owned = std::move(other.GetPointer());
 
-  ASSERT(_state, "shared state is broken")
-  ASSERT(_owned, "owned object should not be null")
-  ASSERT(_state->alive, "cannot move dead owner")
+  DEBUG_ASSERT(_state, "shared state is broken")
+  DEBUG_ASSERT(_owned, "owned object should not be null")
+  DEBUG_ASSERT(_state->alive, "cannot move dead owner")
 
-  ASSERT(!other.GetState(), "other owner should be without state after move")
-  ASSERT(!other.GetPointer(), "other owner should be without owned after move")
+  DEBUG_ASSERT(!other.GetState(),
+               "other owner should be without state after move")
+  DEBUG_ASSERT(!other.GetPointer(),
+               "other owner should be without owned after move")
 
   _state->owner.store(this);
 
@@ -474,12 +497,12 @@ template <typename T> Owner<T>::Owner(Owner<T> &&other) {
   _state = std::move(other._state);
   _owned = std::move(other._owned);
 
-  ASSERT(_state, "shared state is broken")
-  ASSERT(_owned, "owned object should not be null")
-  ASSERT(_state->alive, "cannot move dead owner")
+  DEBUG_ASSERT(_state, "shared state is broken")
+  DEBUG_ASSERT(_owned, "owned object should not be null")
+  DEBUG_ASSERT(_state->alive, "cannot move dead owner")
 
-  ASSERT(!other._state, "other owner should be without state after move")
-  ASSERT(!other._owned, "other owner should be without owned after move")
+  DEBUG_ASSERT(!other._state, "other owner should be without state after move")
+  DEBUG_ASSERT(!other._owned, "other owner should be without owned after move")
 
   _state->owner.store(this);
 
@@ -502,8 +525,8 @@ Owner<T>::Owner(Params... params)
 
 template <typename T> Owner<T>::~Owner() {
   if (_state) {
-    ASSERT(_state->alive, "owner should not be dead at this point")
-    ASSERT(_state->owner != nullptr, "owner cannot be nullptr")
+    DEBUG_ASSERT(_state->alive, "owner should not be dead at this point")
+    DEBUG_ASSERT(_state->owner != nullptr, "owner cannot be nullptr")
 
     _state->alive.store(false);
     while (_state->borrows > 0) {

@@ -14,9 +14,9 @@ void broadcastServiceRegistration(
     const SharedServiceExecutor &stub,
     common::memory::Borrower<jobsystem::JobManager> job_manager) {
 
-  ASSERT(weak_sender.CanBorrow(), "sender should exist")
-  ASSERT(stub->IsCallable(), "executor should be callable")
-  ASSERT(stub->IsLocal(), "only local services can be offered to others")
+  DEBUG_ASSERT(weak_sender.CanBorrow(), "sender should exist")
+  DEBUG_ASSERT(stub->IsCallable(), "executor should be callable")
+  DEBUG_ASSERT(stub->IsLocal(), "only local services can be offered to others")
 
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
       [weak_sender, stub](jobsystem::JobContext *context) mutable {
@@ -176,10 +176,10 @@ RemoteServiceRegistry::RemoteServiceRegistry(
 }
 
 void RemoteServiceRegistry::SetupEventSubscribers() {
-  ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
+  DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
   auto subsystems = m_subsystems.Borrow();
-  ASSERT(subsystems->ProvidesSubsystem<events::IEventBroker>(),
-         "event broker subsystem should exist")
+  DEBUG_ASSERT(subsystems->ProvidesSubsystem<events::IEventBroker>(),
+               "event broker subsystem should exist")
 
   auto event_system = subsystems->RequireSubsystem<events::IEventBroker>();
 
@@ -196,9 +196,9 @@ void RemoteServiceRegistry::SetupEventSubscribers() {
 }
 
 void RemoteServiceRegistry::SetupMessageConsumers() {
-  ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
-  ASSERT(m_subsystems.Borrow()->ProvidesSubsystem<IMessageEndpoint>(),
-         "peer networking subsystem should exist")
+  DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
+  DEBUG_ASSERT(m_subsystems.Borrow()->ProvidesSubsystem<IMessageEndpoint>(),
+               "peer networking subsystem should exist")
 
   auto subsystems = m_subsystems.Borrow();
 
@@ -222,13 +222,13 @@ void RemoteServiceRegistry::SetupMessageConsumers() {
 void RemoteServiceRegistry::SendServicePortfolioToPeer(
     const std::string &peer_id) {
 
-  ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
+  DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
 
   auto subsystems = m_subsystems.Borrow();
-  ASSERT(subsystems->ProvidesSubsystem<IMessageEndpoint>(),
-         "peer networking subsystem should exist")
-  ASSERT(subsystems->ProvidesSubsystem<jobsystem::JobManager>(),
-         "job system should exist")
+  DEBUG_ASSERT(subsystems->ProvidesSubsystem<IMessageEndpoint>(),
+               "peer networking subsystem should exist")
+  DEBUG_ASSERT(subsystems->ProvidesSubsystem<jobsystem::JobManager>(),
+               "job system should exist")
 
   if (!subsystems
            ->ProvidesSubsystem<networking::messaging::IMessageEndpoint>()) {
@@ -260,7 +260,7 @@ SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
     common::memory::Reference<networking::messaging::IMessageEndpoint>
         weak_endpoint) {
 
-  ASSERT(weak_endpoint.CanBorrow(), "sending endpoint should exist")
+  DEBUG_ASSERT(weak_endpoint.CanBorrow(), "sending endpoint should exist")
 
   auto job = std::make_shared<Job>(
       [weak_endpoint, peer_id,

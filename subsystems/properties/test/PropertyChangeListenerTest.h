@@ -13,7 +13,7 @@ using namespace jobsystem;
 
 class VerificationListener : public PropertyChangeListener {
 private:
-  unsigned int m_change_notification_received{0};
+  std::atomic_int m_change_notification_received{0};
 
 public:
   void ProcessPropertyChange(const std::string &key) noexcept override {
@@ -23,8 +23,8 @@ public:
               << " times")
   }
 
-  unsigned int GetChangeNotificationsReceived() const {
-    return m_change_notification_received;
+  int GetChangeNotificationsReceived() const {
+    return m_change_notification_received.load();
   }
 };
 

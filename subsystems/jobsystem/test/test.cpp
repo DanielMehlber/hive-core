@@ -375,7 +375,7 @@ TEST(JobSynchronization, recursive_mutex_fibers) {
           // locked by another fiber. The current fiber shouldn't get access to
           // this section, therefore the recursive mutex does not work as
           // expected.
-          ASSERT(!should_be_currently_locked, "should not be locked");
+          DEBUG_ASSERT(!should_be_currently_locked, "should not be locked");
           should_be_currently_locked = true;
 
           {

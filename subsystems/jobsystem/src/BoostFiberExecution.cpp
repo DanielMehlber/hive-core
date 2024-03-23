@@ -88,7 +88,8 @@ void BoostFiberExecution::WaitForCompletion(
     }
 
     auto id_after = boost::this_fiber::get_id();
-    ASSERT(id_before == id_after, "fiber must not change id during yielding")
+    DEBUG_ASSERT(id_before == id_after,
+                 "fiber must not change id during yielding")
   } else {
     // caller is a thread, so block
     while (!waitable->IsFinished()) {
@@ -146,9 +147,9 @@ void BoostFiberExecution::Stop() {
      * main thread
      */
     // TODO: Fix this bug
-    ASSERT(worker->get_id() != std::this_thread::get_id(),
-           "execution is not supposed to be terminated by one of its own "
-           "worker threads: The thread would join itself")
+    DEBUG_ASSERT(worker->get_id() != std::this_thread::get_id(),
+                 "execution is not supposed to be terminated by one of its own "
+                 "worker threads: The thread would join itself")
     worker->join();
   }
 

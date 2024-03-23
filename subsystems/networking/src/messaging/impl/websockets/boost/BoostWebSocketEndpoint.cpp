@@ -119,8 +119,8 @@ BoostWebSocketEndpoint::~BoostWebSocketEndpoint() {
 
   // wait until all worker threads have returned
   for (auto &execution : m_execution_threads) {
-    ASSERT(execution.get_id() != std::this_thread::get_id(),
-           "Execution thread should not join itself")
+    DEBUG_ASSERT(execution.get_id() != std::this_thread::get_id(),
+                 "Execution thread should not join itself")
     execution.join();
   }
 

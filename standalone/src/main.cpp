@@ -105,6 +105,7 @@ int main(int argc, const char **argv) {
   if (renderer_type == "onscreen") {
     auto renderer =
         common::memory::Owner<graphics::OnscreenRenderer>(scene, width, height);
+    auto renderer_ref = renderer.CreateReference();
     core.SetRenderer(std::move(renderer));
 
     if (enable_rendering_job) {
@@ -114,8 +115,10 @@ int main(int argc, const char **argv) {
     if (enable_rendering_service) {
       auto offscreen_renderer =
           common::memory::Owner<graphics::OffscreenRenderer>(
-              renderer->GetSetup(), scene);
-      auto offscreen_renderer_ref = offscreen_renderer.CreateReference();
+              renderer_ref.Borrow()->GetSetup(), scene);
+
+      core.EnableRenderingService(offscreen_renderer.CreateReference());
+      offscreen_renderer->Resize(width, height);
 
       /* We need to transfer the ownership of offscreen renderer somewhere. Use
        * the subsystem manager and instead of IRenderer (used by the main
@@ -124,16 +127,14 @@ int main(int argc, const char **argv) {
       core.GetSubsystemsManager()
           ->AddOrReplaceSubsystem<graphics::OffscreenRenderer>(
               std::move(offscreen_renderer));
-
-      core.EnableRenderingService(offscreen_renderer_ref);
-      offscreen_renderer->Resize(width, height);
     }
   } else if (renderer_type == "offscreen") {
     auto renderer =
         common::memory::Owner<graphics::OffscreenRenderer>(std::nullopt, scene);
-    core.SetRenderer(std::move(renderer));
 
     renderer->Resize(width, height);
+
+    core.SetRenderer(std::move(renderer));
 
     if (enable_rendering_job) {
       core.EnableRenderingJob();

@@ -381,7 +381,7 @@ void OffscreenRenderer::SetupInstanceAndDevice(
           m_instance->getPhysicalDeviceAndQueueFamily(VK_QUEUE_GRAPHICS_BIT);
       m_queueFamily = queueFamily;
 
-      if (physicalDevice && queueFamily > 0) {
+      if (physicalDevice && queueFamily >= 0) {
         // finish setup and do not continue creating own instance and device
         return;
       } else {

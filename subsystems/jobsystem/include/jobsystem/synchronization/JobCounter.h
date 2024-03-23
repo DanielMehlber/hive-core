@@ -50,7 +50,7 @@ inline void JobCounter::Increase() {
 
 inline void JobCounter::Decrease() {
   std::unique_lock lock(m_count_mutex);
-  ASSERT(m_count > 0, "job counter must not be decreased below zero.")
+  DEBUG_ASSERT(m_count > 0, "job counter must not be decreased below zero.")
   m_count--;
 }
 

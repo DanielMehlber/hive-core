@@ -71,7 +71,7 @@ void TiledCompositeRendererPlugin::Init(plugins::SharedPluginContext context) {
       render_service_count = render_caller.value()->GetCallableCount();
     }
 
-    tiled_renderer->SetServiceCount(render_service_count);
+    tiled_renderer_ref.Borrow()->SetServiceCount(render_service_count);
   } else {
     THROW_EXCEPTION(plugins::PluginSetupFailedException,
                     "subsystems are not accessible, but required")
