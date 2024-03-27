@@ -31,12 +31,19 @@ void BoostFiberRecursiveSpinLock::unlock() {
     }
   }
 
-  m_spin_lock.unlock();
+  m_lock.clear();
   m_owner_info.reset();
 }
 
 void BoostFiberRecursiveSpinLock::lock() {
-  // first check if lock has already been acquired by current thread/fiber.
+  while (!try_lock()) {
+      // TODO: introduce some sort of yield of sleep to avoid busy waiting
+  }
+}
+
+bool BoostFiberRecursiveSpinLock::try_lock() {
+
+  // first check if this thread/fiber has already aquired this lock
   {
     common::sync::ScopedLock lock(m_owner_info_mutex);
     if (m_owner_info) {
@@ -46,13 +53,20 @@ void BoostFiberRecursiveSpinLock::lock() {
         // this fiber/thread has already acquired this lock, so skip to avoid
         // deadlock
         m_owner_lock_count.fetch_add(1);
-        return;
+        return true;
       }
     }
   }
 
-  m_spin_lock.lock();
-  common::sync::ScopedLock lock(m_owner_info_mutex);
-  m_owner_info = GetCurrentOwnerInfo();
-  m_owner_lock_count.store(1);
+  // sets the current value to true and returns the value the flag held before
+  bool alreadyLocked = m_lock.test_and_set(std::memory_order_acquire);
+
+  // if lock has been aquired, store current owner info
+  if (!alreadyLocked) {
+    common::sync::ScopedLock lock(m_owner_info_mutex);
+    m_owner_info = GetCurrentOwnerInfo();
+    m_owner_lock_count.store(1);
+  }
+
+  return !alreadyLocked;
 }

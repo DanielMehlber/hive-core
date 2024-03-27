@@ -41,7 +41,7 @@ private:
    * here.
    */
   std::queue<SharedJob> m_init_queue;
-  mutable mutex m_init_queue_mutex;
+  mutable recursive_mutex m_init_queue_mutex;
   SharedJobCounter m_init_phase_counter;
 
   /**
@@ -49,14 +49,14 @@ private:
    * here.
    */
   std::queue<SharedJob> m_main_queue;
-  mutable mutex m_main_queue_mutex;
+  mutable recursive_mutex m_main_queue_mutex;
   SharedJobCounter m_main_phase_counter;
 
   /**
    * All jobs for the clean-up phase of the cycle are collected here.
    */
   std::queue<SharedJob> m_clean_up_queue;
-  mutable mutex m_clean_up_queue_mutex;
+  mutable recursive_mutex m_clean_up_queue_mutex;
   SharedJobCounter m_clean_up_phase_counter;
 
   /**
@@ -66,7 +66,7 @@ private:
    * time-interval jobs).
    */
   std::queue<SharedJob> m_next_cycle_queue;
-  mutable mutex m_next_cycle_queue_mutex;
+  mutable recursive_mutex m_next_cycle_queue_mutex;
 
   /**
    * Some jobs must be prevented from being rescheduled for the next
@@ -96,7 +96,7 @@ private:
    * @param counter counter that should be used to track the progress of all job
    * instances pushed into the execution
    */
-  void ExecuteQueueAndWait(std::queue<SharedJob> &queue, mutex &queue_mutex,
+  void ExecuteQueueAndWait(std::queue<SharedJob> &queue, recursive_mutex &queue_mutex,
                            const SharedJobCounter &counter);
 
   /**
@@ -108,7 +108,7 @@ private:
    * @param counter counter that is attached to all job instances that get
    * passed to the job execution.
    */
-  void ScheduleAllJobsInQueue(std::queue<SharedJob> &queue, mutex &queue_mutex,
+  void ScheduleAllJobsInQueue(std::queue<SharedJob> &queue, recursive_mutex &queue_mutex,
                               const SharedJobCounter &counter);
 
   /**

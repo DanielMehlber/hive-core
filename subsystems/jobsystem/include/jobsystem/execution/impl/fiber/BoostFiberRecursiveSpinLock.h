@@ -35,8 +35,6 @@ struct OwnerInfo {
 
 class BoostFiberRecursiveSpinLock {
 protected:
-  /** underlying spin lock */
-  common::sync::SpinLock m_spin_lock;
 
   /** another normal spin lock synchronizing access to owner information */
   mutable common::sync::SpinLock m_owner_info_mutex;
@@ -47,9 +45,13 @@ protected:
   /** amount of recursive locks by the current owner */
   std::atomic_int m_owner_lock_count{0};
 
+  /** if true, this is currently locked */
+  std::atomic_flag m_lock;
+
 public:
   void lock();
   void unlock();
+  bool try_lock();
 };
 
 } // namespace jobsystem

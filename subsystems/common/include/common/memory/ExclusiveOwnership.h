@@ -528,10 +528,11 @@ template <typename T> Owner<T>::~Owner() {
     DEBUG_ASSERT(_state->alive, "owner should not be dead at this point")
     DEBUG_ASSERT(_state->owner != nullptr, "owner cannot be nullptr")
 
-    _state->alive.store(false);
     while (_state->borrows > 0) {
       std::this_thread::yield();
     }
+
+    _state->alive.store(false);
   }
 }
 

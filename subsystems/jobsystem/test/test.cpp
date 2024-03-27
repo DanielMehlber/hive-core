@@ -353,7 +353,7 @@ TEST(JobSynchronization, recursive_mutex_threads) {
 
   common::test::TryAssertUntilTimeout([&finished]() { return finished; }, 1s);
   th.join();
-}
+}                 
 
 TEST(JobSynchronization, recursive_mutex_fibers) {
   auto config = std::make_shared<common::config::Configuration>();
