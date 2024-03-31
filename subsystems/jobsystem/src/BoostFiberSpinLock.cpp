@@ -1,4 +1,5 @@
 #include "jobsystem/execution/impl/fiber/BoostFiberSpinLock.h"
+#include "common/assert/Assert.h"
 #include <boost/fiber/all.hpp>
 
 using namespace jobsystem;
@@ -23,6 +24,7 @@ void BoostFiberSpinLock::lock() {
 }
 
 void BoostFiberSpinLock::unlock() {
+  DEBUG_ASSERT(m_lock.test(), "cannot unlock unaquired lock");
   // use release semantics to ensure that all prior
   // writes have been fully committed before we unlock
   m_lock.clear(std::memory_order_release);

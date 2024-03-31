@@ -22,6 +22,8 @@ void BoostFiberRecursiveSpinLock::unlock() {
   std::unique_lock lock(m_owner_info_mutex);
 
   DEBUG_ASSERT(m_owner_info.has_value(), "should be locked by owner");
+  DEBUG_ASSERT(m_owner_info.value() == GetCurrentOwnerInfo(),
+               "only current owner is allowed to unlock");
   DEBUG_ASSERT(m_owner_lock_count > 0, "should be locked");
   DEBUG_ASSERT(m_lock.test(), "should be locked");
 
