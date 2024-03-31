@@ -33,9 +33,22 @@ struct OwnerInfo {
   }
 };
 
+/**
+ * A user-space recursive mutex alternative which is built to integrate
+ * seamlessly with fibers provided by the boost library. Instead of blocking or
+ * busy waiting, the current fiber (or thread) yields.
+ *
+ * @note Normal std::recursive_mutex implementations only work on the
+ * thread-level and do not recognize fibers, causing various errors on different
+ * platforms.
+ *
+ * @note The Boost.Fiber library also provides their own recursive_mutex
+ * implementation for the same purpose. However, for some reason, it only works
+ * with fibers and cannot handle normal threads (blindly high-jacks their
+ * contexts, resulting in deadlocks and undefined behavior).
+ */
 class BoostFiberRecursiveSpinLock {
 protected:
-
   /** another normal spin lock synchronizing access to owner information */
   mutable common::sync::SpinLock m_owner_info_mutex;
 

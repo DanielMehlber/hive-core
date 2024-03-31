@@ -17,7 +17,8 @@ add_library(jobsystem SHARED
         src/TimerJob.cpp
         src/BoostFiberExecution.cpp
         include/jobsystem/execution/impl/fiber/BoostFiberRecursiveSpinLock.h
-        src/BoostFiberRecursiveSpinLock.cpp)
+        src/BoostFiberRecursiveSpinLock.cpp
+        src/BoostFiberSpinLock.cpp)
 
 target_include_directories(jobsystem PUBLIC
         include
