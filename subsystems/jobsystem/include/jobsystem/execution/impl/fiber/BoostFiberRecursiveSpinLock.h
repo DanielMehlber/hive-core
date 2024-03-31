@@ -48,6 +48,8 @@ protected:
   /** if true, this is currently locked */
   std::atomic_flag m_lock;
 
+  void yield() const;
+
 public:
   void lock();
   void unlock();
