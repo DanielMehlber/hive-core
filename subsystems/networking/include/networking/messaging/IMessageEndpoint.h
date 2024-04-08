@@ -59,7 +59,7 @@ public:
    * @return a future representing the broadcast progress and holding the count
    * of recipients.
    */
-  virtual std::future<size_t> Broadcast(const SharedMessage &message) = 0;
+  virtual std::future<size_t> IssueBroadcastAsJob(const SharedMessage &message) = 0;
 
   /**
    * Counts active and usable connections of this endpoint to others.

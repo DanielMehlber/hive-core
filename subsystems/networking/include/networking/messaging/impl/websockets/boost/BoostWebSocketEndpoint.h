@@ -128,7 +128,7 @@ public:
 
   void CloseConnectionTo(const std::string &uri) noexcept override;
 
-  std::future<size_t> Broadcast(const SharedMessage &message) override;
+  std::future<size_t> IssueBroadcastAsJob(const SharedMessage &message) override;
 
   bool HasConnectionTo(const std::string &uri) const noexcept override;
 

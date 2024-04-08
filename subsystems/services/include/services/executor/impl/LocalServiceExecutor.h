@@ -36,7 +36,7 @@ public:
   virtual ~LocalServiceExecutor() = default;
 
   std::future<SharedServiceResponse>
-  Call(SharedServiceRequest request,
+  IssueCallAsJob(SharedServiceRequest request,
        common::memory::Borrower<jobsystem::JobManager> job_manager) override;
 
   bool IsCallable() override { return true; };

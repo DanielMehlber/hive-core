@@ -252,7 +252,7 @@ TEST(WebSockets, websockets_message_broadcast) {
 
   SharedMessage message = std::make_shared<Message>("test-type");
 
-  auto future = broadcasting_peer.endpoint.Borrow()->Broadcast(message);
+  auto future = broadcasting_peer.endpoint.Borrow()->IssueBroadcastAsJob(message);
   broadcasting_peer.job_manager.Borrow()->InvokeCycleAndWait();
   future.wait();
   ASSERT_EQ(future.get(), 5);

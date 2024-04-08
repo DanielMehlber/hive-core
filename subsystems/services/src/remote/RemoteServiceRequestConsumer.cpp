@@ -52,7 +52,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
 
               // call service locally
               std::future<SharedServiceResponse> future_response =
-                  service_caller->Call(request, job_manager, true);
+                  service_caller->IssueCallAsJob(request, job_manager, true);
 
               context->GetJobManager()->WaitForCompletion(future_response);
               response = future_response.get();

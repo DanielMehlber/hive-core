@@ -47,7 +47,7 @@ public:
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer);
 
   std::future<SharedServiceResponse>
-  Call(SharedServiceRequest request,
+  IssueCallAsJob(SharedServiceRequest request,
        common::memory::Borrower<jobsystem::JobManager> job_manager) override;
 
   bool IsCallable() override;

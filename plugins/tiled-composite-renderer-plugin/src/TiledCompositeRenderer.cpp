@@ -165,7 +165,7 @@ bool TiledCompositeRenderer::Render() {
         [_this = ReferenceFromThis(), rendering_service_request,
          subsystems = m_subsystems, service_caller,
          i](jobsystem::JobContext *context) mutable {
-          auto future_response = service_caller->Call(rendering_service_request,
+          auto future_response = service_caller->IssueCallAsJob(rendering_service_request,
                                                       context->GetJobManager());
 
           context->GetJobManager()->WaitForCompletion(future_response);

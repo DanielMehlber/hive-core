@@ -26,7 +26,7 @@ bool RemoteServiceExecutor::IsCallable() {
   }
 }
 
-std::future<SharedServiceResponse> RemoteServiceExecutor::Call(
+std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
     SharedServiceRequest request,
     common::memory::Borrower<jobsystem::JobManager> job_manager) {
 

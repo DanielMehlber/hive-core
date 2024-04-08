@@ -105,12 +105,17 @@ public:
   JobExecutionState GetState();
 };
 
+/**
+ * Checks if current executor is a fiber or a normal thread.
+ */
+bool IsExecutedByFiber();
+
 template <typename FutureType>
 inline void
 BoostFiberExecution::WaitForCompletion(const std::future<FutureType> &future) {
-  bool is_called_from_fiber = !boost::fibers::context::active()->is_context(
-      boost::fibers::type::main_context);
-  if (is_called_from_fiber) {
+  // TODO: Remove
+  auto* _context = boost::fibers::context::active();
+  if (IsExecutedByFiber()) {
     // caller is a fiber, so yield
     while (future.wait_for(std::chrono::seconds(0)) !=
            std::future_status::ready) {

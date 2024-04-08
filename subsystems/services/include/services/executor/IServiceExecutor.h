@@ -25,7 +25,7 @@ public:
    * @return future response (if the service has completed successfully)
    */
   virtual std::future<SharedServiceResponse>
-  Call(SharedServiceRequest request,
+  IssueCallAsJob(SharedServiceRequest request,
        common::memory::Borrower<jobsystem::JobManager> job_manager) = 0;
 
   /**

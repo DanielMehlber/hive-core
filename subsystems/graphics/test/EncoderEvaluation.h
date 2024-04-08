@@ -90,7 +90,7 @@
 //      std::vector<long> times;
 //      times.resize(5);
 //      for (int i = 0; i < 5; i++) {
-//        auto result_fut = caller->Call(
+//        auto result_fut = caller->IssueCallAsJob(
 //            GenerateRenderingRequest(image_size, image_size), job_manager);
 //
 //        auto start_point = std::chrono::high_resolution_clock::now();

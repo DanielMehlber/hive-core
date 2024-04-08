@@ -33,6 +33,9 @@ void BoostFiberExecution::Schedule(std::shared_ptr<Job> job) {
     if (auto maybe_manager = weak_manager.TryBorrow()) {
       auto manager = maybe_manager.value();
 
+      // TODO: Remove
+      auto *_context = boost::fibers::context::active();
+
       JobContext context(manager->GetTotalCyclesCount(), manager);
       JobContinuation continuation = job->Execute(&context);
 
@@ -75,12 +78,8 @@ void BoostFiberExecution::WaitForCompletion(
   common::profiling::Timer waiting_timer("job-waiting-for-completion");
 #endif
 
-  // For type::main_context the context is associated with the “main” fiber of
-  // the thread: the one implicitly created by the thread itself, rather than
-  // one explicitly created by Boost.Fiber (= a normal thread)
-  bool is_called_from_fiber = !boost::fibers::context::active()->is_context(
-      boost::fibers::type::main_context);
-  if (is_called_from_fiber) {
+ 
+  if (IsExecutedByFiber()) {
     // caller is a fiber, so yield
     auto id_before = boost::this_fiber::get_id();
     while (!waitable->IsFinished()) {
@@ -179,4 +178,19 @@ void BoostFiberExecution::ExecuteWorker() {
     // hostage (caused SEGFAULTS in some scenarios) by releasing it.
     job = nullptr;
   }
+}
+
+// Reminder to self: Do NOT move this definition into a header, even though 
+// it's begging to be inlined.
+//
+// A header that is used across compilation units implicitily re-defines 
+// this function for each one and messes up the underlying static/thread_local 
+// qualifiers used in fiber::context::active().
+// 
+// C++ is such a beeatifulll language :D
+// (please kill me, it took almost 6h to figure this out).
+bool jobsystem::execution::impl::IsExecutedByFiber() {
+  // A worker_context is always created inside a fiber.
+  return boost::fibers::context::active()->is_context(
+      boost::fibers::type::worker_context);
 }

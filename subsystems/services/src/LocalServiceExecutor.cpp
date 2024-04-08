@@ -11,7 +11,7 @@ LocalServiceExecutor::LocalServiceExecutor(
     : m_func(std::move(func)), m_service_name(std::move(service_name)),
       m_id(common::uuid::UuidGenerator::Random()) {}
 
-std::future<SharedServiceResponse> LocalServiceExecutor::Call(
+std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
     SharedServiceRequest request,
     common::memory::Borrower<jobsystem::JobManager> job_manager) {
 
@@ -24,6 +24,10 @@ std::future<SharedServiceResponse> LocalServiceExecutor::Call(
   jobsystem::job::SharedJob job = jobsystem::JobSystemFactory::CreateJob(
       [request, _this = shared_from_this(),
        completion_promise](jobsystem::JobContext *context) mutable {
+
+        LOG_DEBUG("executing local service '" << request->GetServiceName()
+                                              << "' for request "
+                                              << request->GetTransactionId())
         try {
           auto result = _this->m_func(request);
           context->GetJobManager()->WaitForCompletion(result);
