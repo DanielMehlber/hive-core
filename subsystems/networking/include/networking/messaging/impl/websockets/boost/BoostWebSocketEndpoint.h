@@ -35,7 +35,7 @@ private:
    */
   bool m_running{false};
   mutable jobsystem::recursive_mutex m_running_mutex;
-  
+
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
   common::config::SharedConfiguration m_config;
 
@@ -128,7 +128,8 @@ public:
 
   void CloseConnectionTo(const std::string &uri) noexcept override;
 
-  std::future<size_t> IssueBroadcastAsJob(const SharedMessage &message) override;
+  std::future<size_t>
+  IssueBroadcastAsJob(const SharedMessage &message) override;
 
   bool HasConnectionTo(const std::string &uri) const noexcept override;
 

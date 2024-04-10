@@ -1,6 +1,6 @@
 #include "jobsystem/execution/impl/fiber/BoostFiberRecursiveSpinLock.h"
-#include "common/synchronization/ScopedLock.h"
 #include "common/assert/Assert.h"
+#include "common/synchronization/ScopedLock.h"
 
 using namespace jobsystem;
 
@@ -45,19 +45,19 @@ void BoostFiberRecursiveSpinLock::unlock() {
 
 void BoostFiberRecursiveSpinLock::lock() {
   while (!try_lock()) {
-    /* A fiber can context switch even though it has aquired a lock. 
+    /* A fiber can context switch even though it has aquired a lock.
     To avoid deadlocks, other waiting fibers/threads must not block. */
     yield();
   }
 }
 
 void BoostFiberRecursiveSpinLock::yield() const {
-    auto owner_info = GetCurrentOwnerInfo();
-    if (owner_info.is_fiber) {
-      boost::this_fiber::yield();
-    } else {
-      std::this_thread::yield();
-    }
+  auto owner_info = GetCurrentOwnerInfo();
+  if (owner_info.is_fiber) {
+    boost::this_fiber::yield();
+  } else {
+    std::this_thread::yield();
+  }
 }
 
 bool BoostFiberRecursiveSpinLock::try_lock() {
@@ -66,7 +66,7 @@ bool BoostFiberRecursiveSpinLock::try_lock() {
   {
     std::unique_lock lock(m_owner_info_mutex);
     if (m_owner_info) {
-      auto& owner_info = m_owner_info.value();
+      auto &owner_info = m_owner_info.value();
 
       DEBUG_ASSERT(m_owner_lock_count > 0, "shoud be locked");
       DEBUG_ASSERT(m_lock.test(), "shoud be locked");

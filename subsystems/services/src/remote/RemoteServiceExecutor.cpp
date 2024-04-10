@@ -40,8 +40,9 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
                     << _this->m_remote_host_name)
 
           if (!_this->m_response_consumer.expired()) {
-            /* pass the promise (resolving the service request) to the response consumer. 
-            When its response arrives, the request promimse will be resolved. */
+            /* pass the promise (resolving the service request) to the response
+            consumer. When its response arrives, the request promimse will be
+            resolved. */
             _this->m_response_consumer.lock()->AddResponsePromise(
                 request->GetTransactionId(), std::move(*promise));
           } else {

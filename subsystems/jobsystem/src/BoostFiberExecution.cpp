@@ -75,7 +75,6 @@ void BoostFiberExecution::WaitForCompletion(
   common::profiling::Timer waiting_timer("job-waiting-for-completion");
 #endif
 
- 
   if (IsExecutedByFiber()) {
     // caller is a fiber, so yield
     auto id_before = boost::this_fiber::get_id();
@@ -167,31 +166,26 @@ void BoostFiberExecution::ExecuteWorker() {
   boost::fibers::use_scheduling_algorithm<boost::fibers::algo::shared_work>();
 
   std::function<void()> job;
-  boost::fibers::channel_op_status channel_status;
-  do {
-    channel_status = m_job_channel->try_pop(job);
+  while (m_job_channel->pop(job) != boost::fibers::channel_op_status::closed) {
+    auto fiber = boost::fibers::fiber(std::move(job));
+    fiber.detach();
 
-    if (job) {
-      auto fiber = boost::fibers::fiber(std::move(job));
-      fiber.detach();
+    // avoid keeping some anonymous functions (and their captured variables)
+    // hostage (caused SEGFAULTS in some scenarios) by releasing it.
+    job = nullptr;
+  }
 
-      // avoid keeping some anonymous functions (and their captured variables)
-      // hostage (caused SEGFAULTS in some scenarios) by releasing it.
-      job = nullptr;
-    }
-  } while (channel_status != boost::fibers::channel_op_status::closed);
-
-  LOG_WARN("worker thread " << std::this_thread::get_id() 
-      << " in fiber job execution terminated")
+  LOG_WARN("worker thread " << std::this_thread::get_id()
+                            << " in fiber job execution terminated")
 }
 
-// Reminder to self: Do NOT move this definition into a header, even though 
+// Reminder to self: Do NOT move this definition into a header, even though
 // it's begging to be inlined.
 //
-// A header that is used across compilation units implicitily re-defines 
-// this function for each one and messes up the underlying static/thread_local 
+// A header that is used across compilation units implicitily re-defines
+// this function for each one and messes up the underlying static/thread_local
 // qualifiers used in fiber::context::active().
-// 
+//
 // C++ is such a beeatifulll language :D
 // (please kill me, it took almost 6h to figure this out).
 bool jobsystem::execution::impl::IsExecutedByFiber() {

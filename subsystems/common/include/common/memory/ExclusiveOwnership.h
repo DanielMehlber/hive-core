@@ -64,7 +64,7 @@ protected:
   std::shared_ptr<OwnershipState> _shared_ownership_state;
 
 #ifndef NDEBUG
-  /** convenience pointer to the owned object 
+  /** convenience pointer to the owned object
   (mainly for the use with debuggers, because they'd only see a void*). */
   T *_data;
 #endif

@@ -34,7 +34,6 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
         [_this = std::static_pointer_cast<RemoteServiceRequestConsumer>(
              shared_from_this()),
          request, connection_info](jobsystem::JobContext *context) {
-       
           LOG_DEBUG("processing service request for service '"
                     << request->GetServiceName() << "'")
 

@@ -26,7 +26,7 @@ GzipRenderResultEncoder::Encode(const std::vector<unsigned char> &buffer) {
 std::vector<unsigned char>
 GzipRenderResultEncoder::Decode(const std::string &str) {
   std::vector<unsigned char> decompressed;
-  
+
   std::stringstream compressed(str);
 
   boost::iostreams::filtering_streambuf<boost::iostreams::input> in;

@@ -24,7 +24,6 @@ std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
   jobsystem::job::SharedJob job = jobsystem::JobSystemFactory::CreateJob(
       [request, _this = shared_from_this(),
        completion_promise](jobsystem::JobContext *context) mutable {
-
         LOG_DEBUG("executing local service '" << request->GetServiceName()
                                               << "' for request "
                                               << request->GetTransactionId())

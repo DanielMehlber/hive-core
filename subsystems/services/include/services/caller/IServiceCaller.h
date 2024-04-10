@@ -30,8 +30,8 @@ public:
    */
   virtual std::future<SharedServiceResponse>
   IssueCallAsJob(SharedServiceRequest request,
-       common::memory::Borrower<jobsystem::JobManager> job_manager,
-       bool only_local = false) noexcept = 0;
+                 common::memory::Borrower<jobsystem::JobManager> job_manager,
+                 bool only_local = false) noexcept = 0;
 
   /**
    * Checks if there are currently callable and usable service executions

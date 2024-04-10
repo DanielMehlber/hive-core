@@ -5,7 +5,6 @@
 #include <future>
 #include <map>
 
-
 namespace services::impl {
 
 /**

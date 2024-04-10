@@ -207,7 +207,8 @@ void BoostWebSocketEndpoint::ProcessReceivedMessage(
     auto consumer_list = GetConsumersOfMessageType(message_type);
 
     LOG_DEBUG("received message of type '" << message_type << "' ("
-                                           << consumer_list.size() << " consumers registered)")
+                                           << consumer_list.size()
+                                           << " consumers registered)")
 
     for (const auto &consumer : consumer_list) {
       auto job = std::make_shared<MessageConsumerJob>(

@@ -29,8 +29,7 @@ std::string TimerManager::Print() {
     ss << "> Timer " << name << ": TOTAL-MIN " << ns_to_ms(data.total_min_ns)
        << "ms | TOTAL-MAX " << ns_to_ms(data.total_max_ns) << "ms | AVG "
        << ns_to_ms(average_ns) << "ms | MIN " << ns_to_ms(min_ns) << "ms | MAX "
-       << ns_to_ms(max_ns) << "ms"
-       << "\n";
+       << ns_to_ms(max_ns) << "ms" << "\n";
   }
 
   return ss.str();

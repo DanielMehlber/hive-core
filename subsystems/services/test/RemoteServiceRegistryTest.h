@@ -90,11 +90,11 @@ TEST(ServiceTests, run_single_remote_service) {
 
   SharedServiceCaller caller =
       node_2.service_registry.Borrow()->Find("add").get().value();
-  auto result_fut =
-      caller->IssueCallAsJob(GenerateAddingRequest(3, 5), node_2.job_manager.Borrow());
+  auto result_fut = caller->IssueCallAsJob(GenerateAddingRequest(3, 5),
+                                           node_2.job_manager.Borrow());
 
-  // we need a second threads here: node_1 has to send its call and node_2 needs to
-  // process and respond to it. These actions usually take place in different
+  // we need a second threads here: node_1 has to send its call and node_2 needs
+  // to process and respond to it. These actions usually take place in different
   // processes, so they must be executed in parallel.
   std::atomic_bool finished = false;
   auto node_1_request_processing = std::thread([&node_1, &finished]() {
@@ -174,7 +174,7 @@ TEST(ServiceTests, remote_service_load_balancing) {
   std::vector<std::future<SharedServiceResponse>> responses;
   for (int i = 0; i < 5; i++) {
     auto response = caller->IssueCallAsJob(GenerateAddingRequest(1, i),
-                                 central_node.job_manager.Borrow());
+                                           central_node.job_manager.Borrow());
     responses.push_back(std::move(response));
   }
 

@@ -96,7 +96,8 @@ private:
    * @param counter counter that should be used to track the progress of all job
    * instances pushed into the execution
    */
-  void ExecuteQueueAndWait(std::queue<SharedJob> &queue, recursive_mutex &queue_mutex,
+  void ExecuteQueueAndWait(std::queue<SharedJob> &queue,
+                           recursive_mutex &queue_mutex,
                            const SharedJobCounter &counter);
 
   /**
@@ -108,7 +109,8 @@ private:
    * @param counter counter that is attached to all job instances that get
    * passed to the job execution.
    */
-  void ScheduleAllJobsInQueue(std::queue<SharedJob> &queue, recursive_mutex &queue_mutex,
+  void ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
+                              recursive_mutex &queue_mutex,
                               const SharedJobCounter &counter);
 
   /**

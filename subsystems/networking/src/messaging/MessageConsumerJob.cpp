@@ -9,9 +9,9 @@ using namespace jobsystem::job;
 MessageConsumerJob::MessageConsumerJob(SharedMessageConsumer consumer,
                                        SharedMessage message,
                                        ConnectionInfo connection_info)
-    : Job(
-          std::bind(&MessageConsumerJob::ConsumeMessage, this, _1),
-          "consume-web-socket-message-type-" + message->GetType(), JobExecutionPhase::MAIN),
+    : Job(std::bind(&MessageConsumerJob::ConsumeMessage, this, _1),
+          "consume-web-socket-message-type-" + message->GetType(),
+          JobExecutionPhase::MAIN),
       m_consumer{std::move(consumer)}, m_message{message},
       m_connection_info(std::move(connection_info)) {}
 

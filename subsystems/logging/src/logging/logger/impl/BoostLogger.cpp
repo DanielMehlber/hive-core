@@ -18,7 +18,7 @@ void logging::logger::impl::BoostLogger::Init() {
   boost::log::add_common_attributes();
 }
 
-void logging::logger::impl::BoostLogger::ShutDown(){};
+void logging::logger::impl::BoostLogger::ShutDown() {};
 
 logging::logger::impl::BoostLogger::~BoostLogger() { ShutDown(); }
 logging::logger::impl::BoostLogger::BoostLogger() { Init(); }
