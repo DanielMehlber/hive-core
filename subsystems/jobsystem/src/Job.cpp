@@ -15,8 +15,6 @@ JobContinuation Job::Execute(JobContext *context) {
   m_current_state = IN_EXECUTION;
   JobContinuation continuation;
   try {
-    // TODO: Remove
-    auto *_context = boost::fibers::context::active();
     continuation = m_workload(context);
     m_current_state = EXECUTION_FINISHED;
   } catch (const std::exception &exception) {

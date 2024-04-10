@@ -113,7 +113,7 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
   std::unique_lock lock(m_socket_mutex);
 
   if (!m_socket.is_open()) {
-    LOG_WARN("Cannot sent message via web-socket to remote host "
+    LOG_WARN("cannot sent message via web-socket to remote host "
              << m_remote_endpoint_data.address().to_string() << ":"
              << m_remote_endpoint_data.port() << " because socket is closed")
 
@@ -156,13 +156,13 @@ void BoostWebSocketConnection::OnMessageSent(
   lock.unlock();
 
   if (error_code) {
-    LOG_WARN("Sending message via web-socket to remote host "
+    LOG_WARN("sending message via web-socket to remote host "
              << m_remote_endpoint_data.address().to_string() << ":"
              << m_remote_endpoint_data.port()
              << " failed: " << error_code.message())
     auto exception =
         BUILD_EXCEPTION(MessageSendingException,
-                        "Sending message via web-socket to remote host "
+                        "sending message via web-socket to remote host "
                             << m_remote_endpoint_data.address().to_string()
                             << ":" << m_remote_endpoint_data.port()
                             << " failed: " << error_code.message());

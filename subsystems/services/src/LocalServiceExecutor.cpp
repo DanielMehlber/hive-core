@@ -39,7 +39,8 @@ std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
         }
         return jobsystem::job::JobContinuation::DISPOSE;
       },
-      "local-service-call-" + common::uuid::UuidGenerator::Random());
+      "local-service-execution-(" + request->GetServiceName() + ")-" +
+          common::uuid::UuidGenerator::Random());
 
   job_manager->KickJob(job);
 

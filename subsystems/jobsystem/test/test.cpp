@@ -327,8 +327,6 @@ TEST(JobSynchronization, wait_for_future) {
 
   SharedJob future_job =
       JobSystemFactory::CreateJob([&future](JobContext *context) {
-        // TODO: Remove
-        auto *_context = boost::fibers::context::active();
         context->GetJobManager()->WaitForCompletion(future);
         return JobContinuation::DISPOSE;
       });

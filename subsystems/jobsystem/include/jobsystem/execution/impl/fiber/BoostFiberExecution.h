@@ -113,8 +113,6 @@ bool IsExecutedByFiber();
 template <typename FutureType>
 inline void
 BoostFiberExecution::WaitForCompletion(const std::future<FutureType> &future) {
-  // TODO: Remove
-  auto* _context = boost::fibers::context::active();
   if (IsExecutedByFiber()) {
     // caller is a fiber, so yield
     while (future.wait_for(std::chrono::seconds(0)) !=

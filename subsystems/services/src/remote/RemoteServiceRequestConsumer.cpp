@@ -34,6 +34,10 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
         [_this = std::static_pointer_cast<RemoteServiceRequestConsumer>(
              shared_from_this()),
          request, connection_info](jobsystem::JobContext *context) {
+       
+          LOG_DEBUG("processing service request for service '"
+                    << request->GetServiceName() << "'")
+
           auto job_manager = _this->m_subsystems.TryBorrow()
                                  .value()
                                  ->RequireSubsystem<jobsystem::JobManager>();
@@ -108,7 +112,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
     job_manager->KickJob(job);
   } else /* if subsystems are not available */ {
     if (!m_subsystems.CanBorrow()) {
-      LOG_ERR("Cannot process received message because required subsystems are "
+      LOG_ERR("cannot process received message because required subsystems are "
               "not available or have been shut down")
     }
   }

@@ -33,9 +33,6 @@ void BoostFiberExecution::Schedule(std::shared_ptr<Job> job) {
     if (auto maybe_manager = weak_manager.TryBorrow()) {
       auto manager = maybe_manager.value();
 
-      // TODO: Remove
-      auto *_context = boost::fibers::context::active();
-
       JobContext context(manager->GetTotalCyclesCount(), manager);
       JobContinuation continuation = job->Execute(&context);
 
@@ -170,14 +167,22 @@ void BoostFiberExecution::ExecuteWorker() {
   boost::fibers::use_scheduling_algorithm<boost::fibers::algo::shared_work>();
 
   std::function<void()> job;
-  while (boost::fibers::channel_op_status::closed != m_job_channel->pop(job)) {
-    auto fiber = boost::fibers::fiber(job);
-    fiber.detach();
+  boost::fibers::channel_op_status channel_status;
+  do {
+    channel_status = m_job_channel->try_pop(job);
 
-    // avoid keeping some anonymous functions (and their captured variables)
-    // hostage (caused SEGFAULTS in some scenarios) by releasing it.
-    job = nullptr;
-  }
+    if (job) {
+      auto fiber = boost::fibers::fiber(std::move(job));
+      fiber.detach();
+
+      // avoid keeping some anonymous functions (and their captured variables)
+      // hostage (caused SEGFAULTS in some scenarios) by releasing it.
+      job = nullptr;
+    }
+  } while (channel_status != boost::fibers::channel_op_status::closed);
+
+  LOG_WARN("worker thread " << std::this_thread::get_id() 
+      << " in fiber job execution terminated")
 }
 
 // Reminder to self: Do NOT move this definition into a header, even though 
