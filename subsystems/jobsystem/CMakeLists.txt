@@ -9,6 +9,16 @@ find_package(Boost REQUIRED COMPONENTS
         filesystem
 )
 
+# disable some optimizations because they cause known bugs on MSVC (Windows)
+# see https://www.boost.org/doc/libs/1_77_0/libs/context/doc/html/context/overview.html
+IF (MSVC)
+    # Add the /GL- flag to disable global program optimization
+    string(REPLACE "/GL" "/GL-" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+     # Replace /EHsc with /EHs
+    string(REPLACE "/EHsc" "/EHs" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+ENDIF()
+
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(jobsystem SHARED

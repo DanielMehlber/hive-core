@@ -52,9 +52,10 @@ private:
 
   /**
    * Processes jobs as fibers.
-   * @note This is run by the worker threads
+   * @param barrier Is notified when the main fiber has been set up and is ready to run.
+   * @note This is run by the worker threads.
    */
-  void ExecuteWorker();
+  void ExecuteWorker(std::atomic_int* barrier);
 
 public:
   BoostFiberExecution() = delete;

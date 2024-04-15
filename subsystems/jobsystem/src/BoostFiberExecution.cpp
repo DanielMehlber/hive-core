@@ -102,11 +102,17 @@ void BoostFiberExecution::Start(common::memory::Borrower<JobManager> manager) {
   LOG_DEBUG("Started fiber based job executor with " << m_worker_thread_count
                                                      << " worker threads")
 
+  std::atomic_int barrier{m_worker_thread_count};
+
   // Spawn worker threads: They will add themselves to the workforce
   for (int i = 0; i < m_worker_thread_count; i++) {
     auto worker = std::make_shared<std::thread>(
-        std::bind(&BoostFiberExecution::ExecuteWorker, this));
-    m_worker_threads.push_back(worker);
+        std::bind(&BoostFiberExecution::ExecuteWorker, this, &barrier));
+    m_worker_threads.push_back(std::move(worker));
+  }
+
+  while (barrier > 0) {
+    std::this_thread::yield();
   }
 
   m_current_state = JobExecutionState::RUNNING;
@@ -154,7 +160,7 @@ void BoostFiberExecution::Stop() {
   m_managing_instance = common::memory::Reference<JobManager>();
 }
 
-void BoostFiberExecution::ExecuteWorker() {
+void BoostFiberExecution::ExecuteWorker(std::atomic_int* barrier) {
 
   /*
    * Work sharing = a scheduler takes fibers from other threads when it has no
@@ -164,6 +170,9 @@ void BoostFiberExecution::ExecuteWorker() {
    * From this call on, the thread is a fiber itself.
    */
   boost::fibers::use_scheduling_algorithm<boost::fibers::algo::shared_work>();
+
+  // notify the barrier that this fiber is ready to be used
+  barrier->fetch_sub(1);
 
   std::function<void()> job;
   while (m_job_channel->pop(job) != boost::fibers::channel_op_status::closed) {
