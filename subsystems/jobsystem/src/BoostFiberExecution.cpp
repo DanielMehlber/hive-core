@@ -166,14 +166,24 @@ void BoostFiberExecution::ExecuteWorker() {
   boost::fibers::use_scheduling_algorithm<boost::fibers::algo::shared_work>();
 
   std::function<void()> job;
-  while (m_job_channel->pop(job) != boost::fibers::channel_op_status::closed) {
-    auto fiber = boost::fibers::fiber(std::move(job));
-    fiber.detach();
+  boost::fibers::channel_op_status status;
+  do {
+    // using channel::try_pop() and fiber::yield() instead of channel::pop()
+    // directly because it causes bugs on Windows OS: Somehow it schedules the
+    // main-fiber "away". This is probably a platform-specific bug of the
+    // fcontext_t implementation used under the hood (Boost 1.84). Sadly, the
+    // alternative WinFiber implementation for Windows causes other errors
+    // giving me a headache, so this is a valid option.
+    status = m_job_channel->try_pop(job);
 
-    // avoid keeping some anonymous functions (and their captured variables)
-    // hostage (caused SEGFAULTS in some scenarios) by releasing it.
-    job = nullptr;
-  }
+    if (job) {
+      auto fiber = boost::fibers::fiber(std::move(job));
+      fiber.detach();
+    }
+
+    // make the main fiber yield to allow worker fibers to execute their work.
+    boost::this_fiber::yield();
+  } while (status != boost::fibers::channel_op_status::closed);
 
   LOG_WARN("worker thread " << std::this_thread::get_id()
                             << " in fiber job execution terminated")
