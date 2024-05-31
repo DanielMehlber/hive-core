@@ -63,6 +63,12 @@ protected:
   friend Reference<T>;
   std::shared_ptr<OwnershipState> _shared_ownership_state;
 
+#ifndef NDEBUG
+  /** convenience pointer to the owned object
+  (mainly for the use with debuggers, because they'd only see a void*). */
+  T *_data;
+#endif
+
   /**
    * Borrows from an Owner.
    * @param owner Owner to borrow from.
@@ -78,17 +84,31 @@ protected:
     }
     _shared_ownership_state = owner->_state;
     _shared_ownership_state->borrows.fetch_add(1, std::memory_order_relaxed);
+#ifndef NDEBUG
+    // get convenience pointer to owned data (mainly for debuggers).
+    _data = owner->operator->();
+#endif
   }
 
 public:
   Borrower(Borrower<T> &other)
       : _shared_ownership_state(other._shared_ownership_state) {
     _shared_ownership_state->borrows.fetch_add(1, std::memory_order_relaxed);
+#ifndef NDEBUG
+    // get convenience pointer to owned data (mainly for debuggers).
+    auto *owner = (Owner<T> *)_shared_ownership_state->owner.load();
+    _data = owner->operator->();
+#endif
   }
 
   Borrower(const Borrower<T> &other)
       : _shared_ownership_state(other._shared_ownership_state) {
     _shared_ownership_state->borrows.fetch_add(1, std::memory_order_relaxed);
+#ifndef NDEBUG
+    // get convenience pointer to owned data (mainly for debuggers).
+    auto *owner = (Owner<T> *)_shared_ownership_state->owner.load();
+    _data = owner->operator->();
+#endif
   }
 
   ~Borrower() {
@@ -528,10 +548,11 @@ template <typename T> Owner<T>::~Owner() {
     DEBUG_ASSERT(_state->alive, "owner should not be dead at this point")
     DEBUG_ASSERT(_state->owner != nullptr, "owner cannot be nullptr")
 
-    _state->alive.store(false);
     while (_state->borrows > 0) {
       std::this_thread::yield();
     }
+
+    _state->alive.store(false);
   }
 }
 

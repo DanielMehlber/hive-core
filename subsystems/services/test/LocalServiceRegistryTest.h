@@ -26,7 +26,8 @@ TEST(ServiceTests, adding_service) {
 
   SharedServiceRequest request = GenerateAddingRequest(6, 5);
 
-  auto result_fut = service_caller->Call(request, job_manager.Borrow());
+  auto result_fut =
+      service_caller->IssueCallAsJob(request, job_manager.Borrow());
   job_manager->InvokeCycleAndWait();
 
   result_fut.wait();

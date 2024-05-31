@@ -77,37 +77,40 @@ void JobManager::KickJob(const SharedJob &job) {
   case INIT: {
     std::unique_lock queue_lock(m_init_queue_mutex);
     m_init_queue.push(job);
-    queue_lock.unlock();
 
     // if current cycle is running in this phase, directly schedule it.
     // in case the c-lion linter says this statement is always false: it lies.
     if (m_current_state == CYCLE_INIT) {
       ScheduleAllJobsInQueue(m_init_queue, m_init_queue_mutex,
                              m_init_phase_counter);
+      DEBUG_ASSERT(m_current_state == CYCLE_INIT,
+                   "state is not properly synchronized");
     }
   } break;
   case MAIN: {
     std::unique_lock queue_lock(m_main_queue_mutex);
     m_main_queue.push(job);
-    queue_lock.unlock();
 
     // if current cycle is running in this phase, directly schedule it.
     // in case the c-lion linter says this statement is always false: it lies.
     if (m_current_state == CYCLE_MAIN) {
       ScheduleAllJobsInQueue(m_main_queue, m_main_queue_mutex,
                              m_main_phase_counter);
+      DEBUG_ASSERT(m_current_state == CYCLE_MAIN,
+                   "state is not properly synchronized");
     }
   } break;
   case CLEAN_UP: {
     std::unique_lock queue_lock(m_clean_up_queue_mutex);
     m_clean_up_queue.push(job);
-    queue_lock.unlock();
 
     // if current cycle is running in this phase, directly schedule it.
     // in case the c-lion linter says this statement is always false: it lies.
     if (m_current_state == CYCLE_CLEAN_UP) {
       ScheduleAllJobsInQueue(m_clean_up_queue, m_clean_up_queue_mutex,
                              m_clean_up_phase_counter);
+      DEBUG_ASSERT(m_current_state == CYCLE_CLEAN_UP,
+                   "state is not properly synchronized");
     }
   } break;
   }
@@ -116,7 +119,7 @@ void JobManager::KickJob(const SharedJob &job) {
 }
 
 void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
-                                        mutex &queue_mutex,
+                                        recursive_mutex &queue_mutex,
                                         const SharedJobCounter &counter) {
   std::unique_lock lock(queue_mutex);
   while (!queue.empty()) {
@@ -139,7 +142,7 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
 }
 
 void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
-                                     mutex &queue_mutex,
+                                     recursive_mutex &queue_mutex,
                                      const SharedJobCounter &counter) {
   ScheduleAllJobsInQueue(queue, queue_mutex, counter);
   WaitForCompletion(counter);
@@ -215,7 +218,8 @@ void JobManager::KickJobForNextCycle(const SharedJob &job) {
 }
 
 void tryRemoveJobWithIdFromQueue(const std::string &id,
-                                 std::queue<SharedJob> &queue, mutex &mutex) {
+                                 std::queue<SharedJob> &queue,
+                                 recursive_mutex &mutex) {
   std::queue<SharedJob> new_queue;
   std::unique_lock lock(mutex);
   while (!queue.empty()) {

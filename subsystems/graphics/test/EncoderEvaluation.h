@@ -1,38 +1,38 @@
 // TODO: adapt to new API
-//#ifndef SIMULATION_FRAMEWORK_ENCODEREVALUATION_H
-//#define SIMULATION_FRAMEWORK_ENCODEREVALUATION_H
+// #ifndef SIMULATION_FRAMEWORK_ENCODEREVALUATION_H
+// #define SIMULATION_FRAMEWORK_ENCODEREVALUATION_H
 //
-//#include "PeerSetup.h"
-//#include "common/test/TryAssertUntilTimeout.h"
-//#include "events/EventFactory.h"
-//#include "graphics/renderer/impl/OffscreenRenderer.h"
-//#include "graphics/service/RenderService.h"
-//#include "graphics/service/RenderServiceRequest.h"
-//#include "graphics/service/encoders/IRenderResultEncoder.h"
-//#include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
-//#include "graphics/service/encoders/impl/GzipRenderResultEncoder.h"
-//#include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
-//#include "networking/NetworkingFactory.h"
-//#include "services/registry/impl/remote/RemoteServiceRegistry.h"
-//#include <gtest/gtest.h>
+// #include "PeerSetup.h"
+// #include "common/test/TryAssertUntilTimeout.h"
+// #include "events/EventFactory.h"
+// #include "graphics/renderer/impl/OffscreenRenderer.h"
+// #include "graphics/service/RenderService.h"
+// #include "graphics/service/RenderServiceRequest.h"
+// #include "graphics/service/encoders/IRenderResultEncoder.h"
+// #include "graphics/service/encoders/impl/Base64RenderResultEncoder.h"
+// #include "graphics/service/encoders/impl/GzipRenderResultEncoder.h"
+// #include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
+// #include "networking/NetworkingFactory.h"
+// #include "services/registry/impl/remote/RemoteServiceRegistry.h"
+// #include <gtest/gtest.h>
 //
-//using namespace common::test;
+// using namespace common::test;
 //
-//struct Measurement {
+// struct Measurement {
 //  int image_size;
 //  float time_ms;
 //};
 //
-//struct Encoder {
+// struct Encoder {
 //  std::string name;
 //  std::vector<Measurement> measurements;
 //};
 //
-//struct Evaluation {
+// struct Evaluation {
 //  std::vector<Encoder> encoders;
 //};
 //
-//TEST(GraphicsTests, encoder_eval) {
+// TEST(GraphicsTests, encoder_eval) {
 //  auto subsystems_1 = SetupSubsystems();
 //
 //  auto job_manager = subsystems_1->RequireSubsystem<JobManager>();
@@ -68,7 +68,8 @@
 //      },
 //      10s);
 //
-//  SharedServiceCaller caller = REGISTRY_OF(node2)->Find("render").get().value();
+//  SharedServiceCaller caller =
+//  REGISTRY_OF(node2)->Find("render").get().value();
 //
 //  std::shared_ptr<IRenderResultEncoder> encoders[]{
 //      std::make_shared<PlainRenderResultEncoder>(),
@@ -90,7 +91,7 @@
 //      std::vector<long> times;
 //      times.resize(5);
 //      for (int i = 0; i < 5; i++) {
-//        auto result_fut = caller->Call(
+//        auto result_fut = caller->IssueCallAsJob(
 //            GenerateRenderingRequest(image_size, image_size), job_manager);
 //
 //        auto start_point = std::chrono::high_resolution_clock::now();
@@ -164,4 +165,4 @@
 //  outFile.close();
 //}
 //
-//#endif // SIMULATION_FRAMEWORK_ENCODEREVALUATION_H
+// #endif // SIMULATION_FRAMEWORK_ENCODEREVALUATION_H

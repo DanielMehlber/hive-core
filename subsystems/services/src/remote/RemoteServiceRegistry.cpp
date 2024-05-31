@@ -27,7 +27,7 @@ void broadcastServiceRegistration(
           registration.SetId(stub->GetId());
 
           std::future<size_t> progress =
-              sender->Broadcast(registration.GetMessage());
+              sender->IssueBroadcastAsJob(registration.GetMessage());
 
           context->GetJobManager()->WaitForCompletion(progress);
 

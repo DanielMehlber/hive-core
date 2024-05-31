@@ -9,6 +9,7 @@ void LocalOnlyServiceRegistry::Register(const SharedServiceExecutor &stub) {
 
   std::string name = stub->GetServiceName();
 
+  std::unique_lock services_lock(m_registered_services_mutex);
   if (!m_registered_services.contains(name)) {
     m_registered_services[name] = std::make_shared<RoundRobinServiceCaller>();
   }
@@ -20,6 +21,7 @@ void LocalOnlyServiceRegistry::Register(const SharedServiceExecutor &stub) {
 }
 
 void LocalOnlyServiceRegistry::Unregister(const std::string &name) {
+  std::unique_lock services_lock(m_registered_services_mutex);
   if (m_registered_services.contains(name)) {
     m_registered_services.erase(name);
     LOG_DEBUG("service '" << name
@@ -33,6 +35,7 @@ LocalOnlyServiceRegistry::Find(const std::string &name,
   std::promise<std::optional<SharedServiceCaller>> promise;
   std::future<std::optional<SharedServiceCaller>> future = promise.get_future();
 
+  std::unique_lock services_lock(m_registered_services_mutex);
   if (m_registered_services.contains(name)) {
     SharedServiceCaller caller = m_registered_services.at(name);
     if (caller->IsCallable()) {

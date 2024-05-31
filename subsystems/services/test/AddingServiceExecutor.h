@@ -14,6 +14,7 @@ public:
             "add", std::bind(&AddingServiceExecutor::Add, this, _1)){};
 
   std::future<SharedServiceResponse> Add(const SharedServiceRequest &request) {
+    LOG_DEBUG("executing adding service")
     auto opt_a = request->GetParameter("a");
     auto opt_b = request->GetParameter("b");
     std::promise<SharedServiceResponse> completion_promise;

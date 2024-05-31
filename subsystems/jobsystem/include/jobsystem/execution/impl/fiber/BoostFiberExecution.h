@@ -52,9 +52,10 @@ private:
 
   /**
    * Processes jobs as fibers.
-   * @note This is run by the worker threads
+   * @param barrier Is notified when the main fiber has been set up and is ready to run.
+   * @note This is run by the worker threads.
    */
-  void ExecuteWorker();
+  void ExecuteWorker(std::atomic_int* barrier);
 
 public:
   BoostFiberExecution() = delete;
@@ -105,12 +106,15 @@ public:
   JobExecutionState GetState();
 };
 
+/**
+ * Checks if current executor is a fiber or a normal thread.
+ */
+bool IsExecutedByFiber();
+
 template <typename FutureType>
 inline void
 BoostFiberExecution::WaitForCompletion(const std::future<FutureType> &future) {
-  bool is_called_from_fiber = !boost::fibers::context::active()->is_context(
-      boost::fibers::type::main_context);
-  if (is_called_from_fiber) {
+  if (IsExecutedByFiber()) {
     // caller is a fiber, so yield
     while (future.wait_for(std::chrono::seconds(0)) !=
            std::future_status::ready) {

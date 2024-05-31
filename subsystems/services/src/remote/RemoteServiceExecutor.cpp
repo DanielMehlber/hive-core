@@ -26,7 +26,7 @@ bool RemoteServiceExecutor::IsCallable() {
   }
 }
 
-std::future<SharedServiceResponse> RemoteServiceExecutor::Call(
+std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
     SharedServiceRequest request,
     common::memory::Borrower<jobsystem::JobManager> job_manager) {
 
@@ -40,6 +40,9 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::Call(
                     << _this->m_remote_host_name)
 
           if (!_this->m_response_consumer.expired()) {
+            /* pass the promise (resolving the service request) to the response
+            consumer. When its response arrives, the request promimse will be
+            resolved. */
             _this->m_response_consumer.lock()->AddResponsePromise(
                 request->GetTransactionId(), std::move(*promise));
           } else {

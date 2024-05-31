@@ -35,7 +35,7 @@ void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor executor) {
   m_service_executors.push_back(executor);
 }
 
-std::future<SharedServiceResponse> RoundRobinServiceCaller::Call(
+std::future<SharedServiceResponse> RoundRobinServiceCaller::IssueCallAsJob(
     SharedServiceRequest request,
     common::memory::Borrower<jobsystem::JobManager> job_manager,
     bool only_local) noexcept {
@@ -44,7 +44,7 @@ std::future<SharedServiceResponse> RoundRobinServiceCaller::Call(
       std::make_shared<std::promise<SharedServiceResponse>>();
   std::future<SharedServiceResponse> future = promise->get_future();
 
-  SharedJob job = JobSystemFactory::CreateJob(
+  SharedJob job = std::make_shared<Job>(
       [_this = shared_from_this(), promise, request, only_local,
        job_manager](JobContext *context) {
         std::optional<SharedServiceExecutor> maybe_executor =
@@ -53,7 +53,7 @@ std::future<SharedServiceResponse> RoundRobinServiceCaller::Call(
         if (maybe_executor.has_value()) {
           // call stub
           SharedServiceExecutor executor = maybe_executor.value();
-          auto future_result = executor->Call(request, job_manager);
+          auto future_result = executor->IssueCallAsJob(request, job_manager);
 
           // wait for call to complete
           context->GetJobManager()->WaitForCompletion(future_result);
@@ -71,7 +71,8 @@ std::future<SharedServiceResponse> RoundRobinServiceCaller::Call(
         }
 
         return JobContinuation::DISPOSE;
-      });
+      },
+      "round-robin-service-call-(" + request->GetServiceName() + ")");
 
   job_manager->KickJob(job);
   return future;

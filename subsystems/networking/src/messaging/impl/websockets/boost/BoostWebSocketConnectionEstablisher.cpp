@@ -86,8 +86,8 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection(
 
   if (error_code) {
     LOG_WARN("cannot establish TCP connection to "
-             << endpoint_type.address() << " (" << uri << ") "
-             << ": " << error_code.message())
+             << endpoint_type.address() << " (" << uri << ") " << ": "
+             << error_code.message())
 
     auto exception = BUILD_EXCEPTION(ConnectionFailedException,
                                      "cannot establish TCP connection to "

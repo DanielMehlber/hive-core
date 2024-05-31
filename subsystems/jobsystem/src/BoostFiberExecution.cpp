@@ -75,12 +75,7 @@ void BoostFiberExecution::WaitForCompletion(
   common::profiling::Timer waiting_timer("job-waiting-for-completion");
 #endif
 
-  // For type::main_context the context is associated with the “main” fiber of
-  // the thread: the one implicitly created by the thread itself, rather than
-  // one explicitly created by Boost.Fiber (= a normal thread)
-  bool is_called_from_fiber = !boost::fibers::context::active()->is_context(
-      boost::fibers::type::main_context);
-  if (is_called_from_fiber) {
+  if (IsExecutedByFiber()) {
     // caller is a fiber, so yield
     auto id_before = boost::this_fiber::get_id();
     while (!waitable->IsFinished()) {
@@ -107,11 +102,17 @@ void BoostFiberExecution::Start(common::memory::Borrower<JobManager> manager) {
   LOG_DEBUG("Started fiber based job executor with " << m_worker_thread_count
                                                      << " worker threads")
 
+  std::atomic_int barrier{m_worker_thread_count};
+
   // Spawn worker threads: They will add themselves to the workforce
   for (int i = 0; i < m_worker_thread_count; i++) {
     auto worker = std::make_shared<std::thread>(
-        std::bind(&BoostFiberExecution::ExecuteWorker, this));
-    m_worker_threads.push_back(worker);
+        std::bind(&BoostFiberExecution::ExecuteWorker, this, &barrier));
+    m_worker_threads.push_back(std::move(worker));
+  }
+
+  while (barrier > 0) {
+    std::this_thread::yield();
   }
 
   m_current_state = JobExecutionState::RUNNING;
@@ -159,7 +160,7 @@ void BoostFiberExecution::Stop() {
   m_managing_instance = common::memory::Reference<JobManager>();
 }
 
-void BoostFiberExecution::ExecuteWorker() {
+void BoostFiberExecution::ExecuteWorker(std::atomic_int* barrier) {
 
   /*
    * Work sharing = a scheduler takes fibers from other threads when it has no
@@ -170,13 +171,44 @@ void BoostFiberExecution::ExecuteWorker() {
    */
   boost::fibers::use_scheduling_algorithm<boost::fibers::algo::shared_work>();
 
-  std::function<void()> job;
-  while (boost::fibers::channel_op_status::closed != m_job_channel->pop(job)) {
-    auto fiber = boost::fibers::fiber(job);
-    fiber.detach();
+  // notify the barrier that this fiber is ready to be used
+  barrier->fetch_sub(1);
 
-    // avoid keeping some anonymous functions (and their captured variables)
-    // hostage (caused SEGFAULTS in some scenarios) by releasing it.
-    job = nullptr;
-  }
+  std::function<void()> job;
+  boost::fibers::channel_op_status status;
+  do {
+    // using channel::try_pop() and fiber::yield() instead of channel::pop()
+    // directly because it causes bugs on Windows OS: Somehow it schedules the
+    // main-fiber "away". This is probably a platform-specific bug of the
+    // fcontext_t implementation used under the hood (Boost 1.84). Sadly, the
+    // alternative WinFiber implementation for Windows causes other errors
+    // giving me a headache, so this is a valid option.
+    status = m_job_channel->try_pop(job);
+
+    if (job) {
+      auto fiber = boost::fibers::fiber(std::move(job));
+      fiber.detach();
+    }
+
+    // make the main fiber yield to allow worker fibers to execute their work.
+    boost::this_fiber::yield();
+  } while (status != boost::fibers::channel_op_status::closed);
+
+  LOG_WARN("worker thread " << std::this_thread::get_id()
+                            << " in fiber job execution terminated")
+}
+
+// Reminder to self: Do NOT move this definition into a header, even though
+// it's begging to be inlined.
+//
+// A header that is used across compilation units implicitily re-defines
+// this function for each one and messes up the underlying static/thread_local
+// qualifiers used in fiber::context::active().
+//
+// C++ is such a beeatifulll language :D
+// (please kill me, it took almost 6h to figure this out).
+bool jobsystem::execution::impl::IsExecutedByFiber() {
+  // A worker_context is always created inside a fiber.
+  return boost::fibers::context::active()->is_context(
+      boost::fibers::type::worker_context);
 }

@@ -69,8 +69,8 @@ TEST(GraphicsTests, remote_render_service) {
   std::vector<long> times;
   times.resize(10);
   for (int i = 0; i < 10; i++) {
-    auto result_fut = caller->Call(GenerateRenderingRequest(1000, 1000),
-                                   node_2.job_manager.Borrow());
+    auto result_fut = caller->IssueCallAsJob(
+        GenerateRenderingRequest(1000, 1000), node_2.job_manager.Borrow());
 
     auto start_point = std::chrono::high_resolution_clock::now();
 
@@ -127,8 +127,8 @@ TEST(GraphicsTest, offscreen_rendering_sphere) {
 
   RenderServiceRequest request_generator;
   request_generator.SetExtend({10, 10});
-  auto response = render_service->Call(request_generator.GetRequest(),
-                                       job_manager_ref.Borrow());
+  auto response = render_service->IssueCallAsJob(request_generator.GetRequest(),
+                                                 job_manager_ref.Borrow());
 
   job_manager_ref.Borrow()->InvokeCycleAndWait();
   job_manager_ref.Borrow()->WaitForCompletion(response);

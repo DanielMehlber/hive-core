@@ -29,9 +29,9 @@ public:
    * @return future response from service
    */
   virtual std::future<SharedServiceResponse>
-  Call(SharedServiceRequest request,
-       common::memory::Borrower<jobsystem::JobManager> job_manager,
-       bool only_local = false) noexcept = 0;
+  IssueCallAsJob(SharedServiceRequest request,
+                 common::memory::Borrower<jobsystem::JobManager> job_manager,
+                 bool only_local = false) noexcept = 0;
 
   /**
    * Checks if there are currently callable and usable service executions

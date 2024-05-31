@@ -46,9 +46,9 @@ public:
       std::string remote_host_name, std::string id,
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer);
 
-  std::future<SharedServiceResponse>
-  Call(SharedServiceRequest request,
-       common::memory::Borrower<jobsystem::JobManager> job_manager) override;
+  std::future<SharedServiceResponse> IssueCallAsJob(
+      SharedServiceRequest request,
+      common::memory::Borrower<jobsystem::JobManager> job_manager) override;
 
   bool IsCallable() override;
 

@@ -1,4 +1,5 @@
 #include "jobsystem/execution/impl/fiber/BoostFiberRecursiveSpinLock.h"
+#include "common/assert/Assert.h"
 #include "common/synchronization/ScopedLock.h"
 
 using namespace jobsystem;
@@ -18,8 +19,14 @@ OwnerInfo GetCurrentOwnerInfo() {
 }
 
 void BoostFiberRecursiveSpinLock::unlock() {
+  std::unique_lock lock(m_owner_info_mutex);
 
-  common::sync::ScopedLock lock(m_owner_info_mutex);
+  DEBUG_ASSERT(m_owner_info.has_value(), "should be locked by owner");
+  DEBUG_ASSERT(m_owner_info.value() == GetCurrentOwnerInfo(),
+               "only current owner is allowed to unlock");
+  DEBUG_ASSERT(m_owner_lock_count > 0, "should be locked");
+  DEBUG_ASSERT(m_lock.test(), "should be locked");
+
   if (m_owner_info) {
     auto owner_info = m_owner_info.value();
 
@@ -31,28 +38,57 @@ void BoostFiberRecursiveSpinLock::unlock() {
     }
   }
 
-  m_spin_lock.unlock();
+  m_lock.clear();
   m_owner_info.reset();
+  m_owner_lock_count.store(0);
 }
 
 void BoostFiberRecursiveSpinLock::lock() {
-  // first check if lock has already been acquired by current thread/fiber.
+  while (!try_lock()) {
+    /* A fiber can context switch even though it has aquired a lock.
+    To avoid deadlocks, other waiting fibers/threads must not block. */
+    yield();
+  }
+}
+
+void BoostFiberRecursiveSpinLock::yield() const {
+  auto owner_info = GetCurrentOwnerInfo();
+  if (owner_info.is_fiber) {
+    boost::this_fiber::yield();
+  } else {
+    std::this_thread::yield();
+  }
+}
+
+bool BoostFiberRecursiveSpinLock::try_lock() {
+
+  // first check if this thread/fiber has already aquired this lock
   {
-    common::sync::ScopedLock lock(m_owner_info_mutex);
+    std::unique_lock lock(m_owner_info_mutex);
     if (m_owner_info) {
-      auto owner_info = m_owner_info.value();
+      auto &owner_info = m_owner_info.value();
+
+      DEBUG_ASSERT(m_owner_lock_count > 0, "shoud be locked");
+      DEBUG_ASSERT(m_lock.test(), "shoud be locked");
 
       if (owner_info == GetCurrentOwnerInfo()) {
         // this fiber/thread has already acquired this lock, so skip to avoid
         // deadlock
         m_owner_lock_count.fetch_add(1);
-        return;
+        return true;
       }
     }
   }
 
-  m_spin_lock.lock();
-  common::sync::ScopedLock lock(m_owner_info_mutex);
-  m_owner_info = GetCurrentOwnerInfo();
-  m_owner_lock_count.store(1);
+  // sets the current value to true and returns the value the flag held before
+  bool alreadyLocked = m_lock.test_and_set(std::memory_order_acquire);
+
+  // if lock has been aquired, store current owner info
+  if (!alreadyLocked) {
+    common::sync::ScopedLock lock(m_owner_info_mutex);
+    m_owner_info = GetCurrentOwnerInfo();
+    m_owner_lock_count.store(1);
+  }
+
+  return !alreadyLocked;
 }

@@ -205,6 +205,11 @@ void BoostWebSocketEndpoint::ProcessReceivedMessage(
 
     std::string message_type = message->GetType();
     auto consumer_list = GetConsumersOfMessageType(message_type);
+
+    LOG_DEBUG("received message of type '" << message_type << "' ("
+                                           << consumer_list.size()
+                                           << " consumers registered)")
+
     for (const auto &consumer : consumer_list) {
       auto job = std::make_shared<MessageConsumerJob>(
           consumer, message, over_connection->GetConnectionInfo());
@@ -355,7 +360,7 @@ bool BoostWebSocketEndpoint::HasConnectionTo(
 }
 
 std::future<size_t>
-BoostWebSocketEndpoint::Broadcast(const SharedMessage &message) {
+BoostWebSocketEndpoint::IssueBroadcastAsJob(const SharedMessage &message) {
 
   std::shared_ptr<std::promise<size_t>> promise =
       std::make_shared<std::promise<size_t>>();

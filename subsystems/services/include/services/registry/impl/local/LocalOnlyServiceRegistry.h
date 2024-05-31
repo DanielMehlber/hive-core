@@ -5,7 +5,6 @@
 #include <future>
 #include <map>
 
-
 namespace services::impl {
 
 /**
@@ -16,6 +15,7 @@ namespace services::impl {
  */
 class LocalOnlyServiceRegistry : public services::IServiceRegistry {
 protected:
+  mutable jobsystem::mutex m_registered_services_mutex;
   std::map<std::string, services::SharedServiceCaller> m_registered_services;
 
 public:
