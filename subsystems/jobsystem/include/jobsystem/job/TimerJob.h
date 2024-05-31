@@ -28,10 +28,21 @@ private:
   bool m_timer_started{false};
 
 public:
+  /**
+   * Creates a new timer job with a given workload, id, time, phase and
+   * synchronization behavior.
+   * @param workload function that will be executed by the job.
+   * @param id unique identifier of this job.
+   * @param time duration that has to pass for the job to get scheduled.
+   * @param phase in which the job should be executed during the execution
+   * cycle.
+   * @param async if the job is asynchronous, the cycle will not wait for it to
+   * finish.
+   */
   TimerJob(std::function<JobContinuation(JobContext *)>, const std::string &id,
-           std::chrono::duration<double> time, JobExecutionPhase phase = MAIN);
-  TimerJob(std::function<JobContinuation(JobContext *)>,
-           std::chrono::duration<double> time, JobExecutionPhase phase = MAIN);
+           std::chrono::duration<double> time, JobExecutionPhase phase = MAIN,
+           bool async = false);
+
   ~TimerJob() override = default;
 
   /**

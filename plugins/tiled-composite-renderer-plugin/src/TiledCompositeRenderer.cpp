@@ -165,8 +165,8 @@ bool TiledCompositeRenderer::Render() {
         [_this = ReferenceFromThis(), rendering_service_request,
          subsystems = m_subsystems, service_caller,
          i](jobsystem::JobContext *context) mutable {
-          auto future_response = service_caller->IssueCallAsJob(rendering_service_request,
-                                                      context->GetJobManager());
+          auto future_response = service_caller->IssueCallAsJob(
+              rendering_service_request, context->GetJobManager());
 
           context->GetJobManager()->WaitForCompletion(future_response);
           auto response = future_response.get();
@@ -200,7 +200,8 @@ bool TiledCompositeRenderer::Render() {
           }
 
           return JobContinuation::DISPOSE;
-        });
+        },
+        "remote-render-tile-" + std::to_string(i));
     job->AddCounter(counter);
     job_system->KickJob(job);
   }

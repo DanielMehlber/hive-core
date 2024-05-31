@@ -78,7 +78,8 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
           promise->set_exception(std::make_exception_ptr(exception));
         }
         return JobContinuation::DISPOSE;
-      });
+      },
+      "remote-service-call-" + request->GetTransactionId());
 
   job_manager->KickJob(job);
   return future;

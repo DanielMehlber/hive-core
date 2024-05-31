@@ -37,15 +37,30 @@ protected:
   /** Workload will be executed in the given phase of the execution cycle. */
   JobExecutionPhase m_phase;
 
+  /** Some jobs block the current execution cycle until they are finished
+   * (synchronized jobs). Others take longer to resolve and therefore must not
+   * block the execution cycle. They can finish anytime in the future
+   * (asynchronous). */
+  bool m_async{false};
+
   /** All counters that track the progress of this job. */
   std::queue<std::shared_ptr<JobCounter>> m_counters;
   mutable mutex m_counters_mutex;
 
 public:
+  /**
+   * Creates a new job with a given workload, id, phase and synchronization
+   * behavior.
+   * @param workload function that will be executed by the job.
+   * @param id unique identifier of this job.
+   * @param phase in which the job should be executed during the execution
+   * cycle.
+   * @param async if the job is asynchronous, the cycle will not wait for it to
+   * finish.
+   */
   Job(std::function<JobContinuation(JobContext *)>, std::string id,
-      JobExecutionPhase phase = MAIN);
-  explicit Job(std::function<JobContinuation(JobContext *)>,
-               JobExecutionPhase phase = MAIN);
+      JobExecutionPhase phase = MAIN, bool async = false);
+  
   virtual ~Job() { FinishJob(); };
 
   /**
@@ -76,16 +91,46 @@ public:
    */
   void AddCounter(const std::shared_ptr<JobCounter> &counter);
 
+  /**
+   * Get the current state of this job during the execution cycle. It tracks the
+   * current progress of the job.
+   * @return Current state of this job.
+   */
   JobState GetState();
+
+  /**
+   * Set the current state of this job during the execution cycle.
+   * @param state new state of this job.
+   */
   void SetState(JobState state);
+
+  /**
+   * Get phase in which the job should be executed during the execution cycle.
+   * @return Phase of execution.
+   */
   JobExecutionPhase GetPhase();
+
+  /**
+   * Get the unique ID of this job.
+   * @return Id of this job.
+   */
   const std::string &GetId();
+
+  /**
+   * if a job is synchronized with the cycle, the cycle will wait for the job to
+   * finish. Asynchronous jobs can finish anytime in the future and are not
+   * blocking the cycle.
+   * @return true, if job is asynchronous.
+   */
+  bool IsAsync() const;
 };
 
 inline JobState Job::GetState() { return m_current_state; }
 inline void Job::SetState(JobState state) { m_current_state = state; }
 inline JobExecutionPhase Job::GetPhase() { return m_phase; }
 inline const std::string &Job::GetId() { return m_id; }
+
+inline bool Job::IsAsync() const { return m_async; }
 
 typedef std::shared_ptr<jobsystem::job::Job> SharedJob;
 

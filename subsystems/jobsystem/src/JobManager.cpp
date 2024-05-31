@@ -133,7 +133,12 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
       continue;
     }
 
-    job->AddCounter(counter);
+    // some jobs are long-running and should not be waited for
+    bool cycle_should_wait_for_completion = !job->IsAsync();
+    if (cycle_should_wait_for_completion) {
+      job->AddCounter(counter);
+    }
+
     m_execution.Schedule(job);
 #ifndef NDEBUG
     m_job_execution_counter++;

@@ -62,13 +62,14 @@ void JobBasedEventBroker::FireEvent(SharedEvent event) {
       auto &subscribers_of_topic = m_event_listeners.at(topic_name);
       for (auto &subscriber : subscribers_of_topic) {
         if (!subscriber.expired()) {
-          SharedJob event_job =
-              std::make_shared<Job>([subscriber, event](JobContext *) {
+          SharedJob event_job = std::make_shared<Job>(
+              [subscriber, event](JobContext *) {
                 if (!subscriber.expired()) {
                   subscriber.lock()->HandleEvent(event);
                 }
                 return JobContinuation::DISPOSE;
-              });
+              },
+              "fire-event-" + event->GetId());
 
           auto job_manager = subsystems->RequireSubsystem<JobManager>();
           job_manager->KickJob(event_job);
