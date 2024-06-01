@@ -152,6 +152,14 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
 void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
                                      recursive_mutex &queue_mutex,
                                      const SharedJobCounter &counter) {
+
+  {
+    std::unique_lock lock(queue_mutex);
+    if (queue.empty()) {
+      return /* because there is nothing to queue */;
+    }
+  }
+
   ScheduleAllJobsInQueue(queue, queue_mutex, counter);
   WaitForCompletion(counter);
 }

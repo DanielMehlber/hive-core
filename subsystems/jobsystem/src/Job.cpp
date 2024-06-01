@@ -1,10 +1,15 @@
 #include "jobsystem/job/Job.h"
 #include "common/uuid/UuidGenerator.h"
 #include "logging/LogManager.h"
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 #ifdef ENABLE_PROFILING
 #include "common/profiling/Timer.h"
 #endif
+
+#define JOB_DEADLINE 1s
 
 using namespace jobsystem::job;
 
@@ -15,8 +20,28 @@ JobContinuation Job::Execute(JobContext *context) {
   m_current_state = IN_EXECUTION;
   JobContinuation continuation;
   try {
+
+#ifndef NDEBUG
+    auto start_time = std::chrono::high_resolution_clock::now();
+#endif
+
     continuation = m_workload(context);
     m_current_state = EXECUTION_FINISHED;
+
+#ifndef NDEBUG
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = end_time - start_time;
+    bool has_synchronous_job_exceeded_deadline =
+        !m_async && duration > JOB_DEADLINE;
+    if (has_synchronous_job_exceeded_deadline) {
+      LOG_DEBUG(
+          "job '" << m_id << "' took long to execute ("
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         duration)
+                         .count()
+                  << "ms): making it asynchronous is strongly advised.")
+    }
+#endif
   } catch (const std::exception &exception) {
     LOG_ERR("job " << m_id
                    << " threw and exception and failed: " << exception.what())
