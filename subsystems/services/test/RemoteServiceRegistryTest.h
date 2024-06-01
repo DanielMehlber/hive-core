@@ -297,7 +297,7 @@ TEST(ServiceTest, async_service_call) {
 
   // call remote service of node 1 asynchronously
   auto result_fut =
-      caller->IssueCallAsJob(GenerateDelayRequest(2000 /*ms*/),
+      caller->IssueCallAsJob(GenerateDelayRequest(500 /*ms*/),
                              node_2.job_manager.Borrow(), false, true);
 
   // we need a second thread here: node_1 has to send its call and node_2 needs
@@ -315,12 +315,13 @@ TEST(ServiceTest, async_service_call) {
   while (result_fut.wait_for(0s) != std::future_status::ready) {
     node_2.job_manager.Borrow()->InvokeCycleAndWait();
     cycles++;
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
   finished.store(true);
   node_1_request_processing.join();
 
+  // assert that requesting node was not blocked and completed multiple cycles
   ASSERT_TRUE(cycles > 1);
 }
 

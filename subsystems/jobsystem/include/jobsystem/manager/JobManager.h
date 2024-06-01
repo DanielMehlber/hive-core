@@ -77,6 +77,8 @@ private:
   mutable mutex m_continuation_requeue_blacklist_mutex;
 
   JobManagerState m_current_state{READY};
+  mutable mutex m_current_state_mutex;
+
   JobExecutionImpl m_execution;
 
   size_t m_total_cycle_count{0};
