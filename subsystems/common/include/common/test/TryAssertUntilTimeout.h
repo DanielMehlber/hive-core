@@ -24,7 +24,7 @@ void TryAssertUntilTimeout(const std::function<bool()> &evaluation,
       FAIL() << "more than " << timeout.count()
              << " seconds passed and condition was still not true";
     }
-    std::this_thread::sleep_for(0.05s);
+    std::this_thread::sleep_for(1ms);
   }
 }
 } // namespace common::test
