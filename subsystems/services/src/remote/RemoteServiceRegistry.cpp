@@ -48,7 +48,8 @@ void broadcastServiceRegistration(
         }
 
         return JobContinuation::DISPOSE;
-      });
+      },
+      "broadcast-service-registration-" + stub->GetServiceName());
 
   job_manager->KickJob(job);
 }

@@ -2,6 +2,7 @@
 #define WEBSOCKETMESSAGEREGISTRYTEST_H
 
 #include "AddingServiceExecutor.h"
+#include "DelayServiceExecutor.h"
 #include "common/test/TryAssertUntilTimeout.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "jobsystem/manager/JobManager.h"
@@ -261,6 +262,67 @@ TEST(ServiceTests, web_socket_node_destroyed) {
 
   // scenario: both node2 and its services are gone.
   ASSERT_FALSE(node_1.service_registry.Borrow()->Find("add").get().has_value());
+}
+
+TEST(ServiceTest, async_service_call) {
+  auto config = std::make_shared<common::config::Configuration>();
+
+  auto node_1 = setupNode(config, 9005);
+  auto node_2 = setupNode(config, 9006);
+
+  auto connection_progress =
+      node_1.network_endpoint.Borrow()->EstablishConnectionTo("127.0.0.1:9006");
+
+  connection_progress.wait();
+  ASSERT_NO_THROW(connection_progress.get());
+
+  SharedServiceExecutor local_service =
+      std::make_shared<DelayServiceExecutor>();
+
+  node_1.service_registry.Borrow()->Register(local_service);
+  node_1.job_manager.Borrow()->InvokeCycleAndWait();
+
+  TryAssertUntilTimeout(
+      [&node_2]() mutable {
+        node_2.job_manager.Borrow()->InvokeCycleAndWait();
+        return node_2.service_registry.Borrow()
+            ->Find("delay")
+            .get()
+            .has_value();
+      },
+      10s);
+
+  SharedServiceCaller caller =
+      node_2.service_registry.Borrow()->Find("delay").get().value();
+
+  // call remote service of node 1 asynchronously
+  auto result_fut =
+      caller->IssueCallAsJob(GenerateDelayRequest(500 /*ms*/),
+                             node_2.job_manager.Borrow(), false, true);
+
+  // we need a second thread here: node_1 has to send its call and node_2 needs
+  // to process and respond to it. These actions usually take place in different
+  // processes, so they must be executed in parallel.
+  std::atomic_bool finished = false;
+  std::atomic_int cycles = 0;
+  auto node_1_request_processing = std::thread([&node_1, &finished, &cycles]() {
+    auto job_manager = node_1.job_manager.Borrow();
+    while (!finished.load()) {
+      job_manager->InvokeCycleAndWait();
+    }
+  });
+
+  while (result_fut.wait_for(0s) != std::future_status::ready) {
+    node_2.job_manager.Borrow()->InvokeCycleAndWait();
+    cycles++;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  finished.store(true);
+  node_1_request_processing.join();
+
+  // assert that requesting node was not blocked and completed multiple cycles
+  ASSERT_TRUE(cycles > 1);
 }
 
 #endif // WEBSOCKETMESSAGEREGISTRYTEST_H

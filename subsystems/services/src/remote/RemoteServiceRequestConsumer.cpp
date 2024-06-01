@@ -106,7 +106,8 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
           }
 
           return JobContinuation::DISPOSE;
-        });
+        },
+        "process-service-request-" + request->GetTransactionId());
 
     job_manager->KickJob(job);
   } else /* if subsystems are not available */ {

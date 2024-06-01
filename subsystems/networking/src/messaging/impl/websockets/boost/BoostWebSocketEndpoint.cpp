@@ -401,7 +401,8 @@ BoostWebSocketEndpoint::IssueBroadcastAsJob(const SharedMessage &message) {
 
         promise->set_value(count);
         return JobContinuation::DISPOSE;
-      });
+      },
+      "broadcast-web-socket-message-" + message->GetId());
 
   auto subsystems = m_subsystems.Borrow();
   auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();

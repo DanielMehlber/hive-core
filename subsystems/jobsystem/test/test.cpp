@@ -53,10 +53,12 @@ TEST(JobSystem, multiple_jobs_per_phase) {
   int job_count = 5;
   std::atomic_int counter = 0;
   for (int i = 0; i < job_count; i++) {
-    auto job = JobSystemFactory::CreateJob([&](JobContext *) {
-      counter++;
-      return JobContinuation::REQUEUE;
-    });
+    auto job = JobSystemFactory::CreateJob(
+        [&](JobContext *) {
+          counter++;
+          return JobContinuation::REQUEUE;
+        },
+        "test-job");
     manager->KickJob(job);
   }
 
@@ -72,10 +74,12 @@ TEST(JobSystem, auto_requeue) {
   manager->StartExecution();
   std::atomic<int> executions = 0;
 
-  auto job = JobSystemFactory::CreateJob([&executions](JobContext *) {
-    executions++;
-    return JobContinuation::REQUEUE;
-  });
+  auto job = JobSystemFactory::CreateJob(
+      [&executions](JobContext *) {
+        executions++;
+        return JobContinuation::REQUEUE;
+      },
+      "auto-requeue-job");
 
   manager->KickJob(job);
   manager->InvokeCycleAndWait();
@@ -126,33 +130,40 @@ TEST(JobSystem, jobs_kicking_jobs) {
   bool jobBCompleted = false;
   bool jobCCompleted = false;
   bool jobDCompleted = false;
-  auto jobA = JobSystemFactory::CreateJob([&](JobContext *context) {
-    // job inside job (should execute directly)
-    auto jobB = JobSystemFactory::CreateJob([&](JobContext *context) {
-      // job inside job inside job (should also execute directly)
-      auto jobC = JobSystemFactory::CreateJob([&](JobContext *context) {
-        // the phase of this job has passed, so it should not be executed
-        auto jobD = JobSystemFactory::CreateJob(
+  auto jobA = JobSystemFactory::CreateJob(
+      [&](JobContext *context) {
+        // job inside job (should execute directly)
+        auto jobB = JobSystemFactory::CreateJob(
             [&](JobContext *context) {
-              jobDCompleted = true;
+              // job inside job inside job (should also execute directly)
+              auto jobC = JobSystemFactory::CreateJob(
+                  [&](JobContext *context) {
+                    // the phase of this job has passed, so it should not be
+                    // executed
+                    auto jobD = JobSystemFactory::CreateJob(
+                        [&](JobContext *context) {
+                          jobDCompleted = true;
+                          return JobContinuation::DISPOSE;
+                        },
+                        "job-d", INIT);
+                    context->GetJobManager()->KickJob(jobD);
+                    jobCCompleted = true;
+                    return JobContinuation::DISPOSE;
+                  },
+                  "job-c");
+              context->GetJobManager()->KickJob(jobC);
+              jobBCompleted = true;
               return JobContinuation::DISPOSE;
             },
-            INIT);
-        context->GetJobManager()->KickJob(jobD);
-        jobCCompleted = true;
-        return JobContinuation::DISPOSE;
-      });
-      context->GetJobManager()->KickJob(jobC);
-      jobBCompleted = true;
-      return JobContinuation::DISPOSE;
-    });
+            "job-b");
 
-    SharedJobCounter counter = JobSystemFactory::CreateCounter();
-    jobB->AddCounter(counter);
-    context->GetJobManager()->KickJob(jobB);
-    jobACompleted = true;
-    return JobContinuation::DISPOSE;
-  });
+        SharedJobCounter counter = JobSystemFactory::CreateCounter();
+        jobB->AddCounter(counter);
+        context->GetJobManager()->KickJob(jobB);
+        jobACompleted = true;
+        return JobContinuation::DISPOSE;
+      },
+      "job-a");
 
   manager->KickJob(jobA);
   manager->InvokeCycleAndWait();
@@ -182,12 +193,14 @@ TEST(JobSystem, job_bulk) {
         [absolute_counter, &manager](JobContext *context) {
           for (int i = 0; i < 10; i++) {
             SharedJob job = JobSystemFactory::CreateJob(
-                [](JobContext *) { return JobContinuation::DISPOSE; });
+                [](JobContext *) { return JobContinuation::DISPOSE; },
+                "bulk-job");
             job->AddCounter(absolute_counter);
             manager->KickJob(job);
           }
           return JobContinuation::DISPOSE;
-        });
+        },
+        "bulk-job");
     job->AddCounter(absolute_counter);
     manager->KickJob(job);
   }
@@ -206,19 +219,23 @@ TEST(JobSystem, wait_for_job_inside_job) {
 
   std::vector<short> order;
 
-  SharedJob job = JobSystemFactory::CreateJob([&](JobContext *) {
-    SharedJobCounter counter = JobSystemFactory::CreateCounter();
-    SharedJob otherJob = JobSystemFactory::CreateJob([&](JobContext *) {
-      order.push_back(1);
-      return JobContinuation::DISPOSE;
-    });
-    otherJob->AddCounter(counter);
+  SharedJob job = JobSystemFactory::CreateJob(
+      [&](JobContext *) {
+        SharedJobCounter counter = JobSystemFactory::CreateCounter();
+        SharedJob otherJob = JobSystemFactory::CreateJob(
+            [&](JobContext *) {
+              order.push_back(1);
+              return JobContinuation::DISPOSE;
+            },
+            "inside-job");
+        otherJob->AddCounter(counter);
 
-    manager->KickJob(otherJob);
-    manager->WaitForCompletion(counter);
-    order.push_back(2);
-    return JobContinuation::DISPOSE;
-  });
+        manager->KickJob(otherJob);
+        manager->WaitForCompletion(counter);
+        order.push_back(2);
+        return JobContinuation::DISPOSE;
+      },
+      "outside-job");
 
   manager->KickJob(job);
   manager->InvokeCycleAndWait();
@@ -235,10 +252,12 @@ TEST(JobSystem, detach_jobs) {
   auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
-  SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
-    execution_counter++;
-    return JobContinuation::REQUEUE;
-  });
+  SharedJob job = JobSystemFactory::CreateJob(
+      [&](JobContext *context) {
+        execution_counter++;
+        return JobContinuation::REQUEUE;
+      },
+      "counter-job");
 
   manager->KickJob(job);
   manager->InvokeCycleAndWait();
@@ -259,16 +278,20 @@ TEST(JobSystem, detach_jobs_mid_execution) {
   manager->StartExecution();
 
   SharedJobCounter detach_job_counter = JobSystemFactory::CreateCounter();
-  SharedJob job = JobSystemFactory::CreateJob([&](JobContext *context) {
-    context->GetJobManager()->WaitForCompletion(detach_job_counter);
-    execution_counter++;
-    return JobContinuation::REQUEUE;
-  });
+  SharedJob job = JobSystemFactory::CreateJob(
+      [&](JobContext *context) {
+        context->GetJobManager()->WaitForCompletion(detach_job_counter);
+        execution_counter++;
+        return JobContinuation::REQUEUE;
+      },
+      "counter-job");
 
-  SharedJob detach_job = JobSystemFactory::CreateJob([&](JobContext *context) {
-    context->GetJobManager()->DetachJob(job->GetId());
-    return JobContinuation::DISPOSE;
-  });
+  SharedJob detach_job = JobSystemFactory::CreateJob(
+      [&](JobContext *context) {
+        context->GetJobManager()->DetachJob(job->GetId());
+        return JobContinuation::DISPOSE;
+      },
+      "detach-job");
   detach_job->AddCounter(detach_job_counter);
 
   manager->KickJob(job);
@@ -287,17 +310,19 @@ TEST(JobSystem, wait_for_future_completion) {
   auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
 
-  SharedJob job = JobSystemFactory::CreateJob([&order](JobContext *context) {
-    std::future<void> future = std::async(std::launch::async, [&order] {
-      std::this_thread::sleep_for(0.1s);
-      order.push_back(1);
-    });
+  SharedJob job = JobSystemFactory::CreateJob(
+      [&order](JobContext *context) {
+        std::future<void> future = std::async(std::launch::async, [&order] {
+          std::this_thread::sleep_for(0.1s);
+          order.push_back(1);
+        });
 
-    order.push_back(0);
-    context->GetJobManager()->WaitForCompletion(future);
-    order.push_back(2);
-    return JobContinuation::DISPOSE;
-  });
+        order.push_back(0);
+        context->GetJobManager()->WaitForCompletion(future);
+        order.push_back(2);
+        return JobContinuation::DISPOSE;
+      },
+      "future-test-job");
 
   manager->KickJob(job);
   manager->InvokeCycleAndWait();
@@ -317,19 +342,21 @@ TEST(JobSynchronization, wait_for_future) {
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
 
-  SharedJob promise_job =
-      JobSystemFactory::CreateJob([promise](JobContext *context) {
+  SharedJob promise_job = JobSystemFactory::CreateJob(
+      [promise](JobContext *context) {
         std::this_thread::sleep_for(0.1s);
 
         promise->set_value();
         return JobContinuation::DISPOSE;
-      });
+      },
+      "promise-job");
 
-  SharedJob future_job =
-      JobSystemFactory::CreateJob([&future](JobContext *context) {
+  SharedJob future_job = JobSystemFactory::CreateJob(
+      [&future](JobContext *context) {
         context->GetJobManager()->WaitForCompletion(future);
         return JobContinuation::DISPOSE;
-      });
+      },
+      "future-job");
 
   manager->KickJob(promise_job);
   manager->KickJob(future_job);
@@ -366,9 +393,9 @@ TEST(JobSynchronization, recursive_mutex_fibers) {
   // main idea: fire lots of jobs which all lock the same recursive mutex and
   // assert they do not enter the same critical section in parallel.
   for (int i = 0; i < 100; i++) {
-    auto job =
-        std::make_shared<Job>([&recursive_mutex, &should_be_currently_locked,
-                               i](JobContext *context) {
+    auto job = std::make_shared<Job>(
+        [&recursive_mutex, &should_be_currently_locked,
+         i](JobContext *context) {
           std::unique_lock lock(recursive_mutex);
 
           // if this is true, this means that this critical section is actually
@@ -390,12 +417,46 @@ TEST(JobSynchronization, recursive_mutex_fibers) {
           should_be_currently_locked = false;
 
           return JobContinuation::DISPOSE;
-        });
+        },
+        "test-job");
     job_manager->KickJob(job);
   }
 
   job_manager->InvokeCycleAndWait();
   job_manager->StopExecution();
+}
+
+TEST(JobSystem, async_jobs) {
+  auto config = std::make_shared<common::config::Configuration>();
+  auto manager = common::memory::Owner<JobManager>(config);
+  manager->StartExecution();
+
+  std::atomic<int> cycles = 0;
+
+  SharedJob job = JobSystemFactory::CreateJob(
+      [&cycles](JobContext *context) {
+        while (cycles < 3) {
+          std::this_thread::sleep_for(1ms);
+        }
+        return JobContinuation::DISPOSE;
+      },
+      "async-job", MAIN, true);
+
+  manager->KickJob(job);
+
+  for (int i = 0; i < 3; i++) {
+    manager->InvokeCycleAndWait();
+    cycles++;
+    ASSERT_NE(job->GetState(), JobState::DETACHED);
+  }
+
+  cycles++;
+  manager->InvokeCycleAndWait();
+
+  std::this_thread::sleep_for(10ms);
+  ASSERT_EQ(job->GetState(), JobState::EXECUTION_FINISHED);
+
+  manager->StopExecution();
 }
 
 int main(int argc, char **argv) {

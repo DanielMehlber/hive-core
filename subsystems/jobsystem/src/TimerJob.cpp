@@ -6,12 +6,8 @@ using namespace jobsystem::job;
 
 TimerJob::TimerJob(std::function<JobContinuation(JobContext *)> workload,
                    const std::string &id, std::chrono::duration<double> time,
-                   JobExecutionPhase phase)
-    : Job(std::move(workload), id, phase), m_time{time} {}
-
-TimerJob::TimerJob(std::function<JobContinuation(JobContext *)> workload,
-                   std::chrono::duration<double> time, JobExecutionPhase phase)
-    : Job(std::move(workload), phase), m_time{time} {}
+                   JobExecutionPhase phase, bool async)
+    : Job(std::move(workload), id, phase, async), m_time{time} {}
 
 void TimerJob::RestartTimer() {
   m_timer_start = std::chrono::high_resolution_clock::now();

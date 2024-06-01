@@ -26,12 +26,15 @@ public:
    * @param request represents input parameters for the service call
    * @param job_manager manages and executes spawned job later
    * @param only_local if only local services should be considered for execution
+   * @param async if the call should be executed asynchronously. If executed
+   * synchronously, it will block the execution cycle until the request has been
+   * resolved.
    * @return future response from service
    */
   virtual std::future<SharedServiceResponse>
   IssueCallAsJob(SharedServiceRequest request,
                  common::memory::Borrower<jobsystem::JobManager> job_manager,
-                 bool only_local = false) noexcept = 0;
+                 bool only_local = false, bool async = false) noexcept = 0;
 
   /**
    * Checks if there are currently callable and usable service executions

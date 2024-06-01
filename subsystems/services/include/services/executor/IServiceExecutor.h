@@ -20,13 +20,17 @@ public:
    * Calls the service using parameters and returns a response eventually
    * @param request request containing parameters and metadata
    * @param job_manager job manager that the
+   * @param async if the call should be executed asynchronously. If executed
+   * synchronously, it will block the execution cycle until the request has been
+   * resolved.
    * @note Service execution is coupled to the job system for parallel service
    * execution
    * @return future response (if the service has completed successfully)
    */
-  virtual std::future<SharedServiceResponse> IssueCallAsJob(
-      SharedServiceRequest request,
-      common::memory::Borrower<jobsystem::JobManager> job_manager) = 0;
+  virtual std::future<SharedServiceResponse>
+  IssueCallAsJob(SharedServiceRequest request,
+                 common::memory::Borrower<jobsystem::JobManager> job_manager,
+                 bool async = false) = 0;
 
   /**
    * Checks if the service can be currently called

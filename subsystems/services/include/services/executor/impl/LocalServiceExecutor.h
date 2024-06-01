@@ -35,9 +35,10 @@ public:
           func);
   virtual ~LocalServiceExecutor() = default;
 
-  std::future<SharedServiceResponse> IssueCallAsJob(
-      SharedServiceRequest request,
-      common::memory::Borrower<jobsystem::JobManager> job_manager) override;
+  std::future<SharedServiceResponse>
+  IssueCallAsJob(SharedServiceRequest request,
+                 common::memory::Borrower<jobsystem::JobManager> job_manager,
+                 bool async) override;
 
   bool IsCallable() override { return true; };
 

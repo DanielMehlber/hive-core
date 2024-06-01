@@ -34,13 +34,9 @@ void Job::AddCounter(const std::shared_ptr<JobCounter> &counter) {
 }
 
 Job::Job(std::function<JobContinuation(JobContext *)> workload, std::string id,
-         JobExecutionPhase phase)
-    : m_workload{std::move(workload)}, m_id{std::move(id)}, m_phase{phase} {}
-
-Job::Job(std::function<JobContinuation(JobContext *)> workload,
-         JobExecutionPhase phase)
-    : m_workload{std::move(workload)}, m_phase{phase},
-      m_id{common::uuid::UuidGenerator::Random()} {}
+         JobExecutionPhase phase, bool async)
+    : m_workload{std::move(workload)}, m_id{std::move(id)}, m_phase{phase},
+      m_async{async} {}
 
 void Job::FinishJob() {
   std::unique_lock counter_lock(m_counters_mutex);

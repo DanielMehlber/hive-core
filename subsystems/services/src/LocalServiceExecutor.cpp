@@ -13,7 +13,7 @@ LocalServiceExecutor::LocalServiceExecutor(
 
 std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
     SharedServiceRequest request,
-    common::memory::Borrower<jobsystem::JobManager> job_manager) {
+    common::memory::Borrower<jobsystem::JobManager> job_manager, bool async) {
 
   // for when the job has resolved
   std::shared_ptr<std::promise<SharedServiceResponse>> completion_promise =
@@ -38,8 +38,7 @@ std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
         }
         return jobsystem::job::JobContinuation::DISPOSE;
       },
-      "local-service-execution-(" + request->GetServiceName() + ")-" +
-          common::uuid::UuidGenerator::Random());
+      "local-service-execution-" + request->GetTransactionId(), MAIN, async);
 
   job_manager->KickJob(job);
 

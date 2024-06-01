@@ -75,11 +75,12 @@ void JobManager::KickJob(const SharedJob &job) {
 
   switch (job->GetPhase()) {
   case INIT: {
-    std::unique_lock queue_lock(m_init_queue_mutex);
-    m_init_queue.push(job);
+    {
+      std::unique_lock queue_lock(m_init_queue_mutex);
+      m_init_queue.push(job);
+    }
 
-    // if current cycle is running in this phase, directly schedule it.
-    // in case the c-lion linter says this statement is always false: it lies.
+    std::unique_lock state_lock(m_current_state_mutex);
     if (m_current_state == CYCLE_INIT) {
       ScheduleAllJobsInQueue(m_init_queue, m_init_queue_mutex,
                              m_init_phase_counter);
@@ -88,11 +89,12 @@ void JobManager::KickJob(const SharedJob &job) {
     }
   } break;
   case MAIN: {
-    std::unique_lock queue_lock(m_main_queue_mutex);
-    m_main_queue.push(job);
+    {
+      std::unique_lock queue_lock(m_main_queue_mutex);
+      m_main_queue.push(job);
+    }
 
-    // if current cycle is running in this phase, directly schedule it.
-    // in case the c-lion linter says this statement is always false: it lies.
+    std::unique_lock state_lock(m_current_state_mutex);
     if (m_current_state == CYCLE_MAIN) {
       ScheduleAllJobsInQueue(m_main_queue, m_main_queue_mutex,
                              m_main_phase_counter);
@@ -101,11 +103,12 @@ void JobManager::KickJob(const SharedJob &job) {
     }
   } break;
   case CLEAN_UP: {
-    std::unique_lock queue_lock(m_clean_up_queue_mutex);
-    m_clean_up_queue.push(job);
+    {
+      std::unique_lock queue_lock(m_clean_up_queue_mutex);
+      m_clean_up_queue.push(job);
+    }
 
-    // if current cycle is running in this phase, directly schedule it.
-    // in case the c-lion linter says this statement is always false: it lies.
+    std::unique_lock state_lock(m_current_state_mutex);
     if (m_current_state == CYCLE_CLEAN_UP) {
       ScheduleAllJobsInQueue(m_clean_up_queue, m_clean_up_queue_mutex,
                              m_clean_up_phase_counter);
@@ -133,7 +136,12 @@ void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,
       continue;
     }
 
-    job->AddCounter(counter);
+    // some jobs are long-running and should not be waited for
+    bool cycle_should_wait_for_completion = !job->IsAsync();
+    if (cycle_should_wait_for_completion) {
+      job->AddCounter(counter);
+    }
+
     m_execution.Schedule(job);
 #ifndef NDEBUG
     m_job_execution_counter++;
@@ -182,17 +190,29 @@ void JobManager::InvokeCycleAndWait() {
   m_clean_up_phase_counter = std::make_shared<JobCounter>();
 
   // pass different phases consecutively to the execution
-  m_current_state = CYCLE_INIT;
+  {
+    std::unique_lock lock(m_current_state_mutex);
+    m_current_state = CYCLE_INIT;
+  }
   ExecuteQueueAndWait(m_init_queue, m_init_queue_mutex, m_init_phase_counter);
 
-  m_current_state = CYCLE_MAIN;
+  {
+    std::unique_lock lock(m_current_state_mutex);
+    m_current_state = CYCLE_MAIN;
+  }
   ExecuteQueueAndWait(m_main_queue, m_main_queue_mutex, m_main_phase_counter);
 
-  m_current_state = CYCLE_CLEAN_UP;
+  {
+    std::unique_lock lock(m_current_state_mutex);
+    m_current_state = CYCLE_CLEAN_UP;
+  }
   ExecuteQueueAndWait(m_clean_up_queue, m_clean_up_queue_mutex,
                       m_clean_up_phase_counter);
 
-  m_current_state = READY;
+  {
+    std::unique_lock lock(m_current_state_mutex);
+    m_current_state = READY;
+  }
 
   ResetContinuationRequeueBlacklist();
 #ifndef NDEBUG
