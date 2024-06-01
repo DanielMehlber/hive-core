@@ -28,7 +28,7 @@ bool RemoteServiceExecutor::IsCallable() {
 
 std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
     SharedServiceRequest request,
-    common::memory::Borrower<jobsystem::JobManager> job_manager) {
+    common::memory::Borrower<jobsystem::JobManager> job_manager, bool async) {
 
   auto promise = std::make_shared<std::promise<SharedServiceResponse>>();
   std::future<SharedServiceResponse> future = promise->get_future();
@@ -79,7 +79,7 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
         }
         return JobContinuation::DISPOSE;
       },
-      "remote-service-call-" + request->GetTransactionId());
+      "remote-service-call-" + request->GetTransactionId(), MAIN, async);
 
   job_manager->KickJob(job);
   return future;
