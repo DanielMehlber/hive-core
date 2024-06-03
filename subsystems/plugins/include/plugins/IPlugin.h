@@ -1,5 +1,4 @@
-#ifndef IPLUGIN_H
-#define IPLUGIN_H
+#pragma once
 
 #include "PluginContext.h"
 #include "common/exceptions/ExceptionsBase.h"
@@ -38,5 +37,3 @@ public:
 typedef std::shared_ptr<IPlugin> SharedPlugin;
 
 } // namespace plugins
-
-#endif // IPLUGIN_H

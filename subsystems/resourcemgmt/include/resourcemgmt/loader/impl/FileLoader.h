@@ -1,5 +1,4 @@
-#ifndef FILELOADER_H
-#define FILELOADER_H
+#pragma once
 
 #include "resourcemgmt/loader/IResourceLoader.h"
 
@@ -37,5 +36,3 @@ inline const std::string &FileLoader::GetId() const noexcept {
 }
 
 } // namespace resourcemgmt::loaders
-
-#endif /* FILELOADER_H */

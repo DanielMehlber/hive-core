@@ -1,5 +1,4 @@
-#ifndef SERVICEFACTORY_H
-#define SERVICEFACTORY_H
+#pragma once
 
 #include "ServiceRequest.h"
 #include "ServiceResponse.h"
@@ -15,5 +14,3 @@ public:
 };
 
 } // namespace services
-
-#endif // SERVICEFACTORY_H

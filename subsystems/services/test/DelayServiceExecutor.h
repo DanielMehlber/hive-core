@@ -1,5 +1,4 @@
-#ifndef DELAYSERVICEEXECUTOR_H
-#define DELAYSERVICEEXECUTOR_H
+#pragma once
 
 #include "services/executor/impl/LocalServiceExecutor.h"
 
@@ -48,5 +47,3 @@ SharedServiceRequest GenerateDelayRequest(int delay) {
   request->SetParameter("delay-milliseconds", delay);
   return request;
 }
-
-#endif // DELAYSERVICEEXECUTOR_H

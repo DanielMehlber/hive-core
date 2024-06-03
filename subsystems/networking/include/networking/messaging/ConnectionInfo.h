@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETCONNECTIONINFO_H
-#define WEBSOCKETCONNECTIONINFO_H
+#pragma once
 
 #include <string>
 
@@ -14,5 +13,3 @@ struct ConnectionInfo {
 };
 
 } // namespace networking::messaging
-
-#endif // WEBSOCKETCONNECTIONINFO_H

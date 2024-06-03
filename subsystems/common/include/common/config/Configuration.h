@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_CONFIGURATION_H
-#define SIMULATION_FRAMEWORK_CONFIGURATION_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -137,5 +136,3 @@ inline void Configuration::Set<std::string>(const std::string &name,
 typedef std::shared_ptr<Configuration> SharedConfiguration;
 
 } // namespace common::config
-
-#endif // SIMULATION_FRAMEWORK_CONFIGURATION_H

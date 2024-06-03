@@ -1,5 +1,4 @@
-#ifndef JOBEXITBEHAVIOR_H
-#define JOBEXITBEHAVIOR_H
+#pragma once
 
 namespace jobsystem::job {
 
@@ -24,5 +23,3 @@ enum JobContinuation {
   REQUEUE
 };
 } // namespace jobsystem::job
-
-#endif /* JOBEXITBEHAVIOR_H */

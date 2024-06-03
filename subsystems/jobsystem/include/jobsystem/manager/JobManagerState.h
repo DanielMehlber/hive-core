@@ -1,5 +1,4 @@
-#ifndef JOBMANAGERSTATE_H
-#define JOBMANAGERSTATE_H
+#pragma once
 
 namespace jobsystem {
 
@@ -32,5 +31,3 @@ enum JobManagerState {
   CYCLE_CLEAN_UP
 };
 } // namespace jobsystem
-
-#endif /* JOBMANAGERSTATE_H */

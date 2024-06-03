@@ -1,5 +1,4 @@
-#ifndef KERNEL_H
-#define KERNEL_H
+#pragma once
 
 #include "common/config/Configuration.h"
 #include "common/memory/ExclusiveOwnership.h"
@@ -107,5 +106,3 @@ public:
   GetSubsystemsManager();
 };
 } // namespace core
-
-#endif // KERNEL_H

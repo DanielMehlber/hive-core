@@ -1,5 +1,4 @@
-#ifndef SCOPEDLOCK_H
-#define SCOPEDLOCK_H
+#pragma once
 
 namespace common::sync {
 
@@ -18,5 +17,3 @@ public:
 };
 
 } // namespace common::sync
-
-#endif // SCOPEDLOCK_H

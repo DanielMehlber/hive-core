@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_EXCLUSIVEOWNERSHIPTEST_H
-#define SIMULATION_FRAMEWORK_EXCLUSIVEOWNERSHIPTEST_H
+#pragma once
 
 #include "common/memory/ExclusiveOwnership.h"
 #include <chrono>
@@ -140,5 +139,3 @@ TEST(ExclusiveOwnershipTests, reference_state_validity) {
 
   ASSERT_FALSE(reference);
 }
-
-#endif // SIMULATION_FRAMEWORK_EXCLUSIVEOWNERSHIPTEST_H

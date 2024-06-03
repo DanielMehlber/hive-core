@@ -1,5 +1,4 @@
-#ifndef SPINLOCK_H
-#define SPINLOCK_H
+#pragma once
 
 #include <atomic>
 
@@ -22,5 +21,3 @@ public:
   bool try_lock();
 };
 } // namespace common::sync
-
-#endif // SPINLOCK_H

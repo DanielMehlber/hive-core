@@ -1,5 +1,4 @@
-#ifndef BOOSTWEBSOCKETCONNECTIONLISTENER_H
-#define BOOSTWEBSOCKETCONNECTIONLISTENER_H
+#pragma once
 
 #include "BoostWebSocketConnection.h"
 #include "common/config/Configuration.h"
@@ -110,5 +109,3 @@ public:
   void ShutDown();
 };
 } // namespace networking::messaging::websockets
-
-#endif /* BOOSTWEBSOCKETCONNECTIONLISTENER_H */

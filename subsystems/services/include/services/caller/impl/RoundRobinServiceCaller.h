@@ -1,5 +1,4 @@
-#ifndef ROUNDROBINSERVICECALLER_H
-#define ROUNDROBINSERVICECALLER_H
+#pragma once
 
 #include "services/caller/IServiceCaller.h"
 #include <vector>
@@ -38,5 +37,3 @@ public:
 };
 
 } // namespace services::impl
-
-#endif // ROUNDROBINSERVICECALLER_H

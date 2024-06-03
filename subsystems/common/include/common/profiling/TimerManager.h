@@ -1,5 +1,4 @@
-#ifndef TIMERMANAGER_H
-#define TIMERMANAGER_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -31,5 +30,3 @@ public:
 };
 
 } // namespace common::profiling
-
-#endif // TIMERMANAGER_H

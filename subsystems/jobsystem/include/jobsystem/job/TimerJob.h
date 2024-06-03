@@ -1,5 +1,4 @@
-#ifndef TIMERJOB_H
-#define TIMERJOB_H
+#pragma once
 
 #include "Job.h"
 #include <chrono>
@@ -53,5 +52,3 @@ public:
   bool IsReadyForExecution(const JobContext &context) final;
 };
 } // namespace jobsystem::job
-
-#endif /* TIMERJOB_H */

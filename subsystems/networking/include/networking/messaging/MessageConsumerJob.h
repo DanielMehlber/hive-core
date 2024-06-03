@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETMESSAGECONSUMERJOB_H
-#define WEBSOCKETMESSAGECONSUMERJOB_H
+#pragma once
 
 #include "IMessageConsumer.h"
 #include <jobsystem/job/Job.h>
@@ -24,5 +23,3 @@ public:
                      ConnectionInfo connection_info);
 };
 } // namespace networking::messaging
-
-#endif /* WEBSOCKETMESSAGECONSUMERJOB_H */

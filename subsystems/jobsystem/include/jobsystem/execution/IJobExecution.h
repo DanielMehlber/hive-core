@@ -1,5 +1,4 @@
-#ifndef IJOBEXECUTION_H
-#define IJOBEXECUTION_H
+#pragma once
 
 #include "JobExecutionState.h"
 #include "jobsystem/job/Job.h"
@@ -109,5 +108,3 @@ inline JobExecutionState IJobExecution<Impl>::GetState() {
 }
 
 } // namespace jobsystem::execution
-
-#endif /* IJOBEXECUTION_H */

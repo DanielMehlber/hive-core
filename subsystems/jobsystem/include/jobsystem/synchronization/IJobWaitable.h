@@ -1,5 +1,4 @@
-#ifndef IJOBWAITABLE_H
-#define IJOBWAITABLE_H
+#pragma once
 
 namespace jobsystem {
 
@@ -17,5 +16,3 @@ public:
   virtual bool IsFinished() = 0;
 };
 } // namespace jobsystem
-
-#endif /* IJOBWAITABLE_H */

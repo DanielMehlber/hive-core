@@ -1,5 +1,4 @@
-#ifndef JOBMANAGER_H
-#define JOBMANAGER_H
+#pragma once
 
 // *** required for windows ***
 #undef max
@@ -212,5 +211,3 @@ JobManager::WaitForCompletion(const std::future<FutureType> &future) {
 }
 
 } // namespace jobsystem
-
-#endif /* JOBMANAGER_H */

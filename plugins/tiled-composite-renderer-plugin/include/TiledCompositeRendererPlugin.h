@@ -1,5 +1,4 @@
-#ifndef TILEDCOMPOSITERENDERERPLUGIN_H
-#define TILEDCOMPOSITERENDERERPLUGIN_H
+#pragma once
 
 #include "graphics/service/RenderService.h"
 #include "plugins/IPlugin.h"
@@ -26,5 +25,3 @@ public:
   void ShutDown(plugins::SharedPluginContext context) override;
   ~TiledCompositeRendererPlugin() override;
 };
-
-#endif // TILEDCOMPOSITERENDERERPLUGIN_H

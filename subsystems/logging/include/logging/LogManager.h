@@ -1,5 +1,4 @@
-#ifndef LOGGINGAPI_H
-#define LOGGINGAPI_H
+#pragma once
 
 #include "logger/ILogger.h"
 #include "logger/impl/BoostLogger.h"
@@ -61,5 +60,3 @@ inline std::shared_ptr<logging::logger::ILogger> GetLogger() {
 #endif
 
 } // namespace logging
-
-#endif /* LOGGINGAPI_H */

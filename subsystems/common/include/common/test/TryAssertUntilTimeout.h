@@ -1,5 +1,4 @@
-#ifndef TRYASSERTUNTILTIMEOUT_H
-#define TRYASSERTUNTILTIMEOUT_H
+#pragma once
 
 #include <gtest/gtest.h>
 using namespace std::chrono_literals;
@@ -28,4 +27,3 @@ void TryAssertUntilTimeout(const std::function<bool()> &evaluation,
   }
 }
 } // namespace common::test
-#endif // TRYASSERTUNTILTIMEOUT_H

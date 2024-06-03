@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETSERVICEEXECUTOR_H
-#define WEBSOCKETSERVICEEXECUTOR_H
+#pragma once
 
 #include "networking/messaging/IMessageEndpoint.h"
 #include "services/executor/IServiceExecutor.h"
@@ -59,5 +58,3 @@ public:
   std::string GetId() override { return m_id; }
 };
 } // namespace services::impl
-
-#endif // WEBSOCKETSERVICEEXECUTOR_H

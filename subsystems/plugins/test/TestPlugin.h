@@ -1,7 +1,6 @@
-#include "plugins/IPlugin.h"
+#pragma once
 
-#ifndef TESTPLUGIN_H
-#define TESTPLUGIN_H
+#include "plugins/IPlugin.h"
 
 class TestPlugin : public plugins::IPlugin {
 private:
@@ -19,5 +18,3 @@ public:
   size_t GetInitCount() { return m_init_count; }
   size_t GetShutdownCount() { return m_shutdown_count; }
 };
-
-#endif // TESTPLUGIN_H

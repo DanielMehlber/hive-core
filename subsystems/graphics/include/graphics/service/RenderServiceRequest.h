@@ -1,9 +1,8 @@
+#pragma once
+
 #include "common/exceptions/ExceptionsBase.h"
 #include "services/ServiceRequest.h"
 #include <vsg/all.h>
-
-#ifndef RENDERSERVICEREQUEST_H
-#define RENDERSERVICEREQUEST_H
 
 namespace graphics {
 
@@ -51,5 +50,3 @@ public:
 };
 
 } // namespace graphics
-
-#endif // RENDERSERVICEREQUEST_H

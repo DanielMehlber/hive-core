@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_MULTIPARTFORMDATATEST_H
-#define SIMULATION_FRAMEWORK_MULTIPARTFORMDATATEST_H
+#pragma once
 
 #include "networking/util/MultipartFormdata.h"
 #include <gtest/gtest.h>
@@ -50,5 +49,3 @@ TEST(MultipartFormdata, generate_and_parse) {
   ASSERT_TRUE(parsed_multipart.parts.contains(binary.name));
   ASSERT_TRUE(parsed_multipart.parts[binary.name].content == binary.content);
 }
-
-#endif // SIMULATION_FRAMEWORK_MULTIPARTFORMDATATEST_H

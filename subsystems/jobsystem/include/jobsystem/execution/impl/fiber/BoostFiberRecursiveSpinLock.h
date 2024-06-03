@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_BOOSTFIBERRECURSIVESPINLOCK_H
-#define SIMULATION_FRAMEWORK_BOOSTFIBERRECURSIVESPINLOCK_H
+#pragma once
 
 #include "boost/fiber/all.hpp"
 #include "common/synchronization/SpinLock.h"
@@ -70,5 +69,3 @@ public:
 };
 
 } // namespace jobsystem
-
-#endif // SIMULATION_FRAMEWORK_BOOSTFIBERRECURSIVESPINLOCK_H

@@ -1,5 +1,4 @@
-#ifndef URLPARSERTEST_H
-#define URLPARSERTEST_H
+#pragma once
 
 #include "networking/util/UrlParser.h"
 #include <gtest/gtest.h>
@@ -35,5 +34,3 @@ TEST(UrlParser, parse_valid) {
   testParser("https", "test.com", "23");
   testParser("ws", "hallo.test.com", "9999", "", "query=true");
 }
-
-#endif /* URLPARSERTEST_H */

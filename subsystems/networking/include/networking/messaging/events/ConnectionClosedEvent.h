@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_CONNECTIONCLOSEDEVENT_H
-#define SIMULATION_FRAMEWORK_CONNECTIONCLOSEDEVENT_H
+#pragma once
 
 #include "events/Event.h"
 
@@ -34,5 +33,3 @@ inline void ConnectionClosedEvent::SetPeerId(const std::string &peer_id) {
 }
 
 } // namespace networking
-
-#endif // SIMULATION_FRAMEWORK_CONNECTIONCLOSEDEVENT_H

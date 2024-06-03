@@ -1,5 +1,4 @@
-#ifndef ILOGGER_H
-#define ILOGGER_H
+#pragma once
 
 #include <string>
 
@@ -18,5 +17,3 @@ public:
   virtual void Debug(const std::string &message) const noexcept = 0;
 };
 } // namespace logging::logger
-
-#endif /* ILOGGER_H */

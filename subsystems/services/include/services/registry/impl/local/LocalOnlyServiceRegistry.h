@@ -1,5 +1,4 @@
-#ifndef LOCALONLYSERVICEREGISTRY_H
-#define LOCALONLYSERVICEREGISTRY_H
+#pragma once
 
 #include "services/registry/IServiceRegistry.h"
 #include <future>
@@ -27,5 +26,3 @@ public:
   Find(const std::string &name, bool only_local) noexcept override;
 };
 } // namespace services::impl
-
-#endif // LOCALONLYSERVICEREGISTRY_H

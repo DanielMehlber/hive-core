@@ -1,5 +1,4 @@
-#ifndef BASE64RENDERRESULTENCODER_H
-#define BASE64RENDERRESULTENCODER_H
+#pragma once
 
 #include "common/encoding/Base64.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
@@ -23,5 +22,3 @@ Base64RenderResultEncoder::Decode(const std::string &str) {
 }
 
 } // namespace graphics
-
-#endif // BASE64RENDERRESULTENCODER_H

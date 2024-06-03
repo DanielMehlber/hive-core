@@ -1,5 +1,4 @@
-#ifndef LOCALSERVICEEXECUTOR_H
-#define LOCALSERVICEEXECUTOR_H
+#pragma once
 
 #include "services/executor/IServiceExecutor.h"
 #include <functional>
@@ -50,5 +49,3 @@ public:
 };
 
 } // namespace services::impl
-
-#endif // LOCALSERVICEEXECUTOR_H

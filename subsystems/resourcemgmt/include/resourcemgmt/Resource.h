@@ -1,5 +1,4 @@
-#ifndef RESOURCE_H
-#define RESOURCE_H
+#pragma once
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "logging/LogManager.h"
@@ -45,5 +44,3 @@ inline Resource::Resource(std::shared_ptr<ResourceType> content_ptr)
 typedef std::shared_ptr<Resource> SharedResource;
 
 } // namespace resourcemgmt
-
-#endif /* RESOURCE_H */

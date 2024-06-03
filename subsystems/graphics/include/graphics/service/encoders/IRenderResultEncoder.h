@@ -1,5 +1,4 @@
-#ifndef IRENDERRESULTENCODER_H
-#define IRENDERRESULTENCODER_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -13,5 +12,3 @@ public:
   virtual ~IRenderResultEncoder() = default;
 };
 } // namespace graphics
-
-#endif // IRENDERRESULTENCODER_H

@@ -1,5 +1,4 @@
-#ifndef IRESOURCELOADER_H
-#define IRESOURCELOADER_H
+#pragma once
 
 #include "resourcemgmt/Resource.h"
 #include <any>
@@ -36,5 +35,3 @@ public:
   virtual SharedResource Load(const std::string &uri) = 0;
 };
 } // namespace resourcemgmt
-
-#endif /* IRESOURCELOADER_H */

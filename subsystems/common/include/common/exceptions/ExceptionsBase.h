@@ -1,5 +1,4 @@
-#ifndef EXCEPTIONSBASE_H
-#define EXCEPTIONSBASE_H
+#pragma once
 
 #include <boost/exception/all.hpp>
 #include <boost/stacktrace.hpp>
@@ -52,5 +51,3 @@ public:
     __ss << message;                                                           \
     return ExceptionType(__ss, boost::stacktrace::stacktrace());               \
   }()
-
-#endif /* EXCEPTIONSBASE_H */

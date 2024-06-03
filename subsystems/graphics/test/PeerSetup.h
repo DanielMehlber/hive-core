@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_PEERSETUP_H
-#define SIMULATION_FRAMEWORK_PEERSETUP_H
+#pragma once
 
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "graphics/renderer/impl/OffscreenRenderer.h"
@@ -58,5 +57,3 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   return Node{std::move(subsystems), job_manager_ref, endpoint_ref,
               registry_ref, port};
 }
-
-#endif // SIMULATION_FRAMEWORK_PEERSETUP_H

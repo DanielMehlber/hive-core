@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETMESSAGECONVERTER_H
-#define WEBSOCKETMESSAGECONVERTER_H
+#pragma once
 
 #include "Message.h"
 #include "common/exceptions/ExceptionsBase.h"
@@ -47,5 +46,3 @@ public:
   static std::string ToMultipartFormData(const SharedMessage &message);
 };
 } // namespace networking::messaging
-
-#endif /* WEBSOCKETMESSAGECONVERTER_H */

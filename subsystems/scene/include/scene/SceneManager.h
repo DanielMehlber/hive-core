@@ -1,5 +1,4 @@
-#ifndef SCENEMANAGER_H
-#define SCENEMANAGER_H
+#pragma once
 
 #include "vsg/all.h"
 
@@ -26,5 +25,3 @@ inline vsg::ref_ptr<vsg::StateGroup> SceneManager::GetRoot() const noexcept {
 typedef std::shared_ptr<SceneManager> SharedScene;
 
 } // namespace scene
-
-#endif // SCENEMANAGER_H

@@ -1,5 +1,4 @@
-#ifndef SERVICEREQUEST_H
-#define SERVICEREQUEST_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -70,5 +69,3 @@ inline void ServiceRequest::SetParameter<std::string>(const std::string &name,
 typedef std::shared_ptr<ServiceRequest> SharedServiceRequest;
 
 } // namespace services
-
-#endif // SERVICEREQUEST_H

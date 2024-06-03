@@ -1,5 +1,4 @@
-#ifndef SERVICECALLER_H
-#define SERVICECALLER_H
+#pragma once
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "common/memory/ExclusiveOwnership.h"
@@ -67,5 +66,3 @@ public:
 typedef std::shared_ptr<IServiceCaller> SharedServiceCaller;
 
 } // namespace services
-
-#endif // SERVICECALLER_H

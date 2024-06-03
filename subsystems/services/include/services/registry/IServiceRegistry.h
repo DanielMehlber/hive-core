@@ -1,5 +1,4 @@
-#ifndef ISERVICEREGISTRY_H
-#define ISERVICEREGISTRY_H
+#pragma once
 
 #include "services/caller/IServiceCaller.h"
 #include <memory>
@@ -39,5 +38,3 @@ public:
 };
 
 } // namespace services
-
-#endif // ISERVICEREGISTRY_H

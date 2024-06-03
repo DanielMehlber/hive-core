@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETSERVICERESPONSECONSUMER_H
-#define WEBSOCKETSERVICERESPONSECONSUMER_H
+#pragma once
 
 #include "common/subsystems/SubsystemManager.h"
 #include "events/listener/impl/FunctionalEventListener.h"
@@ -75,5 +74,3 @@ RemoteServiceResponseConsumer::GetMessageType() const noexcept {
 }
 
 } // namespace services::impl
-
-#endif // WEBSOCKETSERVICERESPONSECONSUMER_H

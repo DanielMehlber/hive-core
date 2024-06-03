@@ -1,5 +1,4 @@
-#ifndef NETWORKINGMANAGER_H
-#define NETWORKINGMANAGER_H
+#pragma once
 
 #include "common/config/Configuration.h"
 #include "common/memory/ExclusiveOwnership.h"
@@ -35,5 +34,3 @@ public:
 };
 
 } // namespace networking
-
-#endif /* NETWORKINGMANAGER_H */

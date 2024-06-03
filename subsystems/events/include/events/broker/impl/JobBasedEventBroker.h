@@ -1,5 +1,4 @@
-#ifndef JOBBASEDMESSAGEBROKER_H
-#define JOBBASEDMESSAGEBROKER_H
+#pragma once
 
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
@@ -55,5 +54,3 @@ public:
   void RemoveAllListeners() override;
 };
 } // namespace events::brokers
-
-#endif /* JOBBASEDMESSAGEBROKER_H */

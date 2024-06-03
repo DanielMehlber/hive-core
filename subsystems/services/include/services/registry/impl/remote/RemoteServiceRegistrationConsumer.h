@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETSERVICEREGISTRATIONCONSUMER_H
-#define WEBSOCKETSERVICEREGISTRATIONCONSUMER_H
+#pragma once
 
 #include "networking/messaging/IMessageConsumer.h"
 #include "networking/messaging/IMessageEndpoint.h"
@@ -39,4 +38,3 @@ RemoteServiceRegistrationConsumer::GetMessageType() const noexcept {
   return MESSAGE_TYPE_REMOTE_SERVICE_REGISTRATION;
 }
 } // namespace services::impl
-#endif // WEBSOCKETSERVICEREGISTRATIONCONSUMER_H

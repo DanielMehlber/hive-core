@@ -1,5 +1,4 @@
-#ifndef JOB_H
-#define JOB_H
+#pragma once
 
 #include "JobContext.h"
 #include "JobExecutionPhase.h"
@@ -60,7 +59,7 @@ public:
    */
   Job(std::function<JobContinuation(JobContext *)>, std::string id,
       JobExecutionPhase phase = MAIN, bool async = false);
-  
+
   virtual ~Job() { FinishJob(); };
 
   /**
@@ -135,5 +134,3 @@ inline bool Job::IsAsync() const { return m_async; }
 typedef std::shared_ptr<jobsystem::job::Job> SharedJob;
 
 } // namespace jobsystem::job
-
-#endif /* JOB_H */

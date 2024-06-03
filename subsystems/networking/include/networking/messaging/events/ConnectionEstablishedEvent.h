@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_CONNECTIONESTABLISHEDEVENT_H
-#define SIMULATION_FRAMEWORK_CONNECTIONESTABLISHEDEVENT_H
+#pragma once
 
 #include "events/Event.h"
 
@@ -33,5 +32,3 @@ inline void ConnectionEstablishedEvent::SetPeer(const std::string &peer_id) {
 }
 
 } // namespace networking
-
-#endif // SIMULATION_FRAMEWORK_CONNECTIONESTABLISHEDEVENT_H

@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETSERVICEREGISTRY_H
-#define WEBSOCKETSERVICEREGISTRY_H
+#pragma once
 
 #include "common/memory/ExclusiveOwnership.h"
 #include "events/listener/impl/FunctionalEventListener.h"
@@ -49,5 +48,3 @@ public:
 };
 
 } // namespace services::impl
-
-#endif // WEBSOCKETSERVICEREGISTRY_H

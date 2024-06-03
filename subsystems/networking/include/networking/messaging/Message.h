@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETMESSAGE_H
-#define WEBSOCKETMESSAGE_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -76,5 +75,3 @@ inline std::string Message::GetType() const noexcept { return m_type; }
 typedef std::shared_ptr<Message> SharedMessage;
 
 } // namespace networking::messaging
-
-#endif /* WEBSOCKETMESSAGE_H */

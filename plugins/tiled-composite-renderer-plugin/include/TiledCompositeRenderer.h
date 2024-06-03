@@ -1,6 +1,4 @@
-#ifndef TILEDCOMPOSITERENDERER_H
-#define TILEDCOMPOSITERENDERER_H
-
+#pragma once
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "graphics/renderer/IRenderer.h"
@@ -73,5 +71,3 @@ public:
 inline graphics::RendererSetup TiledCompositeRenderer::GetSetup() const {
   return m_output_renderer->GetSetup();
 }
-
-#endif // TILEDCOMPOSITERENDERER_H

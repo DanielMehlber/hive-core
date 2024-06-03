@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETMESSAGEREGISTRYTEST_H
-#define WEBSOCKETMESSAGEREGISTRYTEST_H
+#pragma once
 
 #include "AddingServiceExecutor.h"
 #include "DelayServiceExecutor.h"
@@ -324,5 +323,3 @@ TEST(ServiceTest, async_service_call) {
   // assert that requesting node was not blocked and completed multiple cycles
   ASSERT_TRUE(cycles > 1);
 }
-
-#endif // WEBSOCKETMESSAGEREGISTRYTEST_H

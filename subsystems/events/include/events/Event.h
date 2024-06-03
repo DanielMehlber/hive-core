@@ -1,5 +1,4 @@
-#ifndef MESSAGE_H
-#define MESSAGE_H
+#pragma once
 
 #include "common/uuid/UuidGenerator.h"
 #include <any>
@@ -64,5 +63,3 @@ inline const std::string &Event::GetTopic() const { return topic; }
 
 typedef std::shared_ptr<Event> SharedEvent;
 } // namespace events
-
-#endif /* MESSAGE_H */

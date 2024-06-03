@@ -1,5 +1,4 @@
-#ifndef IRENDERER_H
-#define IRENDERER_H
+#pragma once
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "graphics/RenderResult.h"
@@ -64,5 +63,3 @@ public:
 typedef std::shared_ptr<IRenderer> SharedRenderer;
 
 } // namespace graphics
-
-#endif // IRENDERER_H

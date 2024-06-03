@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETPEERTEST_H
-#define WEBSOCKETPEERTEST_H
+#pragma once
 
 #include "common/test/TryAssertUntilTimeout.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
@@ -268,5 +267,3 @@ TEST(WebSockets, websockets_message_broadcast) {
       },
       10s);
 }
-
-#endif /* WEBSOCKETPEERTEST_H */

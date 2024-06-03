@@ -1,5 +1,4 @@
-#ifndef RENDERRESULT_H
-#define RENDERRESULT_H
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -73,5 +72,3 @@ inline void RenderResult::SetExtent(unsigned int width, unsigned int height) {
 typedef std::shared_ptr<RenderResult> SharedRenderResult;
 
 } // namespace graphics
-
-#endif // RENDERRESULT_H
