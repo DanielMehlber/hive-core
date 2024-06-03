@@ -202,10 +202,11 @@ void RemoteServiceRegistry::SetupMessageConsumers() {
                "peer networking subsystem should exist")
 
   auto subsystems = m_subsystems.Borrow();
-
   auto web_socket_peer = subsystems->RequireSubsystem<IMessageEndpoint>();
 
-  auto response_consumer = std::make_shared<RemoteServiceResponseConsumer>();
+  auto response_consumer =
+      std::make_shared<RemoteServiceResponseConsumer>(m_subsystems);
+  
   m_response_consumer = response_consumer;
   m_registration_consumer = std::make_shared<RemoteServiceRegistrationConsumer>(
       std::bind(&RemoteServiceRegistry::Register, this, _1), response_consumer,

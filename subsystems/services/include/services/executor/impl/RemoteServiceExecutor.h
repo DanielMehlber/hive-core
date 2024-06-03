@@ -3,14 +3,13 @@
 
 #include "networking/messaging/IMessageEndpoint.h"
 #include "services/executor/IServiceExecutor.h"
+#include "services/registry/impl/remote/RemoteExceptions.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 #include <memory>
 
 using namespace networking::messaging;
 
 namespace services::impl {
-
-DECLARE_EXCEPTION(CallFailedException);
 
 /**
  * Executes remote services using web-socket events.
@@ -23,7 +22,7 @@ private:
   common::memory::Reference<IMessageEndpoint> m_endpoint;
 
   /** Hostname of remote endpoint (recipient of call message) */
-  std::string m_remote_host_name;
+  ConnectionInfo m_remote_host_info;
 
   /** name of called service */
   std::string m_service_name;
@@ -43,7 +42,7 @@ public:
   explicit RemoteServiceExecutor(
       std::string service_name,
       common::memory::Reference<IMessageEndpoint> endpoint,
-      std::string remote_host_name, std::string id,
+      ConnectionInfo remote_host_info, std::string id,
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer);
 
   std::future<SharedServiceResponse>

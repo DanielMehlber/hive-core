@@ -107,8 +107,10 @@ void BoostWebSocketConnection::Close() {
              << m_remote_endpoint_data.address().to_string() << ":"
              << m_remote_endpoint_data.port())
   }
-  
-  m_on_connection_closed(GetConnectionInfo().GetHostname());
+
+  m_on_connection_closed(GetConnectionInfo().hostname);
+
+  DEBUG_ASSERT(!m_socket.is_open(), "socket should be closed now")
 }
 
 BoostWebSocketConnection::~BoostWebSocketConnection() { Close(); }
@@ -191,7 +193,6 @@ void BoostWebSocketConnection::OnMessageSent(
 }
 
 ConnectionInfo BoostWebSocketConnection::GetConnectionInfo() const {
-  ConnectionInfo info;
-  info.SetHostname(GetRemoteHostAddress());
+  ConnectionInfo info{GetRemoteHostAddress()};
   return info;
 }
