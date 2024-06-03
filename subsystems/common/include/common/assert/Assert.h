@@ -17,5 +17,5 @@
     }                                                                          \
   }
 #else
-#define ASSERT(x, message)
+#define DEBUG_ASSERT(x, message)
 #endif
