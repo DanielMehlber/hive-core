@@ -11,6 +11,11 @@ namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
 namespace asio = boost::asio;           // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
+using namespace std::chrono_literals;
+
+#define HANDSHAKE_TIMEOUT 5s
+#define IDLE_TIMEOUT 5s
+
 BoostWebSocketConnection::BoostWebSocketConnection(
     stream_type &&socket,
     std::function<void(const std::string &, SharedBoostWebSocketConnection)>
@@ -21,6 +26,14 @@ BoostWebSocketConnection::BoostWebSocketConnection(
       m_on_connection_closed{std::move(on_connection_closed)} {
 
   m_remote_endpoint_data = m_socket.next_layer().socket().remote_endpoint();
+
+  // activates timeouts and liveliness probes. Timeouts will be handled by
+  // outstanding async operations (async_read, write, ...).
+  beast::websocket::stream_base::timeout timeout_settings{
+      HANDSHAKE_TIMEOUT, IDLE_TIMEOUT,
+      true // liveliness probes at half-time of idle timeout
+  };
+  m_socket.set_option(timeout_settings);
 }
 
 void BoostWebSocketConnection::StartReceivingMessages() {
@@ -41,7 +54,8 @@ void BoostWebSocketConnection::OnMessageReceived(
   // check for closing message
   if (error_code == websocket::error::closed ||
       error_code == http::error::end_of_stream ||
-      error_code == boost::asio::error::connection_reset) {
+      error_code == boost::asio::error::connection_reset ||
+      error_code == beast::error::timeout) {
     LOG_WARN("remote host " << m_remote_endpoint_data.address().to_string()
                             << ":" << m_remote_endpoint_data.port()
                             << " has closed the web-socket connection")
@@ -93,7 +107,7 @@ void BoostWebSocketConnection::Close() {
              << m_remote_endpoint_data.address().to_string() << ":"
              << m_remote_endpoint_data.port())
   }
-
+  
   m_on_connection_closed(GetConnectionInfo().GetHostname());
 }
 
@@ -122,19 +136,11 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
 
   m_socket.binary(true);
 
-  /*
-   * TODO: Make this async to avoid blocking
+  /* THIS IS INTENTIONALLY SYNCHRONOUS
    * Warning: The async_write call must be synchronized with some sort of lock
    * or condition variable. The async call must finish before another can be
-   * started.
+   * started. The easiest way is to make it synchronous in the first place.
    */
-
-  //  m_socket.async_write(asio::buffer(*payload),
-  //                       boost::beast::bind_front_handler(
-  //                           &BoostWebSocketConnection::OnMessageSent,
-  //                           shared_from_this(), std::move(sending_promise),
-  //                           message, payload, std::move(lock)));
-
   boost::beast::error_code error_code;
   std::size_t bytes_transferred =
       m_socket.write(asio::buffer(*payload), error_code);
@@ -167,6 +173,12 @@ void BoostWebSocketConnection::OnMessageSent(
                             << ":" << m_remote_endpoint_data.port()
                             << " failed: " << error_code.message());
     promise.set_exception(std::make_exception_ptr(exception));
+
+    // if the connection timed out, it must be cleaned up.
+    if (error_code == beast::error::timeout) {
+      Close();
+    }
+
     return;
   }
 
