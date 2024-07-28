@@ -323,3 +323,52 @@ TEST(ServiceTest, async_service_call) {
   // assert that requesting node was not blocked and completed multiple cycles
   ASSERT_TRUE(cycles > 1);
 }
+
+TEST(ServiceTest, service_peer_disconnected) {
+  auto config = std::make_shared<common::config::Configuration>();
+
+  auto node_1 = setupNode(config, 9005);
+
+  std::future<std::shared_ptr<ServiceResponse>> future_response;
+
+  {
+    auto node_2 = setupNode(config, 9006);
+
+    auto connection_progress =
+        node_1.network_endpoint.Borrow()->EstablishConnectionTo(
+            "127.0.0.1:9006");
+
+    connection_progress.wait();
+    ASSERT_NO_THROW(connection_progress.get());
+
+    SharedServiceExecutor local_service =
+        std::make_shared<DelayServiceExecutor>();
+
+    node_2.service_registry.Borrow()->Register(local_service);
+    node_2.job_manager.Borrow()->InvokeCycleAndWait();
+
+    TryAssertUntilTimeout(
+        [&node_1, &node_2]() mutable {
+          node_1.job_manager.Borrow()->InvokeCycleAndWait();
+          node_2.job_manager.Borrow()->InvokeCycleAndWait();
+          return node_1.service_registry.Borrow()
+              ->Find("delay")
+              .get()
+              .has_value();
+        },
+        10s);
+
+    SharedServiceCaller caller =
+        node_1.service_registry.Borrow()->Find("delay").get().value();
+
+    // call remote service of node 1 asynchronously
+    future_response = std::move(
+        caller->IssueCallAsJob(GenerateDelayRequest(500 /*ms*/),
+                               node_1.job_manager.Borrow(), false, false));
+  }
+
+  node_1.job_manager.Borrow()->InvokeCycleAndWait();
+
+  future_response.wait();
+  ASSERT_THROW(future_response.get(), std::exception);
+}
