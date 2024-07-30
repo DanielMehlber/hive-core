@@ -27,6 +27,7 @@ void BoostPluginManager::InstallPlugin(const std::string &path) {
 SharedPluginContext BoostPluginManager::GetContext() { return m_context; }
 
 void BoostPluginManager::InstallPlugin(boost::shared_ptr<IPlugin> plugin) {
+  auto plugin_name = plugin->GetName();
   auto install_job = jobsystem::JobSystemFactory::CreateJob(
       [plugin_manager_ref = ReferenceFromThis(),
        plugin = std::move(plugin)](jobsystem::JobContext *context) mutable {
@@ -58,7 +59,7 @@ void BoostPluginManager::InstallPlugin(boost::shared_ptr<IPlugin> plugin) {
           return JobContinuation::DISPOSE;
         }
       },
-      "install-plugin-{" + plugin->GetName() + "}", JobExecutionPhase::INIT);
+      "install-plugin-{" + plugin_name + "}", JobExecutionPhase::INIT);
 
   GetContext()
       ->GetKernelSubsystems()
