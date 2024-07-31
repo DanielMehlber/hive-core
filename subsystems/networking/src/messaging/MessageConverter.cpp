@@ -6,10 +6,9 @@
 using namespace networking::messaging;
 using namespace boost;
 
-SharedMessage
-networking::messaging::MessageConverter::FromJson(const std::string &json) {
-  json::error_code err;
-  json::value message_body = boost::json::parse(json, err);
+SharedMessage MessageConverter::FromJson(const std::string &json) {
+  system::error_code err;
+  json::value message_body = json::parse(json, err);
 
   if (err) {
     LOG_ERR("cannot parse JSON web-socket message due to syntax errors: "
@@ -24,7 +23,7 @@ networking::messaging::MessageConverter::FromJson(const std::string &json) {
     std::string id = message_body.at("id").as_string().c_str();
     std::string type = message_body.at("type").as_string().c_str();
 
-    SharedMessage parsed_message = std::make_shared<Message>(type, id);
+    auto parsed_message = std::make_shared<Message>(type, id);
 
     // Extract 'attributes' as a map
     std::map<std::string, std::string> attributes;
@@ -62,7 +61,7 @@ std::string MessageConverter::ToJson(const SharedMessage &message) {
 std::string
 MessageConverter::ToMultipartFormData(const SharedMessage &message) {
 
-  networking::util::Multipart multipart;
+  util::Multipart multipart;
 
   // encode metadata of message (id, type, ...) in json format
   json::object message_meta;
@@ -70,19 +69,19 @@ MessageConverter::ToMultipartFormData(const SharedMessage &message) {
   message_meta["type"] = message->GetType();
   auto json_meta = json::serialize(message_meta);
 
-  networking::util::Part meta_part{"meta", json_meta};
+  util::Part meta_part{"meta", json_meta};
   multipart.parts[meta_part.name] = meta_part;
 
   // attach all attributes as parts
   for (const auto &attribute_name : message->GetAttributeNames()) {
-    networking::util::Part attribute_part{
+    util::Part attribute_part{
         attribute_name,
         std::move(message->GetAttribute(attribute_name).value())};
 
     multipart.parts[attribute_name] = std::move(attribute_part);
   }
 
-  return networking::util::generateMultipartFormData(multipart);
+  return generateMultipartFormData(multipart);
 }
 
 std::string extractPartContent(networking::util::Multipart &multipart,
@@ -101,7 +100,7 @@ std::string extractPartContent(networking::util::Multipart &multipart,
 SharedMessage
 MessageConverter::FromMultipartFormData(const std::string &multipart_string) {
 
-  auto multipart = networking::util::parseMultipartFormData(multipart_string);
+  auto multipart = util::parseMultipartFormData(multipart_string);
 
   SharedMessage parsed_message;
 
@@ -109,8 +108,8 @@ MessageConverter::FromMultipartFormData(const std::string &multipart_string) {
   auto meta_part_content = extractPartContent(multipart, "meta");
 
   {
-    json::error_code err;
-    json::value message_body = boost::json::parse(meta_part_content, err);
+    system::error_code err;
+    json::value message_body = json::parse(meta_part_content, err);
 
     if (err) {
       LOG_ERR("cannot parse message meta part (JSON) due to syntax errors: "
