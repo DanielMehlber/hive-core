@@ -369,6 +369,6 @@ TEST(ServiceTest, service_peer_disconnected) {
 
   node_1.job_manager.Borrow()->InvokeCycleAndWait();
 
-  future_response.wait();
+  WaitForFutureUntilTimeout(future_response, 10s);
   ASSERT_THROW(future_response.get(), std::exception);
 }

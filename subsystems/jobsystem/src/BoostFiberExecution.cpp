@@ -64,6 +64,10 @@ void BoostFiberExecution::Schedule(std::shared_ptr<Job> job) {
       LOG_WARN("job execution channel to fibers was full and blocked "
                "execution; inceasing its buffer size is recommended")
       break;
+    default:
+      LOG_WARN("scheduling job " << job->GetId()
+                                 << " failed for an unknown reason")
+      break;
     }
   }
 }
@@ -160,7 +164,7 @@ void BoostFiberExecution::Stop() {
   m_managing_instance = common::memory::Reference<JobManager>();
 }
 
-void BoostFiberExecution::ExecuteWorker(std::atomic_int* barrier) {
+void BoostFiberExecution::ExecuteWorker(std::atomic_int *barrier) {
 
   /*
    * Work sharing = a scheduler takes fibers from other threads when it has no
