@@ -1,7 +1,6 @@
-#include "events/Event.h"
+#pragma once
 
-#ifndef SERVICEREGISTEREDMESSAGE_H
-#define SERVICEREGISTEREDMESSAGE_H
+#include "events/Event.h"
 
 namespace services {
 class ServiceRegisteredNotification {
@@ -33,5 +32,3 @@ inline std::string ServiceRegisteredNotification::GetServiceName() {
   return m_message->GetPayload<std::string>("service-name").value_or("");
 }
 } // namespace services
-
-#endif // SERVICEREGISTEREDMESSAGE_H

@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETCONVERTERTEST_H
-#define WEBSOCKETCONVERTERTEST_H
+#pragma once
 
 #include "networking/messaging/MessageConverter.h"
 #include <gtest/gtest.h>
@@ -38,5 +37,3 @@ TEST(WebSockets, message_converter_invalid) {
   ASSERT_THROW(converter.FromMultipartFormData(invalid_payload),
                MessagePayloadInvalidException);
 }
-
-#endif /* WEBSOCKETCONVERTERTEST_H */

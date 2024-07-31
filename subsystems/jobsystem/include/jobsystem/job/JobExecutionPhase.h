@@ -1,5 +1,4 @@
-#ifndef JOBEXECUTIONPHASE_H
-#define JOBEXECUTIONPHASE_H
+#pragma once
 
 namespace jobsystem::job {
 
@@ -28,5 +27,3 @@ enum JobExecutionPhase {
   CLEAN_UP
 };
 } // namespace jobsystem::job
-
-#endif /* JOBEXECUTIONPHASE_H */

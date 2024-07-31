@@ -1,5 +1,4 @@
-#ifndef ONSCREENRENDERER_H
-#define ONSCREENRENDERER_H
+#pragma once
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "graphics/renderer/IRenderer.h"
@@ -68,5 +67,3 @@ inline RendererSetup OnscreenRenderer::GetSetup() const {
 }
 
 } // namespace graphics
-
-#endif // ONSCREENRENDERER_H

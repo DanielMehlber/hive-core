@@ -1,5 +1,4 @@
-#ifndef OFFSCREENRENDERER_H
-#define OFFSCREENRENDERER_H
+#pragma once
 
 #include "graphics/renderer/IRenderer.h"
 #include "vsg/all.h"
@@ -132,5 +131,3 @@ inline RendererSetup OffscreenRenderer::GetSetup() const {
 }
 
 } // namespace graphics
-
-#endif // OFFSCREENRENDERER_H

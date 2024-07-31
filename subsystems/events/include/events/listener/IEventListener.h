@@ -1,5 +1,4 @@
-#ifndef IMESSAGESUBSCRIBER_H
-#define IMESSAGESUBSCRIBER_H
+#pragma once
 
 #include "events/Event.h"
 
@@ -27,5 +26,3 @@ public:
 typedef std::shared_ptr<IEventListener> SharedEventListener;
 
 } // namespace events
-
-#endif /* IMESSAGESUBSCRIBER_H */

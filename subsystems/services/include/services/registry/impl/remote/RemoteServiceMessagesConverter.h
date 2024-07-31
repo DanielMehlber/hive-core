@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETSERVICERESPONSEMESSAGE_H
-#define WEBSOCKETSERVICERESPONSEMESSAGE_H
+#pragma once
 
 #include "networking/messaging/Message.h"
 #include "services/ServiceRequest.h"
@@ -51,5 +50,3 @@ public:
   FromServiceRequest(const services::ServiceRequest &request);
 };
 } // namespace services::impl
-
-#endif // WEBSOCKETSERVICERESPONSEMESSAGE_H

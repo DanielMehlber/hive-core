@@ -1,5 +1,4 @@
-#ifndef IPLUGINMANAGER_H
-#define IPLUGINMANAGER_H
+#pragma once
 
 #include "IPlugin.h"
 #include <string>
@@ -46,5 +45,3 @@ public:
 };
 
 } // namespace plugins
-
-#endif // IPLUGINMANAGER_H

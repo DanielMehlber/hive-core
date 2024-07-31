@@ -1,5 +1,4 @@
-#ifndef BOOSTWEBSOCKETPEER_H
-#define BOOSTWEBSOCKETPEER_H
+#pragma once
 
 #include "BoostWebSocketConnection.h"
 #include "BoostWebSocketConnectionEstablisher.h"
@@ -136,5 +135,3 @@ public:
   size_t GetActiveConnectionCount() const override;
 };
 } // namespace networking::messaging::websockets
-
-#endif /* BOOSTWEBSOCKETPEER_H */

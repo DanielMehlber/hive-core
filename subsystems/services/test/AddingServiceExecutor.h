@@ -1,5 +1,4 @@
-#ifndef ADDINGSERVICEEXECUTOR_H
-#define ADDINGSERVICEEXECUTOR_H
+#pragma once
 
 #include "services/executor/impl/LocalServiceExecutor.h"
 
@@ -60,5 +59,3 @@ SharedServiceRequest GenerateAddingRequest(int a, int b) {
 int GetResultOfAddition(const SharedServiceResponse &result) {
   return std::stoi(result->GetResult("sum").value());
 }
-
-#endif // ADDINGSERVICEEXECUTOR_H

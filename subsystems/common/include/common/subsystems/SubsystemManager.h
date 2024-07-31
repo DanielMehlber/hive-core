@@ -1,5 +1,4 @@
-#ifndef SUBSYSTEMMANAGER_H
-#define SUBSYSTEMMANAGER_H
+#pragma once
 
 #include "boost/core/demangle.hpp"
 #include "common/exceptions/ExceptionsBase.h"
@@ -159,5 +158,3 @@ void SubsystemManager::AddOrReplaceSubsystem(
 }
 
 } // namespace common::subsystems
-
-#endif // SUBSYSTEMMANAGER_H

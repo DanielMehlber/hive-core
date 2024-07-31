@@ -1,5 +1,4 @@
-#ifndef UUIDGENERATOR_H
-#define UUIDGENERATOR_H
+#pragma once
 
 #include <string>
 
@@ -13,5 +12,3 @@ public:
   static std::string Random() noexcept;
 };
 } // namespace common::uuid
-
-#endif // UUIDGENERATOR_H

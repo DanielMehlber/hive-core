@@ -1,5 +1,4 @@
-#ifndef JOBMUTEX_H
-#define JOBMUTEX_H
+#pragma once
 
 #include <condition_variable>
 #include <mutex>
@@ -18,5 +17,3 @@ typedef BoostFiberSpinLock mutex;
 typedef BoostFiberRecursiveSpinLock recursive_mutex;
 } // namespace jobsystem
 #endif
-
-#endif // JOBMUTEX_H

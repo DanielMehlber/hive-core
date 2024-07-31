@@ -1,5 +1,4 @@
-#ifndef FUNCTIONALMESSAGESUBSCRIBER_H
-#define FUNCTIONALMESSAGESUBSCRIBER_H
+#pragma once
 
 #include "common/uuid/UuidGenerator.h"
 #include "events/Event.h"
@@ -37,5 +36,3 @@ public:
 };
 
 } // namespace events
-
-#endif /* FUNCTIONALMESSAGESUBSCRIBER_H */

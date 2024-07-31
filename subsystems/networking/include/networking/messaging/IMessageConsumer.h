@@ -1,5 +1,4 @@
-#ifndef IWEBSOCKETMESSAGECONSUMER_H
-#define IWEBSOCKETMESSAGECONSUMER_H
+#pragma once
 
 #include "ConnectionInfo.h"
 #include "Message.h"
@@ -31,5 +30,3 @@ public:
 typedef std::shared_ptr<IMessageConsumer> SharedMessageConsumer;
 
 } // namespace networking::messaging
-
-#endif /* IWEBSOCKETMESSAGECONSUMER_H */

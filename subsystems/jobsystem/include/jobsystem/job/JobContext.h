@@ -1,5 +1,4 @@
-#ifndef JOBCONTEXT_H
-#define JOBCONTEXT_H
+#pragma once
 
 #include "common/memory/ExclusiveOwnership.h"
 #include <chrono>
@@ -45,5 +44,3 @@ inline common::memory::Borrower<JobManager> JobContext::GetJobManager() {
 }
 
 } // namespace jobsystem
-
-#endif /* JOBCONTEXT_H */

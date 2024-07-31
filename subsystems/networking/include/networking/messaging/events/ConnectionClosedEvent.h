@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_CONNECTIONCLOSEDEVENT_H
-#define SIMULATION_FRAMEWORK_CONNECTIONCLOSEDEVENT_H
+#pragma once
 
 #include "events/Event.h"
 
@@ -10,14 +9,15 @@ private:
 
 public:
   explicit ConnectionClosedEvent(
-      events::SharedEvent event =
-          std::make_shared<events::Event>("connection-closed"))
+      events::SharedEvent event = std::make_shared<events::Event>(c_event_name))
       : m_event(std::move(event)) {}
 
   events::SharedEvent GetEvent() const;
 
   std::string GetPeerId() const;
   void SetPeerId(const std::string &peer_id);
+
+  static constexpr const char *c_event_name = "connection-closed";
 };
 
 inline events::SharedEvent ConnectionClosedEvent::GetEvent() const {
@@ -33,5 +33,3 @@ inline void ConnectionClosedEvent::SetPeerId(const std::string &peer_id) {
 }
 
 } // namespace networking
-
-#endif // SIMULATION_FRAMEWORK_CONNECTIONCLOSEDEVENT_H

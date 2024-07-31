@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_ASSERT_H
-#define SIMULATION_FRAMEWORK_ASSERT_H
+#pragma once
 
 #ifndef NDEBUG
 #include <iostream>
@@ -18,7 +17,5 @@
     }                                                                          \
   }
 #else
-#define ASSERT(x, message)
+#define DEBUG_ASSERT(x, message)
 #endif
-
-#endif // SIMULATION_FRAMEWORK_ASSERT_H

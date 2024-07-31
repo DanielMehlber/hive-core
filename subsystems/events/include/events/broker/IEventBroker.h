@@ -1,5 +1,4 @@
-#ifndef IMESSAGEBROKER_H
-#define IMESSAGEBROKER_H
+#pragma once
 
 #include "events/Event.h"
 #include "events/listener/IEventListener.h"
@@ -60,5 +59,3 @@ public:
 };
 
 } // namespace events
-
-#endif /* IMESSAGEBROKER_H */

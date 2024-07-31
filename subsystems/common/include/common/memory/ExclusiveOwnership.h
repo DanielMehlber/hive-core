@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_EXCLUSIVEOWNERSHIP_H
-#define SIMULATION_FRAMEWORK_EXCLUSIVEOWNERSHIP_H
+#pragma once
 
 #include "common/assert/Assert.h"
 #include "common/exceptions/ExceptionsBase.h"
@@ -557,5 +556,3 @@ template <typename T> Owner<T>::~Owner() {
 }
 
 } // namespace common::memory
-
-#endif // SIMULATION_FRAMEWORK_EXCLUSIVEOWNERSHIP_H

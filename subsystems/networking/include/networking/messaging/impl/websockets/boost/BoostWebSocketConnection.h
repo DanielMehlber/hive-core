@@ -1,5 +1,4 @@
-#ifndef BOOSTWEBSOCKETCONNECTION_H
-#define BOOSTWEBSOCKETCONNECTION_H
+#pragma once
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "jobsystem/manager/JobManager.h"
@@ -156,5 +155,3 @@ typedef std::shared_ptr<BoostWebSocketConnection>
     SharedBoostWebSocketConnection;
 
 } // namespace networking::messaging::websockets
-
-#endif /* BOOSTWEBSOCKETCONNECTION_H */

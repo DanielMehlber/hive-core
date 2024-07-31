@@ -1,5 +1,4 @@
-#ifndef TIMER_H
-#define TIMER_H
+#pragma once
 
 #include "common/profiling/TimerManager.h"
 #include <chrono>
@@ -24,5 +23,3 @@ public:
 };
 
 } // namespace common::profiling
-
-#endif // TIMER_H

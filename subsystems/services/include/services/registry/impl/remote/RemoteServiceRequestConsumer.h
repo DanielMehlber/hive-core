@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETSERVICEREQUESTCONSUMER_H
-#define WEBSOCKETSERVICEREQUESTCONSUMER_H
+#pragma once
 
 #include "jobsystem/manager/JobManager.h"
 #include "networking/messaging/IMessageConsumer.h"
@@ -47,5 +46,3 @@ RemoteServiceRequestConsumer::GetMessageType() const noexcept {
 }
 
 } // namespace services::impl
-
-#endif // WEBSOCKETSERVICEREQUESTCONSUMER_H

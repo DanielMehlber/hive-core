@@ -1,25 +1,15 @@
-#ifndef WEBSOCKETCONNECTIONINFO_H
-#define WEBSOCKETCONNECTIONINFO_H
+#pragma once
 
 #include <string>
 
 namespace networking::messaging {
 
-class ConnectionInfo {
-protected:
-  std::string m_hostname;
-
-public:
-  void SetHostname(const std::string &hostname);
-  std::string GetHostname() const;
+/**
+ * Contains information about a connection to a remote endpoint or foreign host.
+ */
+struct ConnectionInfo {
+  /** used as identifier for the connection */
+  std::string hostname;
 };
 
-inline void ConnectionInfo::SetHostname(const std::string &hostname) {
-  m_hostname = hostname;
-}
-
-inline std::string ConnectionInfo::GetHostname() const { return m_hostname; }
-
 } // namespace networking::messaging
-
-#endif // WEBSOCKETCONNECTIONINFO_H

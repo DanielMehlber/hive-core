@@ -1,5 +1,4 @@
-#ifndef JOBSTATE_H
-#define JOBSTATE_H
+#pragma once
 
 namespace jobsystem::job {
 
@@ -51,5 +50,3 @@ enum JobState {
   FAILED
 };
 } // namespace jobsystem::job
-
-#endif /* JOBSTATE_H */

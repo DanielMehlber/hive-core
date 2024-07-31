@@ -1,5 +1,4 @@
-#ifndef BOOSTWEBSOCKETCONNECTIONESTABLISHER_H
-#define BOOSTWEBSOCKETCONNECTIONESTABLISHER_H
+#pragma once
 
 #include "BoostWebSocketConnection.h"
 #include "common/exceptions/ExceptionsBase.h"
@@ -66,5 +65,3 @@ public:
   std::future<void> EstablishConnectionTo(const std::string &uri);
 };
 } // namespace networking::messaging::websockets
-
-#endif /* BOOSTWEBSOCKETCONNECTIONESTABLISHER_H */

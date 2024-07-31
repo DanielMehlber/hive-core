@@ -1,5 +1,4 @@
-#ifndef LOCALSERVICEREGISTRYTEST_H
-#define LOCALSERVICEREGISTRYTEST_H
+#pragma once
 
 #include "AddingServiceExecutor.h"
 #include "services/executor/impl/LocalServiceExecutor.h"
@@ -36,5 +35,3 @@ TEST(ServiceTests, adding_service) {
 
   job_manager->StopExecution();
 }
-
-#endif // LOCALSERVICEREGISTRYTEST_H

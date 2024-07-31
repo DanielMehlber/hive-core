@@ -1,5 +1,4 @@
-#ifndef JOBCOUNTER_H
-#define JOBCOUNTER_H
+#pragma once
 
 #include "common/assert/Assert.h"
 #include "jobsystem/synchronization/IJobWaitable.h"
@@ -62,5 +61,3 @@ inline bool JobCounter::IsFinished() {
 typedef std::shared_ptr<jobsystem::job::JobCounter> SharedJobCounter;
 
 } // namespace jobsystem::job
-
-#endif /* JOBCOUNTER_H */

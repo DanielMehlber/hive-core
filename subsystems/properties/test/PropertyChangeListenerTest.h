@@ -1,5 +1,4 @@
-#ifndef PROPERTYCHANGELISTENERTEST_H
-#define PROPERTYCHANGELISTENERTEST_H
+#pragma once
 
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "jobsystem/manager/JobManager.h"
@@ -118,5 +117,3 @@ TEST(PropertyTest, listener_unregistered) {
   job_manager->InvokeCycleAndWait();
   ASSERT_EQ(listener->GetChangeNotificationsReceived(), 0);
 }
-
-#endif /* PROPERTYCHANGELISTENERTEST_H */

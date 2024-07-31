@@ -1,5 +1,4 @@
-#ifndef SERVICERESPONSE_H
-#define SERVICERESPONSE_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -94,5 +93,3 @@ inline std::string ServiceResponse::GetTransactionId() const {
 typedef std::shared_ptr<ServiceResponse> SharedServiceResponse;
 
 } // namespace services
-
-#endif // SERVICERESPONSE_H

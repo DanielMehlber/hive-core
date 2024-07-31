@@ -1,5 +1,4 @@
-#ifndef PLAINRENDERRESULTENCODER_H
-#define PLAINRENDERRESULTENCODER_H
+#pragma once
 
 #include "common/profiling/Timer.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
@@ -34,5 +33,3 @@ PlainRenderResultEncoder::Decode(const std::string &str) {
 }
 
 } // namespace graphics
-
-#endif // PLAINRENDERRESULTENCODER_H

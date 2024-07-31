@@ -1,5 +1,4 @@
-#ifndef ISERVICEEXECUTOR_H
-#define ISERVICEEXECUTOR_H
+#pragma once
 
 #include "common/memory/ExclusiveOwnership.h"
 #include "jobsystem/manager/JobManager.h"
@@ -64,5 +63,3 @@ public:
 
 typedef std::shared_ptr<IServiceExecutor> SharedServiceExecutor;
 } // namespace services
-
-#endif // ISERVICEEXECUTOR_H

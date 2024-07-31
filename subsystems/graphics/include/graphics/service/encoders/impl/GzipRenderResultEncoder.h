@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_GZIPRENDERRESULTENCODER_H
-#define SIMULATION_FRAMEWORK_GZIPRENDERRESULTENCODER_H
+#pragma once
 
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 
@@ -13,5 +12,3 @@ public:
 };
 
 } // namespace graphics
-
-#endif // SIMULATION_FRAMEWORK_GZIPRENDERRESULTENCODER_H

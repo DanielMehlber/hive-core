@@ -1,5 +1,4 @@
-#ifndef WEBSOCKETSERVICEREGISTRATIONMESSAGE_H
-#define WEBSOCKETSERVICEREGISTRATIONMESSAGE_H
+#pragma once
 
 #include "networking/messaging/Message.h"
 
@@ -59,5 +58,3 @@ inline std::string RemoteServiceRegistrationMessage::GetId() noexcept {
 }
 
 } // namespace services::impl
-
-#endif // WEBSOCKETSERVICEREGISTRATIONMESSAGE_H

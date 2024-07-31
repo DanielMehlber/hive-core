@@ -1,5 +1,4 @@
-#ifndef URLPARSER_H
-#define URLPARSER_H
+#pragma once
 
 #include <optional>
 #include <regex>
@@ -31,5 +30,3 @@ public:
   static std::optional<ParsedUrl> parse(const std::string &url);
 };
 } // namespace networking::util
-
-#endif /* URLPARSER_H */

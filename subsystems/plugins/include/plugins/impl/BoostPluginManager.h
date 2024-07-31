@@ -1,5 +1,4 @@
-#ifndef BOOSTPLUGINMANAGER_H
-#define BOOSTPLUGINMANAGER_H
+#pragma once
 
 #include "boost/dll/shared_library.hpp"
 #include "common/subsystems/SubsystemManager.h"
@@ -46,5 +45,3 @@ public:
 };
 
 } // namespace plugins
-
-#endif // BOOSTPLUGINMANAGER_H

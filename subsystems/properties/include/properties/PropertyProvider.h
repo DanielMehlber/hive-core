@@ -1,5 +1,4 @@
-#ifndef PROPERTYPROVIDER_H
-#define PROPERTYPROVIDER_H
+#pragma once
 
 #include "PropertyChangeListener.h"
 #include "common/memory/ExclusiveOwnership.h"
@@ -119,5 +118,3 @@ inline PropType PropertyProvider::GetOrElse(const std::string &key,
 }
 
 } // namespace props
-
-#endif /* PROPERTYPROVIDER_H */

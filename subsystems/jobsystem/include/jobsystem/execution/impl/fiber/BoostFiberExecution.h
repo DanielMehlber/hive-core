@@ -1,5 +1,4 @@
-#ifndef FIBEREXECUTIONIMPL_H
-#define FIBEREXECUTIONIMPL_H
+#pragma once
 
 #include "common/config/Configuration.h"
 #include "jobsystem/execution/IJobExecution.h"
@@ -52,10 +51,11 @@ private:
 
   /**
    * Processes jobs as fibers.
-   * @param barrier Is notified when the main fiber has been set up and is ready to run.
+   * @param barrier Is notified when the main fiber has been set up and is ready
+   * to run.
    * @note This is run by the worker threads.
    */
-  void ExecuteWorker(std::atomic_int* barrier);
+  void ExecuteWorker(std::atomic_int *barrier);
 
 public:
   BoostFiberExecution() = delete;
@@ -131,5 +131,3 @@ inline jobsystem::execution::JobExecutionState BoostFiberExecution::GetState() {
 }
 
 } // namespace jobsystem::execution::impl
-
-#endif /* FIBEREXECUTIONIMPL_H */

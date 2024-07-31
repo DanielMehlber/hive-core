@@ -1,5 +1,4 @@
-#ifndef BOOSTFIBERSPINLOCK_H
-#define BOOSTFIBERSPINLOCK_H
+#pragma once
 
 #include <atomic>
 
@@ -31,5 +30,3 @@ public:
 };
 
 } // namespace jobsystem
-
-#endif // BOOSTFIBERSPINLOCK_H

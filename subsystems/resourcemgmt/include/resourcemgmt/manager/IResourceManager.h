@@ -1,5 +1,4 @@
-#ifndef IRESOURCEMANAGER_H
-#define IRESOURCEMANAGER_H
+#pragma once
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "resourcemgmt/Resource.h"
@@ -42,5 +41,3 @@ public:
 };
 
 } // namespace resourcemgmt
-
-#endif /* IRESOURCEMANAGER_H */

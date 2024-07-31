@@ -1,5 +1,4 @@
-#ifndef SIMULATION_FRAMEWORK_SIMPLEVIEWMATRIX_H
-#define SIMULATION_FRAMEWORK_SIMPLEVIEWMATRIX_H
+#pragma once
 
 #include <utility>
 
@@ -21,5 +20,3 @@ public:
   vsg::dmat4 matrix;
 };
 } // namespace graphics
-
-#endif // SIMULATION_FRAMEWORK_SIMPLEVIEWMATRIX_H

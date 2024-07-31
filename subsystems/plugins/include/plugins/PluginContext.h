@@ -1,5 +1,4 @@
-#ifndef PLUGINCONTEXT_H
-#define PLUGINCONTEXT_H
+#pragma once
 
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
@@ -37,5 +36,3 @@ PluginContext::GetKernelSubsystems() const {
 typedef std::shared_ptr<PluginContext> SharedPluginContext;
 
 } // namespace plugins
-
-#endif // PLUGINCONTEXT_H

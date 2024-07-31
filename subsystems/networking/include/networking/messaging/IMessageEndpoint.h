@@ -1,5 +1,4 @@
-#ifndef IWEBSOCKETSERVER_H
-#define IWEBSOCKETSERVER_H
+#pragma once
 
 #include "IMessageConsumer.h"
 #include "common/exceptions/ExceptionsBase.h"
@@ -100,5 +99,3 @@ public:
 };
 
 } // namespace networking::messaging
-
-#endif /* IWEBSOCKETSERVER_H */

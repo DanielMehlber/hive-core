@@ -1,5 +1,4 @@
-#ifndef RESOURCEMANAGER_H
-#define RESOURCEMANAGER_H
+#pragma once
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "jobsystem/synchronization/JobMutex.h"
@@ -40,5 +39,3 @@ public:
 };
 
 } // namespace resourcemgmt
-
-#endif /* RESOURCEMANAGER_H */

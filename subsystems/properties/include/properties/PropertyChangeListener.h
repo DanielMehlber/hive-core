@@ -1,5 +1,4 @@
-#ifndef PROPERTYCHANGELISTENER_H
-#define PROPERTYCHANGELISTENER_H
+#pragma once
 
 #include "events/listener/IEventListener.h"
 #include "logging/LogManager.h"
@@ -37,5 +36,3 @@ public:
 typedef std::shared_ptr<PropertyChangeListener> SharedPropertyListener;
 
 } // namespace props
-
-#endif /* PROPERTYCHANGELISTENER_H */

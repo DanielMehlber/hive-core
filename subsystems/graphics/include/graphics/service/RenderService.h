@@ -1,5 +1,4 @@
-#ifndef RENDERSERVICE_H
-#define RENDERSERVICE_H
+#pragma once
 
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
@@ -40,5 +39,3 @@ public:
 };
 
 } // namespace graphics
-
-#endif // RENDERSERVICE_H
