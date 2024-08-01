@@ -59,7 +59,7 @@ void RemoteServiceRegistry::Register(const SharedServiceExecutor &stub) {
   if (!stub->IsCallable()) {
     LOG_WARN("cannot register " << (stub->IsLocal() ? "local" : "remote")
                                 << " service '" << stub->GetServiceName()
-                                << " because it is not callable (anymore)")
+                                << "' because it is not callable (anymore)")
     return;
   }
 
@@ -188,7 +188,7 @@ void RemoteServiceRegistry::SetupEventSubscribers() {
       std::make_shared<events::FunctionalEventListener>(
           [this](const events::SharedEvent event) {
             networking::ConnectionEstablishedEvent established_event(event);
-            auto peer_id = established_event.GetPeerId();
+            auto peer_id = established_event.GetEndpointId();
             SendServicePortfolioToPeer(peer_id);
           });
 
@@ -206,7 +206,7 @@ void RemoteServiceRegistry::SetupMessageConsumers() {
 
   auto response_consumer =
       std::make_shared<RemoteServiceResponseConsumer>(m_subsystems);
-  
+
   m_response_consumer = response_consumer;
   m_registration_consumer = std::make_shared<RemoteServiceRegistrationConsumer>(
       std::bind(&RemoteServiceRegistry::Register, this, _1), response_consumer,

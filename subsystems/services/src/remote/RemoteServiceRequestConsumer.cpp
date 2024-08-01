@@ -88,7 +88,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
           if (auto maybe_endpoint = _this->m_endpoint.TryBorrow()) {
             auto endpoint = maybe_endpoint.value();
             auto sending_progress =
-                endpoint->Send(connection_info.hostname, response_message);
+                endpoint->Send(connection_info.endpoint_id, response_message);
             context->GetJobManager()->WaitForCompletion(sending_progress);
 
             try {

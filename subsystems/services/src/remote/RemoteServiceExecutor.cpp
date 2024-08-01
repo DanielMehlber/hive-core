@@ -18,7 +18,8 @@ RemoteServiceExecutor::RemoteServiceExecutor(
 
 bool RemoteServiceExecutor::IsCallable() {
   if (auto maybe_endpoint = m_endpoint.TryBorrow()) {
-    return maybe_endpoint.value()->HasConnectionTo(m_remote_host_info.hostname);
+    return maybe_endpoint.value()->HasConnectionTo(
+        m_remote_host_info.endpoint_id);
   } else {
     return false;
   }
@@ -34,8 +35,8 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
       [_this = shared_from_this(), request, promise](JobContext *context) {
         if (_this->IsCallable()) {
           LOG_DEBUG("calling remote web-socket service '"
-                    << request->GetServiceName() << "' at endpoint "
-                    << _this->m_remote_host_info.hostname)
+                    << request->GetServiceName() << "' at node "
+                    << _this->m_remote_host_info.endpoint_id)
 
           if (!_this->m_response_consumer.expired()) {
             /* pass the promise (resolving the service request) to the response
@@ -60,7 +61,7 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
               RemoteServiceMessagesConverter::FromServiceRequest(*request);
 
           std::future<void> sending_progress = _this->m_endpoint.Borrow()->Send(
-              _this->m_remote_host_info.hostname, message);
+              _this->m_remote_host_info.endpoint_id, message);
 
           // wait until request has been sent and register promise for
           // resolution
@@ -76,28 +77,33 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
 
             if (maybe_promise.has_value()) {
               auto response_promise = std::move(maybe_promise.value());
-              LOG_ERR("failed to call service '"
-                      << request->GetServiceName() << "' at "
+              LOG_ERR("failed to call remote service '"
+                      << request->GetServiceName() << "' of node "
+                      << _this->m_remote_host_info.endpoint_id << " at "
                       << _this->m_remote_host_info.hostname << ": "
                       << sending_exception.what())
-              auto except =
-                  BUILD_EXCEPTION(CallFailedException,
-                                  "failed to call service '"
-                                      << request->GetServiceName() << "' at "
-                                      << _this->m_remote_host_info.hostname
-                                      << ": " << sending_exception.what());
+              auto except = BUILD_EXCEPTION(
+                  CallFailedException,
+                  "failed to call remote service '"
+                      << request->GetServiceName() << "' of node "
+                      << _this->m_remote_host_info.endpoint_id << " at "
+                      << _this->m_remote_host_info.hostname << ": "
+                      << sending_exception.what());
 
               response_promise.set_exception(std::make_exception_ptr(except));
             }
           }
         } else {
           LOG_ERR("cannot call remote web-socket service "
-                  << request->GetServiceName() << " at "
+                  << request->GetServiceName() << " of node "
+                  << _this->m_remote_host_info.endpoint_id << " at "
                   << _this->m_remote_host_info.hostname)
           auto exception = BUILD_EXCEPTION(
-              CallFailedException, "cannot call remote web-socket service "
-                                       << request->GetServiceName() << " at "
-                                       << _this->m_remote_host_info.hostname);
+              CallFailedException,
+              "cannot call remote web-socket service "
+                  << request->GetServiceName() << " of node "
+                  << _this->m_remote_host_info.endpoint_id << " at "
+                  << _this->m_remote_host_info.hostname);
           promise->set_exception(std::make_exception_ptr(exception));
         }
         return JobContinuation::DISPOSE;

@@ -15,19 +15,20 @@ public:
 
   events::SharedEvent GetEvent() const;
 
-  std::string GetPeerId() const;
-  void SetPeer(const std::string &peer_id);
+  std::string GetEndpointId() const;
+  void SetEndpointId(const std::string &peer_id);
 };
 
 inline events::SharedEvent ConnectionEstablishedEvent::GetEvent() const {
   return m_event;
 }
 
-inline std::string ConnectionEstablishedEvent::GetPeerId() const {
+inline std::string ConnectionEstablishedEvent::GetEndpointId() const {
   return m_event->GetPayload<std::string>("peer-id").value();
 }
 
-inline void ConnectionEstablishedEvent::SetPeer(const std::string &peer_id) {
+inline void
+ConnectionEstablishedEvent::SetEndpointId(const std::string &peer_id) {
   m_event->SetPayload<std::string>("peer-id", peer_id);
 }
 

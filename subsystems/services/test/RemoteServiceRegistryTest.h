@@ -17,6 +17,7 @@ using namespace networking;
 using namespace common::test;
 
 struct Node {
+  std::string uuid;
   common::memory::Owner<common::subsystems::SubsystemManager> subsystems;
   common::memory::Reference<JobManager> job_manager;
   common::memory::Reference<IServiceRegistry> service_registry;
@@ -41,6 +42,12 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<events::IEventBroker>(
       std::move(event_broker));
 
+  auto property_provider = common::memory::Owner<props::PropertyProvider>(
+      subsystems.CreateReference());
+  auto property_provider_ref = property_provider.CreateReference();
+  subsystems->AddOrReplaceSubsystem<props::PropertyProvider>(
+      std::move(property_provider));
+
   // setup networking node
   config->Set("net.port", port);
   auto networking_node = common::memory::Owner<networking::NetworkingManager>(
@@ -50,6 +57,9 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
       std::move(networking_node));
 
+  std::string node_id =
+      property_provider_ref.Borrow()->Get<std::string>("net.node.id").value();
+
   // setup service registry
   auto service_registry =
       common::memory::Owner<services::impl::RemoteServiceRegistry>(
@@ -58,8 +68,12 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(
       std::move(service_registry));
 
-  return Node{std::move(subsystems), job_manager_ref, service_registry_ref,
-              networking_endpoint_ref, port};
+  return Node{node_id,
+              std::move(subsystems),
+              job_manager_ref,
+              service_registry_ref,
+              networking_endpoint_ref,
+              port};
 }
 
 TEST(ServiceTests, run_single_remote_service) {

@@ -5,13 +5,8 @@
 #include "BoostWebSocketConnectionListener.h"
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
-#include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/messaging/IMessageEndpoint.h"
-#include "properties/PropertyProvider.h"
-#include <atomic>
-#include <boost/beast/core.hpp>
-#include <boost/beast/websocket.hpp>
 #include <list>
 #include <map>
 
@@ -89,16 +84,19 @@ private:
 
   /**
    * Constructs a new connection object from a stream
-   * @param url id of connection
+   * @param connection_info connection specification
    * @param stream web-socket stream
+   * registered and ready to use.
    */
-  void AddConnection(const std::string &url, stream_type &&stream);
+  void AddConnection(const ConnectionInfo &connection_info,
+                     stream_type &&stream);
 
   std::optional<SharedBoostWebSocketConnection>
-  GetConnection(const std::string &uri);
+  GetConnection(const std::string &connection_id);
 
-  void ProcessReceivedMessage(std::string data,
-                              SharedBoostWebSocketConnection over_connection);
+  void
+  ProcessReceivedMessage(const std::string &data,
+                         const SharedBoostWebSocketConnection &over_connection);
 
   void InitAndStartConnectionListener();
   void InitConnectionEstablisher();
@@ -112,25 +110,26 @@ public:
       const common::memory::Reference<common::subsystems::SubsystemManager>
           &subsystems,
       const common::config::SharedConfiguration &config);
-  virtual ~BoostWebSocketEndpoint();
+
+  ~BoostWebSocketEndpoint() override;
 
   void AddMessageConsumer(std::weak_ptr<IMessageConsumer> consumer) override;
 
   std::list<SharedMessageConsumer>
   GetConsumersOfMessageType(const std::string &type_name) noexcept override;
 
-  std::future<void> Send(const std::string &uri,
+  std::future<void> Send(const std::string &node_id,
                          SharedMessage message) override;
 
-  std::future<void>
+  std::future<ConnectionInfo>
   EstablishConnectionTo(const std::string &uri) noexcept override;
 
-  void CloseConnectionTo(const std::string &uri) noexcept override;
+  void CloseConnectionTo(const std::string &node_id) noexcept override;
 
   std::future<size_t>
   IssueBroadcastAsJob(const SharedMessage &message) override;
 
-  bool HasConnectionTo(const std::string &uri) const noexcept override;
+  bool HasConnectionTo(const std::string &node_id) const noexcept override;
 
   size_t GetActiveConnectionCount() const override;
 };
