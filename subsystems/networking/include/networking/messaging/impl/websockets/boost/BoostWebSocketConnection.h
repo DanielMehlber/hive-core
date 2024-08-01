@@ -25,31 +25,31 @@ private:
   /**
    * TCP stream that allows interaction with the communication partner.
    */
-  stream_type m_socket;
-  mutable jobsystem::recursive_mutex m_socket_mutex;
+  stream_type m_web_socket_stream;
+  mutable jobsystem::recursive_mutex m_web_socket_stream_mutex;
 
   /**
    * Buffer for received messages
    */
-  boost::beast::flat_buffer m_buffer;
+  boost::beast::flat_buffer m_receive_buffer;
 
   /**
    * Will be called to pass the received data on for further processing
    */
   const std::function<void(const std::string &,
                            std::shared_ptr<BoostWebSocketConnection>)>
-      m_on_message_received;
+      m_message_received_callback;
 
   /**
    * Will be called when the connection was closed by this or the other
    * peer
    */
-  const std::function<void(const std::string &)> m_on_connection_closed;
+  const std::function<void(const std::string &)> m_connection_closed_callback;
 
   /**
    * Data describing the remote endpoint of this connection
    */
-  boost::asio::ip::tcp::endpoint m_remote_endpoint_data;
+  boost::asio::ip::tcp::endpoint m_remote_endpoint_info;
 
   /**
    * Info about this connection.
@@ -89,14 +89,18 @@ private:
 public:
   /**
    * Constructs a new web-socket connection handler
-   * @param socket TCP stream which is used for the web-socket connection
-   * @param on_message_received callback function on when a message has been
-   * received
+   * @param on_connection_closed callback function on when the connection has
+   * received.
+   * @param on_message_received callback function that will be called when a new
+   * message has been received and needs to be processed.
+   * @param connection_info connection specification.
+   * @param web_socket_stream web-socket stream that will be handled by this
+   * instance.
    * @attention The newly constructed connection won't automatically listen to
    * incoming events. This can be started by calling StartReceivingMessages.
    */
   BoostWebSocketConnection(
-      ConnectionInfo info, stream_type &&socket,
+      ConnectionInfo connection_info, stream_type &&web_socket_stream,
       std::function<void(const std::string &,
                          std::shared_ptr<BoostWebSocketConnection>)>
           on_message_received,
@@ -143,13 +147,13 @@ public:
 };
 
 inline std::string BoostWebSocketConnection::GetRemoteHostAddress() const {
-  return m_remote_endpoint_data.address().to_string() + ":" +
-         std::to_string(m_remote_endpoint_data.port());
+  return m_remote_endpoint_info.address().to_string() + ":" +
+         std::to_string(m_remote_endpoint_info.port());
 }
 
 inline bool BoostWebSocketConnection::IsUsable() const {
-  std::unique_lock lock(m_socket_mutex);
-  return m_socket.is_open();
+  std::unique_lock lock(m_web_socket_stream_mutex);
+  return m_web_socket_stream.is_open();
 }
 
 inline const ConnectionInfo &BoostWebSocketConnection::GetInfo() const {

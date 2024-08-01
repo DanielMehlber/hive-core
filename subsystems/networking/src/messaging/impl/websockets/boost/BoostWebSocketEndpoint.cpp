@@ -180,7 +180,8 @@ void BoostWebSocketEndpoint::CleanUpConsumersOfMessageType(
 }
 
 void BoostWebSocketEndpoint::ProcessReceivedMessage(
-    std::string data, SharedBoostWebSocketConnection over_connection) {
+    const std::string &data,
+    const SharedBoostWebSocketConnection &over_connection) {
 
   if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
     auto subsystems = maybe_subsystems.value();
@@ -221,8 +222,8 @@ void BoostWebSocketEndpoint::ProcessReceivedMessage(
   }
 }
 
-void BoostWebSocketEndpoint::AddConnection(ConnectionInfo connection_info,
-                                           stream_type &&stream) {
+void BoostWebSocketEndpoint::AddConnection(
+    const ConnectionInfo &connection_info, stream_type &&stream) {
   std::unique_lock running_lock(m_running_mutex);
   if (!m_running) {
     return;
@@ -316,14 +317,17 @@ void BoostWebSocketEndpoint::InitConnectionEstablisher() {
   }
 }
 
-std::future<void> BoostWebSocketEndpoint::Send(const std::string &uri,
+std::future<void> BoostWebSocketEndpoint::Send(const std::string &node_id,
                                                SharedMessage message) {
-  auto maybe_connection = GetConnection(uri);
-  if (maybe_connection.has_value()) {
-    return maybe_connection.value()->Send(message);
-  } else {
-    THROW_EXCEPTION(NoSuchPeerException, "peer " << uri << " does not exist")
+  auto maybe_connection = GetConnection(node_id);
+
+  bool no_connection_to_node_exists = !maybe_connection.has_value();
+  if (no_connection_to_node_exists) {
+    THROW_EXCEPTION(NoSuchPeerException,
+                    "node " << node_id << " does not exist")
   }
+
+  return maybe_connection.value()->Send(message);
 }
 
 std::future<ConnectionInfo>
@@ -337,22 +341,22 @@ BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
 }
 
 void BoostWebSocketEndpoint::CloseConnectionTo(
-    const std::string &connection_id) noexcept {
+    const std::string &node_id) noexcept {
   std::unique_lock lock(m_connections_mutex);
-  if (m_connections.contains(connection_id)) {
-    m_connections.at(connection_id)->Close();
-    m_connections.erase(connection_id);
+  if (m_connections.contains(node_id)) {
+    m_connections.at(node_id)->Close();
+    m_connections.erase(node_id);
   }
 }
 
 bool BoostWebSocketEndpoint::HasConnectionTo(
-    const std::string &connection_id) const noexcept {
+    const std::string &node_id) const noexcept {
   std::unique_lock lock(m_connections_mutex);
-  if (m_connections.contains(connection_id)) {
-    return m_connections.at(connection_id)->IsUsable();
-  } else {
-    return false;
+  if (m_connections.contains(node_id)) {
+    return m_connections.at(node_id)->IsUsable();
   }
+
+  return false;
 }
 
 std::future<size_t>
@@ -373,8 +377,8 @@ BoostWebSocketEndpoint::IssueBroadcastAsJob(const SharedMessage &message) {
         for (auto &connection_tuple : _this->m_connections) {
           auto connection = connection_tuple.second;
           if (connection->IsUsable()) {
-            auto future = connection->Send(message);
-            futures.push_back(std::move(future));
+            auto sending_progress = connection->Send(message);
+            futures.push_back(std::move(sending_progress));
           } else {
             LOG_WARN("web-socket connection to remote endpoint "
                      << connection->GetRemoteHostAddress()
@@ -384,11 +388,11 @@ BoostWebSocketEndpoint::IssueBroadcastAsJob(const SharedMessage &message) {
 
         // wait for messages to be sent
         lock.unlock();
-        for (auto &future : futures) {
-          context->GetJobManager()->WaitForCompletion(future);
+        for (auto &sending_progress : futures) {
+          context->GetJobManager()->WaitForCompletion(sending_progress);
           count++;
           try {
-            future.get();
+            sending_progress.get();
           } catch (const std::exception &ex) {
             LOG_ERR("failed to broadcast message: " << ex.what())
             count--;

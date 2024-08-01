@@ -40,16 +40,15 @@ public:
 
   /**
    * Sends a message to an endpoint associated with the id.
-   * @attention If there is no existing connection with the endpoint,
+   * @attention If there is no existing connection with the node,
    * this operation will try to establish the connection.
-   * @param endpoint_id identifier of the endpoint that should receive the
-   * message. Depending on the underlying implementation, this might be a
-   * network address.
+   * @param node_id unique identifier of a node in the cluster. There must be a
+   * connection between this endpoint and the node with this id.
    * @param message message that should be sent
    * @return a future indicating the completion of the sending process or
    * contains exception if it failed.
    */
-  virtual std::future<void> Send(const std::string &endpoint_id,
+  virtual std::future<void> Send(const std::string &node_id,
                                  SharedMessage message) = 0;
 
   /**
@@ -69,7 +68,7 @@ public:
 
   /**
    * Establishes connection with another endpoint.
-   * @param endpoint_id id of the endpoint to connect to. Depending on the
+   * @param uri id of the endpoint to connect to. Depending on the
    * underlying implementation, this might be a network address.
    * @return a future indicating success or failure of the connecting process.
    * @note This id is unique and will be treated like a key that identifies the
@@ -77,23 +76,22 @@ public:
    * will not be established.
    */
   virtual std::future<ConnectionInfo>
-  EstablishConnectionTo(const std::string &endpoint_id) noexcept = 0;
+  EstablishConnectionTo(const std::string &uri) noexcept = 0;
 
   /**
    * Closes a connection to an endpoint (if the connection is still open).
-   * @param endpoint_id identifier of the connection that should be closed.
+   * @param node_id unique identifier of a node in the cluster.
    * @note connections that are not established will be ignored.
    */
-  virtual void CloseConnectionTo(const std::string &endpoint_id) noexcept = 0;
+  virtual void CloseConnectionTo(const std::string &node_id) noexcept = 0;
 
   /**
    * Checks if this endpoint is currently connected to another one with this
    * id.
-   * @param endpoint_id identifier of connection
+   * @param node_id unique identifier of a node in the cluster.
    * @return true, if there is an established connection to this host
    */
-  virtual bool
-  HasConnectionTo(const std::string &endpoint_id) const noexcept = 0;
+  virtual bool HasConnectionTo(const std::string &node_id) const noexcept = 0;
 
   virtual ~IMessageEndpoint() = default;
 };

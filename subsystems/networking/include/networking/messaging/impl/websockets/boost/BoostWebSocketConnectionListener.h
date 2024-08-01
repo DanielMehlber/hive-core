@@ -42,7 +42,7 @@ private:
    * connections
    */
   std::unique_ptr<boost::asio::ip::tcp::acceptor>
-      m_incoming_connection_acceptor;
+      m_incoming_tcp_connection_acceptor;
 
   /**
    * Defines the endpoint configuration of this host (port, address,
@@ -65,25 +65,25 @@ private:
 
   /**
    * Performs web-socket handshake using an existing TCP connection
-   * @param current_stream established TCP connection
+   * @param plain_tcp_stream established TCP connection
    */
-  void PerformWebSocketHandshake(std::shared_ptr<stream_type> current_stream);
+  void PerformWebSocketHandshake(std::shared_ptr<stream_type> plain_tcp_stream);
 
   /**
    * After the web-socket handshake has been performed, the resulting
    * connection must be processed for further use.
    * @note This is step 3 of the connection process
-   * @param current_stream TCP connection over which the web-socket handshake
+   * @param web_socket_stream TCP connection over which the web-socket handshake
    * has been performed
    * @param ec error code indicating the handshake's success
    */
-  void ProcessWebSocketHandshake(std::shared_ptr<stream_type> current_stream,
+  void ProcessWebSocketHandshake(std::shared_ptr<stream_type> web_socket_stream,
                                  boost::beast::error_code ec);
 
   void ProcessNodeHandshakeRequest(
-      std::shared_ptr<stream_type> current_stream,
+      std::shared_ptr<stream_type> web_socket_stream,
       ConnectionInfo connection_info,
-      std::shared_ptr<boost::beast::flat_buffer> request_buffer,
+      std::shared_ptr<boost::beast::flat_buffer> handhake_request_buffer,
       boost::beast::error_code ec, std::size_t bytes_transferred);
 
 public:
