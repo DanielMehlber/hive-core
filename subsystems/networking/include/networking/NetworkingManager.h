@@ -9,7 +9,7 @@
 
 namespace networking {
 
-typedef networking::messaging::websockets::BoostWebSocketEndpoint
+typedef messaging::websockets::BoostWebSocketEndpoint
     DefaultMessageEndpointImpl;
 
 /**
@@ -25,6 +25,7 @@ private:
   common::memory::Reference<messaging::IMessageEndpoint> m_message_endpoint;
 
   void StartMessageEndpointServer();
+  void ConfigureNode(const common::config::SharedConfiguration &config);
 
 public:
   NetworkingManager(

@@ -80,9 +80,9 @@ void RemoteServiceResponseConsumer::AddResponsePromise(
                                         request_id](
                                            events::SharedEvent event) mutable {
     networking::ConnectionClosedEvent connection_closed(std::move(event));
-    std::string endpoint_id = connection_closed.GetPeerId();
+    std::string endpoint_id = connection_closed.GetEndpointId();
 
-    if (connection_info.hostname == endpoint_id) {
+    if (connection_info.endpoint_id == endpoint_id) {
       LOG_ERR("connection to remote endpoint '"
               << endpoint_id
               << "' has been closed mid service request. Request cancelled.")

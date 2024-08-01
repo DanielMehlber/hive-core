@@ -2,6 +2,7 @@
 #include "logging/LogManager.h"
 #include "networking/messaging/MessageConverter.h"
 #include <boost/asio.hpp>
+#include <utility>
 
 using namespace networking::messaging;
 using namespace networking::messaging::websockets;
@@ -17,13 +18,14 @@ using namespace std::chrono_literals;
 #define IDLE_TIMEOUT 5s
 
 BoostWebSocketConnection::BoostWebSocketConnection(
-    stream_type &&socket,
+    ConnectionInfo info, stream_type &&socket,
     std::function<void(const std::string &, SharedBoostWebSocketConnection)>
         on_message_received,
     std::function<void(const std::string &)> on_connection_closed)
     : m_socket(std::move(socket)),
       m_on_message_received{std::move(on_message_received)},
-      m_on_connection_closed{std::move(on_connection_closed)} {
+      m_on_connection_closed{std::move(on_connection_closed)},
+      m_connection_info(std::move(info)) {
 
   m_remote_endpoint_data = m_socket.next_layer().socket().remote_endpoint();
 
@@ -108,7 +110,7 @@ void BoostWebSocketConnection::Close() {
              << m_remote_endpoint_data.port())
   }
 
-  m_on_connection_closed(GetConnectionInfo().hostname);
+  m_on_connection_closed(m_connection_info.endpoint_id);
 
   DEBUG_ASSERT(!m_socket.is_open(), "socket should be closed now")
 }
@@ -143,7 +145,7 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
    * or condition variable. The async call must finish before another can be
    * started. The easiest way is to make it synchronous in the first place.
    */
-  boost::beast::error_code error_code;
+  beast::error_code error_code;
   std::size_t bytes_transferred =
       m_socket.write(asio::buffer(*payload), error_code);
 
@@ -190,9 +192,4 @@ void BoostWebSocketConnection::OnMessageSent(
             << " bytes) via web-socket to host "
             << m_remote_endpoint_data.address().to_string() << ":"
             << m_remote_endpoint_data.port())
-}
-
-ConnectionInfo BoostWebSocketConnection::GetConnectionInfo() const {
-  ConnectionInfo info{GetRemoteHostAddress()};
-  return info;
 }

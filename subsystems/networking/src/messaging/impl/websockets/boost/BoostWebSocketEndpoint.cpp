@@ -212,7 +212,7 @@ void BoostWebSocketEndpoint::ProcessReceivedMessage(
 
     for (const auto &consumer : consumer_list) {
       auto job = std::make_shared<MessageConsumerJob>(
-          consumer, message, over_connection->GetConnectionInfo());
+          consumer, message, over_connection->GetInfo());
       job_manager->KickJob(job);
     }
   } else /* if subsystems are not available */ {
@@ -221,19 +221,7 @@ void BoostWebSocketEndpoint::ProcessReceivedMessage(
   }
 }
 
-std::optional<std::string> connectionIdFromUrl(const std::string &url) {
-  auto maybe_parsed_url = util::UrlParser::parse(url);
-  if (maybe_parsed_url.has_value()) {
-    auto parsed_url = maybe_parsed_url.value();
-    std::stringstream ss;
-    ss << parsed_url.host << ":" << parsed_url.port << parsed_url.path;
-    return ss.str();
-  } else {
-    return {};
-  }
-}
-
-void BoostWebSocketEndpoint::AddConnection(const std::string &url,
+void BoostWebSocketEndpoint::AddConnection(ConnectionInfo connection_info,
                                            stream_type &&stream) {
   std::unique_lock running_lock(m_running_mutex);
   if (!m_running) {
@@ -242,25 +230,36 @@ void BoostWebSocketEndpoint::AddConnection(const std::string &url,
 
   SharedBoostWebSocketConnection connection =
       std::make_shared<BoostWebSocketConnection>(
-          std::move(stream),
+          connection_info, std::move(stream),
           std::bind(&BoostWebSocketEndpoint::ProcessReceivedMessage, this,
                     std::placeholders::_1, std::placeholders::_2),
           std::bind(&BoostWebSocketEndpoint::OnConnectionClose, this,
                     std::placeholders::_1));
   connection->StartReceivingMessages();
 
-  auto connection_id = connectionIdFromUrl(url).value();
-
   std::unique_lock conn_lock(m_connections_mutex);
-  m_connections[connection_id] = connection;
 
+  // if connection to this node already exists, close old connection
+  bool connection_already_exists =
+      m_connections.contains(connection_info.endpoint_id);
+  if (connection_already_exists) {
+    LOG_WARN("established connection with node " << connection_info.endpoint_id
+                                                 << " already exists.")
+    auto old_connection = m_connections[connection_info.endpoint_id];
+    old_connection->Close();
+  }
+
+  // register new connection
+  m_connections[connection_info.endpoint_id] = connection;
+
+  // fire an event that signals the establishment of a new connection
   if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
     auto subsystems = maybe_subsystems.value();
 
     // fire event if event subsystem is found
     if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {
       ConnectionEstablishedEvent event;
-      event.SetPeer(url);
+      event.SetEndpointId(connection_info.endpoint_id);
 
       auto event_subsystem =
           subsystems->RequireSubsystem<events::IEventBroker>();
@@ -270,9 +269,7 @@ void BoostWebSocketEndpoint::AddConnection(const std::string &url,
 }
 
 std::optional<SharedBoostWebSocketConnection>
-BoostWebSocketEndpoint::GetConnection(const std::string &uri) {
-
-  const std::string connection_id = connectionIdFromUrl(uri).value();
+BoostWebSocketEndpoint::GetConnection(const std::string &connection_id) {
   std::unique_lock lock(m_connections_mutex);
   if (m_connections.contains(connection_id)) {
     auto connection = m_connections.at(connection_id);
@@ -287,9 +284,15 @@ BoostWebSocketEndpoint::GetConnection(const std::string &uri) {
 }
 
 void BoostWebSocketEndpoint::InitAndStartConnectionListener() {
+
+  // get id of this node (required for handshake)
+  auto property_provider =
+      m_subsystems.Borrow()->RequireSubsystem<props::PropertyProvider>();
+  auto node_uuid = property_provider->GetOrElse<std::string>("net.node.id", "");
+
   if (!m_connection_listener) {
     m_connection_listener = std::make_shared<BoostWebSocketConnectionListener>(
-        m_execution_context, m_config, m_local_endpoint,
+        node_uuid, m_execution_context, m_config, m_local_endpoint,
         std::bind(&BoostWebSocketEndpoint::AddConnection, this,
                   std::placeholders::_1, std::placeholders::_2));
     m_connection_listener->Init();
@@ -298,10 +301,16 @@ void BoostWebSocketEndpoint::InitAndStartConnectionListener() {
 }
 
 void BoostWebSocketEndpoint::InitConnectionEstablisher() {
+
+  // get id of this node (required for handshake)
+  auto property_provider =
+      m_subsystems.Borrow()->RequireSubsystem<props::PropertyProvider>();
+  auto node_uuid = property_provider->GetOrElse<std::string>("net.node.id", "");
+
   if (!m_connection_establisher) {
     m_connection_establisher =
         std::make_shared<BoostWebSocketConnectionEstablisher>(
-            m_execution_context,
+            node_uuid, m_execution_context,
             std::bind(&BoostWebSocketEndpoint::AddConnection, this,
                       std::placeholders::_1, std::placeholders::_2));
   }
@@ -317,17 +326,8 @@ std::future<void> BoostWebSocketEndpoint::Send(const std::string &uri,
   }
 }
 
-std::future<void>
+std::future<ConnectionInfo>
 BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
-  auto maybe_connection = GetConnection(uri);
-
-  // if connection has already been established
-  if (maybe_connection.has_value()) {
-    std::promise<void> prom;
-    prom.set_value();
-    return prom.get_future();
-  }
-
   // check if connection establishment component has been initialized.
   if (!m_connection_establisher) {
     InitConnectionEstablisher();
@@ -337,23 +337,19 @@ BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
 }
 
 void BoostWebSocketEndpoint::CloseConnectionTo(
-    const std::string &uri) noexcept {
-  auto maybe_connection_id = connectionIdFromUrl(uri);
-  if (maybe_connection_id.has_value()) {
-    auto connection_id = maybe_connection_id.value();
-    std::unique_lock lock(m_connections_mutex);
-    if (m_connections.contains(connection_id)) {
-      m_connections.at(connection_id)->Close();
-      m_connections.erase(connection_id);
-    }
+    const std::string &connection_id) noexcept {
+  std::unique_lock lock(m_connections_mutex);
+  if (m_connections.contains(connection_id)) {
+    m_connections.at(connection_id)->Close();
+    m_connections.erase(connection_id);
   }
 }
 
 bool BoostWebSocketEndpoint::HasConnectionTo(
-    const std::string &uri) const noexcept {
+    const std::string &connection_id) const noexcept {
   std::unique_lock lock(m_connections_mutex);
-  if (m_connections.contains(uri)) {
-    return m_connections.at(uri)->IsUsable();
+  if (m_connections.contains(connection_id)) {
+    return m_connections.at(connection_id)->IsUsable();
   } else {
     return false;
   }
@@ -431,7 +427,7 @@ void BoostWebSocketEndpoint::OnConnectionClose(const std::string &id) {
       auto event_broker = subsystems->RequireSubsystem<events::IEventBroker>();
 
       ConnectionClosedEvent event;
-      event.SetPeerId(id);
+      event.SetEndpointId(id);
       event_broker->FireEvent(event.GetEvent());
     }
   }

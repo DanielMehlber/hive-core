@@ -76,7 +76,7 @@ public:
    * connection. If there already exists a connection to this id, a new one
    * will not be established.
    */
-  virtual std::future<void>
+  virtual std::future<ConnectionInfo>
   EstablishConnectionTo(const std::string &endpoint_id) noexcept = 0;
 
   /**

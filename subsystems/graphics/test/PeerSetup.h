@@ -14,6 +14,7 @@ using namespace networking;
 using namespace graphics;
 
 struct Node {
+  std::string uuid;
   common::memory::Owner<common::subsystems::SubsystemManager> subsystems;
   common::memory::Reference<jobsystem::JobManager> job_manager;
   common::memory::Reference<IMessageEndpoint> endpoint;
@@ -37,6 +38,12 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<events::IEventBroker>(
       std::move(event_broker));
 
+  auto property_provider = common::memory::Owner<props::PropertyProvider>(
+      subsystems.CreateReference());
+  auto property_providder_ref = property_provider.CreateReference();
+  subsystems->AddOrReplaceSubsystem<props::PropertyProvider>(
+      std::move(property_provider));
+
   // setup networking peer
   config->Set("net.port", port);
   auto networking_peer = common::memory::Owner<networking::NetworkingManager>(
@@ -54,6 +61,9 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(
       std::move(registry));
 
-  return Node{std::move(subsystems), job_manager_ref, endpoint_ref,
-              registry_ref, port};
+  std::string uuid =
+      property_providder_ref.Borrow()->Get<std::string>("net.node.id").value();
+
+  return Node{uuid,         std::move(subsystems), job_manager_ref,
+              endpoint_ref, registry_ref,          port};
 }

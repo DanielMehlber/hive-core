@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "networking/messaging/impl/websockets/boost/BoostWebSocketConnectionListener.h"
 
 using namespace networking;
@@ -11,13 +13,15 @@ namespace asio = boost::asio;           // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 BoostWebSocketConnectionListener::BoostWebSocketConnectionListener(
+    std::string this_node_uuid,
     std::shared_ptr<boost::asio::io_context> execution_context,
     common::config::SharedConfiguration config,
     std::shared_ptr<boost::asio::ip::tcp::endpoint> local_endpoint,
-    std::function<void(std::string, stream_type &&)> connection_consumer)
+    std::function<void(ConnectionInfo, stream_type &&)> connection_consumer)
     : m_connection_consumer{std::move(connection_consumer)},
-      m_execution_context{std::move(execution_context)}, m_config{config},
-      m_local_endpoint{std::move(local_endpoint)} {}
+      m_execution_context{std::move(execution_context)},
+      m_config{std::move(config)}, m_local_endpoint{std::move(local_endpoint)},
+      m_this_node_uuid(std::move(this_node_uuid)) {}
 
 BoostWebSocketConnectionListener::~BoostWebSocketConnectionListener() {
   ShutDown();
@@ -130,7 +134,7 @@ void BoostWebSocketConnectionListener::ProcessTcpConnection(
   auto local_address = socket.local_endpoint().address();
   auto local_port = socket.local_endpoint().port();
 
-  LOG_DEBUG("successfully accepted new incoming TCP connection "
+  LOG_DEBUG("accepted incoming TCP connection "
             << local_address.to_string() << ":" << local_port << "<-"
             << remote_address.to_string() << remote_port)
 
@@ -167,7 +171,6 @@ void BoostWebSocketConnectionListener::ProcessWebSocketHandshake(
   if (ec) {
     LOG_ERR("performing web-socket handshake with " << address.to_string()
                                                     << ": " << ec.message())
-    // TODO: close TCP connection
     StartAcceptingAnotherConnection();
     return;
   }
@@ -181,11 +184,55 @@ void BoostWebSocketConnectionListener::ProcessWebSocketHandshake(
   auto local_address = socket.local_endpoint().address();
   auto local_port = socket.local_endpoint().port();
 
-  LOG_INFO("successfully established incoming web-socket connection "
-           << local_address.to_string() << ":" << local_port << "<-"
-           << remote_address.to_string() << ":" << remote_port)
+  LOG_DEBUG("accepted incoming web-socket connection "
+            << local_address.to_string() << ":" << local_port << "<-"
+            << remote_address.to_string() << ":" << remote_port)
 
-  m_connection_consumer(host, std::move(*current_stream));
+  ConnectionInfo connection_info;
+  connection_info.hostname = host;
+
+  // wait for handshake initiation
+  auto handshake_request_buffer = std::make_shared<beast::flat_buffer>();
+  current_stream->async_read(
+      *handshake_request_buffer,
+      beast::bind_front_handler(
+          &BoostWebSocketConnectionListener::ProcessNodeHandshakeRequest,
+          shared_from_this(), std::move(current_stream), connection_info,
+          handshake_request_buffer));
+}
+void BoostWebSocketConnectionListener::ProcessNodeHandshakeRequest(
+    std::shared_ptr<stream_type> current_stream, ConnectionInfo connection_info,
+    std::shared_ptr<boost::beast::flat_buffer> request_buffer,
+    boost::beast::error_code ec, std::size_t bytes_transferred) {
+
+  if (ec) {
+    LOG_ERR("node handshake request failed with host "
+            << connection_info.hostname << ": " << ec.message())
+    current_stream->close(beast::websocket::close_code::none);
+    return;
+  }
+
+  // extract sent bytes and pass them to the callback function
+  std::string other_endpoint_id =
+      boost::beast::buffers_to_string(request_buffer->data());
+  request_buffer->consume(request_buffer->size());
+
+  connection_info.endpoint_id = other_endpoint_id;
+
+  current_stream->write(boost::asio::buffer(m_this_node_uuid), ec);
+
+  if (ec) {
+    LOG_ERR("node handshake response failed with host "
+            << connection_info.hostname << ": " << ec.message())
+    current_stream->close(beast::websocket::close_code::none);
+    return;
+  }
+
+  LOG_INFO("node " << connection_info.endpoint_id << " from "
+                   << connection_info.hostname
+                   << " sucessfully connected via web-sockets")
+
+  m_connection_consumer(connection_info, std::move(*current_stream));
 
   StartAcceptingAnotherConnection();
 }

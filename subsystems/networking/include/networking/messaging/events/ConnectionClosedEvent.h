@@ -14,8 +14,8 @@ public:
 
   events::SharedEvent GetEvent() const;
 
-  std::string GetPeerId() const;
-  void SetPeerId(const std::string &peer_id);
+  std::string GetEndpointId() const;
+  void SetEndpointId(const std::string &peer_id);
 
   static constexpr const char *c_event_name = "connection-closed";
 };
@@ -24,12 +24,12 @@ inline events::SharedEvent ConnectionClosedEvent::GetEvent() const {
   return m_event;
 }
 
-inline std::string ConnectionClosedEvent::GetPeerId() const {
-  return m_event->GetPayload<std::string>("peer-id").value();
+inline std::string ConnectionClosedEvent::GetEndpointId() const {
+  return m_event->GetPayload<std::string>("endpoint-id").value();
 }
 
-inline void ConnectionClosedEvent::SetPeerId(const std::string &peer_id) {
-  m_event->SetPayload<std::string>("peer-id", peer_id);
+inline void ConnectionClosedEvent::SetEndpointId(const std::string &peer_id) {
+  m_event->SetPayload<std::string>("endpoint-id", peer_id);
 }
 
 } // namespace networking

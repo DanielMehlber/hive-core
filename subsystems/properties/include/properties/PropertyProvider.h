@@ -5,7 +5,6 @@
 #include "common/subsystems/SubsystemManager.h"
 #include "events/broker/IEventBroker.h"
 #include <boost/property_tree/ptree.hpp>
-#include <memory>
 #include <optional>
 #include <string>
 

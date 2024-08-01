@@ -5,13 +5,8 @@
 #include "BoostWebSocketConnectionListener.h"
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
-#include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/messaging/IMessageEndpoint.h"
-#include "properties/PropertyProvider.h"
-#include <atomic>
-#include <boost/beast/core.hpp>
-#include <boost/beast/websocket.hpp>
 #include <list>
 #include <map>
 
@@ -89,13 +84,15 @@ private:
 
   /**
    * Constructs a new connection object from a stream
-   * @param url id of connection
+   * @param connection_info connection specification
    * @param stream web-socket stream
+   * @param connection_promise promise to fulfill when the connection is
+   * registered and ready to use.
    */
-  void AddConnection(const std::string &url, stream_type &&stream);
+  void AddConnection(ConnectionInfo connection_info, stream_type &&stream);
 
   std::optional<SharedBoostWebSocketConnection>
-  GetConnection(const std::string &uri);
+  GetConnection(const std::string &connection_id);
 
   void ProcessReceivedMessage(std::string data,
                               SharedBoostWebSocketConnection over_connection);
@@ -122,15 +119,16 @@ public:
   std::future<void> Send(const std::string &uri,
                          SharedMessage message) override;
 
-  std::future<void>
+  std::future<ConnectionInfo>
   EstablishConnectionTo(const std::string &uri) noexcept override;
 
-  void CloseConnectionTo(const std::string &uri) noexcept override;
+  void CloseConnectionTo(const std::string &connection_id) noexcept override;
 
   std::future<size_t>
   IssueBroadcastAsJob(const SharedMessage &message) override;
 
-  bool HasConnectionTo(const std::string &uri) const noexcept override;
+  bool
+  HasConnectionTo(const std::string &connection_id) const noexcept override;
 
   size_t GetActiveConnectionCount() const override;
 };

@@ -25,7 +25,7 @@ private:
    * This is used as a callback function: A successfully established
    * connection will be passed into this function for further use.
    */
-  std::function<void(std::string, stream_type &&)> m_connection_consumer;
+  std::function<void(ConnectionInfo, stream_type &&)> m_connection_consumer;
 
   /**
    * Used to create new execution strands for asynchronous operations
@@ -49,6 +49,9 @@ private:
    * etc.)
    */
   const std::shared_ptr<boost::asio::ip::tcp::endpoint> m_local_endpoint;
+
+  /** UUID of this node in the cluster required for node handshake */
+  const std::string m_this_node_uuid;
 
   /**
    * After a TCP connection has been established with a client, the
@@ -77,12 +80,19 @@ private:
   void ProcessWebSocketHandshake(std::shared_ptr<stream_type> current_stream,
                                  boost::beast::error_code ec);
 
+  void ProcessNodeHandshakeRequest(
+      std::shared_ptr<stream_type> current_stream,
+      ConnectionInfo connection_info,
+      std::shared_ptr<boost::beast::flat_buffer> request_buffer,
+      boost::beast::error_code ec, std::size_t bytes_transferred);
+
 public:
   BoostWebSocketConnectionListener(
+      std::string this_node_uuid,
       std::shared_ptr<boost::asio::io_context> execution_context,
       common::config::SharedConfiguration config,
       std::shared_ptr<boost::asio::ip::tcp::endpoint> local_endpoint,
-      std::function<void(std::string, stream_type &&)> connection_consumer);
+      std::function<void(ConnectionInfo, stream_type &&)> connection_consumer);
 
   ~BoostWebSocketConnectionListener();
 

@@ -52,6 +52,11 @@ private:
   boost::asio::ip::tcp::endpoint m_remote_endpoint_data;
 
   /**
+   * Info about this connection.
+   */
+  ConnectionInfo m_connection_info;
+
+  /**
    * Waits for message asynchronously and processes it on arrival
    */
   void AsyncReceiveMessage();
@@ -91,7 +96,7 @@ public:
    * incoming events. This can be started by calling StartReceivingMessages.
    */
   BoostWebSocketConnection(
-      stream_type &&socket,
+      ConnectionInfo info, stream_type &&socket,
       std::function<void(const std::string &,
                          std::shared_ptr<BoostWebSocketConnection>)>
           on_message_received,
@@ -134,11 +139,7 @@ public:
    */
   bool IsUsable() const;
 
-  /**
-   * Generates connection info object from current connection data
-   * @return connection info object
-   */
-  ConnectionInfo GetConnectionInfo() const;
+  const ConnectionInfo &GetInfo() const;
 };
 
 inline std::string BoostWebSocketConnection::GetRemoteHostAddress() const {
@@ -149,6 +150,10 @@ inline std::string BoostWebSocketConnection::GetRemoteHostAddress() const {
 inline bool BoostWebSocketConnection::IsUsable() const {
   std::unique_lock lock(m_socket_mutex);
   return m_socket.is_open();
+}
+
+inline const ConnectionInfo &BoostWebSocketConnection::GetInfo() const {
+  return m_connection_info;
 }
 
 typedef std::shared_ptr<BoostWebSocketConnection>

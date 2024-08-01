@@ -22,6 +22,9 @@ class BoostWebSocketConnectionEstablisher
 private:
   std::shared_ptr<boost::asio::io_context> m_execution_context;
 
+  /** Unique ID of this node / endpoint required for their handshake */
+  std::string m_this_node_uuid;
+
   /**
    * Resolves IP addresses from given hostnames
    */
@@ -31,29 +34,38 @@ private:
    * This is used as a callback function: A successfully established
    * connection will be passed into this function for further use.
    */
-  std::function<void(std::string uri, stream_type &&stream)>
-      m_connection_consumer;
+  std::function<void(ConnectionInfo, stream_type &&)> m_connection_consumer;
 
   void ProcessResolvedHostnameOfServer(
-      std::string uri, std::promise<void> &&connection_promise,
+      std::string uri, std::promise<ConnectionInfo> &&connection_promise,
       boost::beast::error_code error_code,
       boost::asio::ip::tcp::resolver::results_type results);
 
   void ProcessEstablishedTcpConnection(
-      std::promise<void> &&connection_promise, std::string uri,
+      std::promise<ConnectionInfo> &&connection_promise, std::string uri,
       std::shared_ptr<stream_type> stream, boost::beast::error_code error_code,
       boost::asio::ip::tcp::resolver::results_type::endpoint_type
           endpoint_type);
 
-  void ProcessWebSocketHandshake(std::promise<void> &&connection_promise,
-                                 std::string uri,
-                                 std::shared_ptr<stream_type> stream,
-                                 boost::beast::error_code error_code);
+  void ProcessWebSocketHandshake(
+      std::promise<ConnectionInfo> &&connection_promise, std::string uri,
+      std::shared_ptr<stream_type> stream, boost::beast::error_code error_code);
+
+  void PerformNodeHandshake(std::promise<ConnectionInfo> &&connection_promise,
+                            ConnectionInfo &&info,
+                            std::shared_ptr<stream_type> stream);
+
+  void ProcessNodeHandshakeResponse(
+      std::promise<ConnectionInfo> &&connection_promise, ConnectionInfo &&info,
+      std::shared_ptr<stream_type> stream,
+      std::shared_ptr<boost::beast::flat_buffer> response_buffer,
+      boost::beast::error_code error_code, std::size_t bytes_transferred);
 
 public:
   BoostWebSocketConnectionEstablisher(
+      std::string this_node_uuid,
       std::shared_ptr<boost::asio::io_context> execution_context,
-      std::function<void(std::string, stream_type &&)> connection_consumer);
+      std::function<void(ConnectionInfo, stream_type &&)> connection_consumer);
 
   /**
    * Tries to establish connection to another endpoint host. This
@@ -62,6 +74,6 @@ public:
    * @return a future resolving when the overall connection-establishment
    * process has completed
    */
-  std::future<void> EstablishConnectionTo(const std::string &uri);
+  std::future<ConnectionInfo> EstablishConnectionTo(const std::string &uri);
 };
 } // namespace networking::messaging::websockets

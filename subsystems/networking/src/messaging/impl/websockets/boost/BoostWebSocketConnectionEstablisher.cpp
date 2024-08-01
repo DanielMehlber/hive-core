@@ -5,6 +5,7 @@
 #include <boost/beast.hpp>
 #include <regex>
 #include <string>
+#include <utility>
 
 using namespace networking::messaging::websockets;
 using namespace networking::messaging;
@@ -17,16 +18,19 @@ namespace asio = boost::asio;           // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 BoostWebSocketConnectionEstablisher::BoostWebSocketConnectionEstablisher(
+    std::string this_node_uuid,
     std::shared_ptr<boost::asio::io_context> execution_context,
-    std::function<void(std::string, stream_type &&)> connection_consumer)
+    std::function<void(ConnectionInfo, stream_type &&)> connection_consumer)
     : m_resolver{asio::make_strand(*execution_context)},
       m_execution_context{execution_context},
-      m_connection_consumer{std::move(connection_consumer)} {}
+      m_connection_consumer{std::move(connection_consumer)},
+      m_this_node_uuid(std::move(this_node_uuid)) {}
 
-std::future<void> BoostWebSocketConnectionEstablisher::EstablishConnectionTo(
+std::future<ConnectionInfo>
+BoostWebSocketConnectionEstablisher::EstablishConnectionTo(
     const std::string &uri) {
 
-  std::promise<void> connection_promise;
+  std::promise<ConnectionInfo> connection_promise;
 
   auto optional_uri = util::UrlParser::parse(uri);
   if (!optional_uri.has_value()) {
@@ -39,7 +43,8 @@ std::future<void> BoostWebSocketConnectionEstablisher::EstablishConnectionTo(
 
   util::ParsedUrl url = optional_uri.value();
 
-  std::future<void> connection_future = connection_promise.get_future();
+  std::future<ConnectionInfo> connection_future =
+      connection_promise.get_future();
 
   m_resolver.async_resolve(
       url.host, url.port,
@@ -51,7 +56,7 @@ std::future<void> BoostWebSocketConnectionEstablisher::EstablishConnectionTo(
 }
 
 void BoostWebSocketConnectionEstablisher::ProcessResolvedHostnameOfServer(
-    std::string uri, std::promise<void> &&connection_promise,
+    std::string uri, std::promise<ConnectionInfo> &&connection_promise,
     beast::error_code error_code, tcp::resolver::results_type results) {
 
   if (error_code) {
@@ -80,14 +85,14 @@ void BoostWebSocketConnectionEstablisher::ProcessResolvedHostnameOfServer(
 }
 
 void BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection(
-    std::promise<void> &&connection_promise, std::string uri,
+    std::promise<ConnectionInfo> &&connection_promise, std::string uri,
     std::shared_ptr<stream_type> stream, beast::error_code error_code,
     tcp::resolver::results_type::endpoint_type endpoint_type) {
 
   if (error_code) {
     LOG_WARN("cannot establish TCP connection to "
-             << endpoint_type.address() << " (" << uri << ") " << ": "
-             << error_code.message())
+             << endpoint_type.address() << " (" << uri << ") "
+             << ": " << error_code.message())
 
     auto exception = BUILD_EXCEPTION(ConnectionFailedException,
                                      "cannot establish TCP connection to "
@@ -97,7 +102,7 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection(
     return;
   }
 
-  LOG_DEBUG("established TCP connection to "
+  LOG_DEBUG("established outgoing TCP connection to "
             << endpoint_type.address().to_string())
 
   // Turn off the timeout on the tcp_stream, because
@@ -128,7 +133,7 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection(
 }
 
 void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
-    std::promise<void> &&connection_promise, std::string uri,
+    std::promise<ConnectionInfo> &&connection_promise, std::string uri,
     std::shared_ptr<stream_type> stream, beast::error_code error_code) {
 
   auto remote_address =
@@ -152,13 +157,70 @@ void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
     return;
   }
 
-  LOG_INFO("successfully established outgoing web-socket connection "
-           << local_address.to_string() << ":" << local_port << "->"
-           << remote_address.to_string() << ":" << remote_port);
+  LOG_DEBUG("established outgoing web-socket connection "
+            << local_address.to_string() << ":" << local_port << "->"
+            << remote_address.to_string() << ":" << remote_port);
+
+  ConnectionInfo connection_info;
+  connection_info.hostname = uri;
+
+  PerformNodeHandshake(std::move(connection_promise),
+                       std::move(connection_info), stream);
+}
+
+void BoostWebSocketConnectionEstablisher::PerformNodeHandshake(
+    std::promise<ConnectionInfo> &&connection_promise, ConnectionInfo &&info,
+    std::shared_ptr<stream_type> stream) {
+
+  // send this node's endpoint ID to the other endpoint
+  beast::error_code error_code;
+  stream->write(boost::asio::buffer(m_this_node_uuid), error_code);
+
+  if (error_code) {
+    LOG_ERR("node handshake failed: " << error_code.message())
+    auto exception =
+        BUILD_EXCEPTION(ConnectionFailedException,
+                        "node handshake failed: " << error_code.message());
+    connection_promise.set_exception(std::make_exception_ptr(exception));
+    return;
+  }
+
+  // wait for other node's endpoint ID response
+  auto handshake_response_buffer = std::make_shared<beast::flat_buffer>();
+  stream->async_read(
+      *handshake_response_buffer,
+      beast::bind_front_handler(
+          &BoostWebSocketConnectionEstablisher::ProcessNodeHandshakeResponse,
+          shared_from_this(), std::move(connection_promise), std::move(info),
+          stream, handshake_response_buffer));
+}
+
+void BoostWebSocketConnectionEstablisher::ProcessNodeHandshakeResponse(
+    std::promise<ConnectionInfo> &&connection_promise, ConnectionInfo &&info,
+    std::shared_ptr<stream_type> stream,
+    std::shared_ptr<beast::flat_buffer> response_buffer,
+    beast::error_code error_code, std::size_t bytes_transferred) {
+
+  if (error_code) {
+    LOG_ERR("node handshake failed: " << error_code.message())
+    auto exception =
+        BUILD_EXCEPTION(ConnectionFailedException,
+                        "node handshake failed: " << error_code.message());
+    connection_promise.set_exception(std::make_exception_ptr(exception));
+    return;
+  }
+
+  // extract sent bytes and pass them to the callback function
+  std::string other_endpoint_id =
+      boost::beast::buffers_to_string(response_buffer->data());
+  response_buffer->consume(response_buffer->size());
+
+  info.endpoint_id = other_endpoint_id;
+
+  LOG_INFO("successfully connected to " << info.endpoint_id << " at "
+                                        << info.hostname << " via web-sockets")
 
   // consume connection
-  m_connection_consumer(uri, std::move(*stream));
-
-  // notify future about resolution of promise
-  connection_promise.set_value();
+  m_connection_consumer(info, std::move(*stream));
+  connection_promise.set_value(info);
 }
