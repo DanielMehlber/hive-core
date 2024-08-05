@@ -4,7 +4,7 @@
 #include "Message.h"
 #include <memory>
 
-namespace networking::messaging {
+namespace hive::networking::messaging {
 
 /**
  * Generic interface for receiving events that are sent over the
@@ -29,4 +29,4 @@ public:
 
 typedef std::shared_ptr<IMessageConsumer> SharedMessageConsumer;
 
-} // namespace networking::messaging
+} // namespace hive::networking::messaging

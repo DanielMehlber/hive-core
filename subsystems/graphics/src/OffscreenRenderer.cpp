@@ -1,7 +1,8 @@
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "logging/LogManager.h"
 
-using namespace graphics;
+using namespace hive::graphics;
+using namespace hive;
 
 vsg::ref_ptr<vsg::ImageView>
 createColorImageView(const vsg::ref_ptr<vsg::Device> &device,

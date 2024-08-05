@@ -1,8 +1,8 @@
 #include "resources/loader/impl/FileLoader.h"
 #include <fstream>
 
-using namespace resources;
-using namespace resources::loaders;
+using namespace hive::resources;
+using namespace hive::resources::loaders;
 
 SharedResource FileLoader::Load(const std::string &uri) {
 

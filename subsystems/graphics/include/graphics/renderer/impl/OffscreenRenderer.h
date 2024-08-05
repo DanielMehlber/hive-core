@@ -3,7 +3,7 @@
 #include "graphics/renderer/IRenderer.h"
 #include "vsg/all.h"
 
-namespace graphics {
+namespace hive::graphics {
 
 /**
  * Renderer that does not display its images on a window surface but instead
@@ -130,4 +130,4 @@ inline RendererSetup OffscreenRenderer::GetSetup() const {
   return {m_device, m_instance};
 }
 
-} // namespace graphics
+} // namespace hive::graphics

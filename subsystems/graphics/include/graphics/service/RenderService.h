@@ -5,7 +5,7 @@
 #include "graphics/renderer/IRenderer.h"
 #include "services/executor/impl/LocalServiceExecutor.h"
 
-namespace graphics {
+namespace hive::graphics {
 
 /**
  * Service that offers rendering an image of the current scene and returning its
@@ -38,4 +38,4 @@ public:
   std::optional<common::memory::Borrower<graphics::IRenderer>> GetRenderer();
 };
 
-} // namespace graphics
+} // namespace hive::graphics

@@ -1,7 +1,7 @@
 #include "properties/PropertyChangeListener.h"
 #include "common/uuid/UuidGenerator.h"
 
-using namespace props;
+using namespace hive::data;
 
 void PropertyChangeListener::HandleEvent(events::SharedEvent message) {
   std::optional<std::string> maybe_property_key =
@@ -15,7 +15,7 @@ void PropertyChangeListener::HandleEvent(events::SharedEvent message) {
   }
 }
 
-std::string props::PropertyChangeListener::GetId() const {
+std::string PropertyChangeListener::GetId() const {
   return m_property_listener_id;
 }
 

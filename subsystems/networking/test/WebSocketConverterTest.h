@@ -4,8 +4,9 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-using namespace networking;
-using namespace networking::messaging;
+using namespace hive;
+using namespace hive::networking;
+using namespace hive::networking::messaging;
 
 TEST(WebSockets, message_converter_serializing) {
 
@@ -13,10 +14,8 @@ TEST(WebSockets, message_converter_serializing) {
   message->SetAttribute("attr1", "value1");
   message->SetAttribute("attr2", "value2");
 
-  std::string payload =
-      networking::messaging::MessageConverter::ToMultipartFormData(message);
-  SharedMessage same_message =
-      networking::messaging::MessageConverter::FromMultipartFormData(payload);
+  std::string payload = MessageConverter::ToMultipartFormData(message);
+  SharedMessage same_message = MessageConverter::FromMultipartFormData(payload);
 
   ASSERT_TRUE(message->EqualsTo(same_message));
 }
@@ -28,8 +27,7 @@ TEST(WebSockets, message_converter_invalid) {
   message->SetAttribute("attr1", "value1");
   message->SetAttribute("attr2", "value2");
 
-  std::string payload =
-      networking::messaging::MessageConverter::ToMultipartFormData(message);
+  std::string payload = MessageConverter::ToMultipartFormData(message);
 
   // now half of the message gets lost
   auto invalid_payload = payload.substr(0, payload.size() / 2);

@@ -1,9 +1,9 @@
 #include "events/broker/impl/JobBasedEventBroker.h"
 
-using namespace events;
-using namespace events::brokers;
+using namespace hive::events;
+using namespace hive::events::brokers;
 using namespace std::chrono_literals;
-using namespace jobsystem;
+using namespace hive::jobsystem;
 
 JobBasedEventBroker::JobBasedEventBroker(
     const common::memory::Reference<common::subsystems::SubsystemManager>

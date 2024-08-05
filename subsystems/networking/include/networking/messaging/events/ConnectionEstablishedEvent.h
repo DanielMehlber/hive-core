@@ -2,7 +2,7 @@
 
 #include "events/Event.h"
 
-namespace networking {
+namespace hive::networking {
 class ConnectionEstablishedEvent {
 private:
   events::SharedEvent m_event;
@@ -32,4 +32,4 @@ ConnectionEstablishedEvent::SetEndpointId(const std::string &peer_id) {
   m_event->SetPayload<std::string>("peer-id", peer_id);
 }
 
-} // namespace networking
+} // namespace hive::networking

@@ -2,7 +2,7 @@
 
 #include "events/Event.h"
 
-namespace services {
+namespace hive::services {
 class ServiceRegisteredNotification {
 private:
   events::SharedEvent m_message;
@@ -31,4 +31,4 @@ ServiceRegisteredNotification::SetServiceName(const std::string &name) {
 inline std::string ServiceRegisteredNotification::GetServiceName() {
   return m_message->GetPayload<std::string>("service-name").value_or("");
 }
-} // namespace services
+} // namespace hive::services

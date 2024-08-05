@@ -4,7 +4,7 @@
 #include <boost/function.hpp>
 #include <boost/json.hpp>
 
-using namespace plugins;
+using namespace hive::plugins;
 namespace json = boost::json;
 namespace fs = boost::filesystem;
 

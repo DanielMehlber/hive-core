@@ -5,8 +5,9 @@
 #include "services/messages/ServiceRegisteredNotification.h"
 #include "services/messages/ServiceUnegisteredNotification.h"
 
-using namespace services;
-using namespace services::impl;
+using namespace hive;
+using namespace hive::services;
+using namespace hive::services::impl;
 using namespace std::placeholders;
 
 void broadcastServiceRegistration(

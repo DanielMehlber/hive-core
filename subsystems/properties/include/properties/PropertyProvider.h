@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 
-namespace props {
+namespace hive::data {
 
 /**
  * Provides read and write access to properties, as well as notification
@@ -116,4 +116,4 @@ inline PropType PropertyProvider::GetOrElse(const std::string &key,
   }
 }
 
-} // namespace props
+} // namespace hive::data

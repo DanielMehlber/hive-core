@@ -1,8 +1,8 @@
 #include "networking/NetworkingManager.h"
 #include "common/uuid/UuidGenerator.h"
 
-using namespace networking;
-using namespace networking::messaging;
+using namespace hive::networking;
+using namespace hive::networking::messaging;
 
 NetworkingManager::NetworkingManager(
     const common::memory::Reference<common::subsystems::SubsystemManager>
@@ -39,7 +39,7 @@ void NetworkingManager::ConfigureNode(
       config->Get("net.node.id", common::uuid::UuidGenerator::Random());
 
   const auto property_provider =
-      m_subsystems.Borrow()->RequireSubsystem<props::PropertyProvider>();
+      m_subsystems.Borrow()->RequireSubsystem<data::PropertyProvider>();
 
   property_provider->Set("net.node.id", node_id);
 

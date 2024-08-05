@@ -3,7 +3,7 @@
 #include "Job.h"
 #include <chrono>
 
-namespace jobsystem::job {
+namespace hive::jobsystem::job {
 
 /**
  * While regular jobs are executed right away in the next execution
@@ -51,4 +51,4 @@ public:
 
   bool IsReadyForExecution(const JobContext &context) final;
 };
-} // namespace jobsystem::job
+} // namespace hive::jobsystem::job

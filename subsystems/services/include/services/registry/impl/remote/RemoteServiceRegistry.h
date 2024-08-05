@@ -8,7 +8,7 @@
 #include "services/registry/impl/remote/RemoteServiceRequestConsumer.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * A registry for both local and remote web-socket services.
@@ -47,4 +47,4 @@ public:
   void SetupEventSubscribers();
 };
 
-} // namespace services::impl
+} // namespace hive::services::impl

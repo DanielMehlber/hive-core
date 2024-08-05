@@ -13,7 +13,7 @@ add_library(Hive::core ALIAS core)
 
 target_include_directories(core PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -44,7 +44,7 @@ install(TARGETS core
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
-        FILE_SET HEADERS DESTINATION include
+        FILE_SET HEADERS DESTINATION include/hive
 )
 
 install(EXPORT coreTargets
@@ -52,8 +52,6 @@ install(EXPORT coreTargets
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
-
-message("Link interface libraries: ${CMAKE_LINK_INTERFACE_LIBRARIES}")
 
 # create documentation using doxygen (if doxygen is installed and documentation is requested)
 find_package(Doxygen QUIET)

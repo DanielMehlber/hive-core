@@ -5,7 +5,8 @@
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
 #include <gtest/gtest.h>
 
-using namespace services;
+using namespace hive;
+using namespace hive::services;
 using namespace std::placeholders;
 
 TEST(ServiceTests, adding_service) {

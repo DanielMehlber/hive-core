@@ -11,7 +11,7 @@ using namespace std::chrono_literals;
 
 #define JOB_DEADLINE 1s
 
-using namespace jobsystem::job;
+using namespace hive::jobsystem::job;
 
 JobContinuation Job::Execute(JobContext *context) {
 #ifdef ENABLE_PROFILING

@@ -5,7 +5,7 @@
 #include "scene/SceneManager.h"
 #include <optional>
 
-namespace graphics {
+namespace hive::graphics {
 
 /**
  * An error occurred during renderer setup, so it can't be used.
@@ -62,4 +62,4 @@ public:
 
 typedef std::shared_ptr<IRenderer> SharedRenderer;
 
-} // namespace graphics
+} // namespace hive::graphics

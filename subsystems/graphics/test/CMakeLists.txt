@@ -6,11 +6,4 @@ add_executable(graphicstests test.cpp
         PeerSetup.h)
 target_link_libraries(graphicstests PUBLIC GTest::GTest ${Boost_LIBRARIES} common jobsystem logging events networking graphics services)
 
-if (INCLUDE_ENCODER_EVALUATION)
-    target_compile_definitions(graphicstests PRIVATE INCLUDE_ENCODER_EVALUATION)
-    message("Encoder Evaluation is activated")
-else ()
-    message("Encoder Evaluation is not activated")
-endif ()
-
 add_test(NAME GraphicsTests COMMAND graphicstests)

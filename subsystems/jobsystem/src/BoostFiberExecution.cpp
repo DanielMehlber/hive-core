@@ -3,8 +3,8 @@
 #include "common/profiling/Timer.h"
 #include "jobsystem/manager/JobManager.h"
 
-using namespace jobsystem::execution::impl;
-using namespace jobsystem::job;
+using namespace hive::jobsystem::execution::impl;
+using namespace hive::jobsystem::job;
 using namespace std::chrono_literals;
 
 BoostFiberExecution::BoostFiberExecution(
@@ -191,7 +191,7 @@ void BoostFiberExecution::ExecuteWorker(std::atomic_int *barrier) {
 //
 // C++ is such a beeatifulll language :D
 // (please kill me, it took almost 6h to figure this out).
-bool jobsystem::execution::impl::IsExecutedByFiber() {
+bool hive::jobsystem::execution::impl::IsExecutedByFiber() {
   // A worker_context is always created inside a fiber.
   return boost::fibers::context::active()->is_context(
       boost::fibers::type::worker_context);

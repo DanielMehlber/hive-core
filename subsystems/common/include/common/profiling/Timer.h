@@ -2,9 +2,8 @@
 
 #include "common/profiling/TimerManager.h"
 #include <chrono>
-#include <functional>
 
-namespace common::profiling {
+namespace hive::common::profiling {
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
@@ -22,4 +21,4 @@ public:
   void Stop();
 };
 
-} // namespace common::profiling
+} // namespace hive::common::profiling

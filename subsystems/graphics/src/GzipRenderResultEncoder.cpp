@@ -5,7 +5,7 @@
 #include <sstream>
 #include <vector>
 
-using namespace graphics;
+using namespace hive::graphics;
 
 std::string
 GzipRenderResultEncoder::Encode(const std::vector<unsigned char> &buffer) {

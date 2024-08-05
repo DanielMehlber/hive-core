@@ -4,7 +4,7 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
-namespace graphics {
+namespace hive::graphics {
 
 typedef std::vector<unsigned char> data_type;
 
@@ -71,4 +71,4 @@ inline void RenderResult::SetExtent(unsigned int width, unsigned int height) {
 
 typedef std::shared_ptr<RenderResult> SharedRenderResult;
 
-} // namespace graphics
+} // namespace hive::graphics

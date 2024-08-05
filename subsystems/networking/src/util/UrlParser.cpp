@@ -1,6 +1,6 @@
 #include "networking/util/UrlParser.h"
 
-using namespace networking::util;
+using namespace hive::networking::util;
 
 std::optional<ParsedUrl> UrlParser::parse(const std::string &url) {
   ParsedUrl result;

@@ -2,7 +2,7 @@
 
 #include "vsg/all.h"
 
-namespace scene {
+namespace hive::scene {
 
 /**
  * Holds a scene and offers util functionality.
@@ -24,4 +24,4 @@ inline vsg::ref_ptr<vsg::StateGroup> SceneManager::GetRoot() const noexcept {
 
 typedef std::shared_ptr<SceneManager> SharedScene;
 
-} // namespace scene
+} // namespace hive::scene

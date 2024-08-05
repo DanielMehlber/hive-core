@@ -7,15 +7,16 @@
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
-using namespace core;
-using namespace jobsystem;
-using namespace events;
-using namespace props;
-using namespace resources;
-using namespace services;
-using namespace plugins;
-using namespace networking;
-using namespace graphics;
+using namespace hive;
+using namespace hive::core;
+using namespace hive::jobsystem;
+using namespace hive::events;
+using namespace hive::data;
+using namespace hive::resources;
+using namespace hive::services;
+using namespace hive::plugins;
+using namespace hive::networking;
+using namespace hive::graphics;
 
 Core::Core(common::config::SharedConfiguration config, bool only_local)
     : m_subsystems(
@@ -134,10 +135,10 @@ common::memory::Borrower<events::IEventBroker> Core::GetEventBroker() {
 }
 
 void Core::SetPropertyProvider(
-    common::memory::Owner<props::PropertyProvider> &&broker) {
+    common::memory::Owner<data::PropertyProvider> &&broker) {
   m_subsystems->AddOrReplaceSubsystem<PropertyProvider>(std::move(broker));
 }
-common::memory::Borrower<props::PropertyProvider> Core::GetPropertyProvider() {
+common::memory::Borrower<data::PropertyProvider> Core::GetPropertyProvider() {
   return m_subsystems->RequireSubsystem<PropertyProvider>();
 }
 

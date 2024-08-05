@@ -1,7 +1,7 @@
 #include "services/ServiceRequest.h"
 #include "common/uuid/UuidGenerator.h"
 
-using namespace services;
+using namespace hive::services;
 
 ServiceRequest::ServiceRequest(std::string service_name)
     : m_service_name(std::move(service_name)),

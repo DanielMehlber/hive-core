@@ -10,7 +10,7 @@
 #include <mutex>
 #include <vector>
 
-namespace events::brokers {
+namespace hive::events::brokers {
 
 /**
  * Using the jobsystem queue by wrapping the task of notifying events into jobs
@@ -53,4 +53,4 @@ public:
                                const std::string &topic) override;
   void RemoveAllListeners() override;
 };
-} // namespace events::brokers
+} // namespace hive::events::brokers

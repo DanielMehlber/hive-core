@@ -6,7 +6,7 @@
 #include "services/executor/IServiceExecutor.h"
 #include <future>
 
-namespace services {
+namespace hive::services {
 
 DECLARE_EXCEPTION(NoCallableServiceFound);
 
@@ -65,4 +65,4 @@ public:
 
 typedef std::shared_ptr<IServiceCaller> SharedServiceCaller;
 
-} // namespace services
+} // namespace hive::services

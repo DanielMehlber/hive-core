@@ -12,7 +12,7 @@
 #define SHARED_LIB_EXTENSION ".dll"
 #endif
 
-namespace plugins {
+namespace hive::plugins {
 
 /**
  * Uses Boost.DLL to load plugins from a dynamic shared library.
@@ -44,4 +44,4 @@ public:
   void InstallPlugins(const std::string &input_path_str) override;
 };
 
-} // namespace plugins
+} // namespace hive::plugins

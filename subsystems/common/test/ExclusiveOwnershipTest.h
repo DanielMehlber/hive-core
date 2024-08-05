@@ -7,7 +7,7 @@
 using namespace std::chrono_literals;
 
 TEST(ExclusiveOwnershipTests, owner_borrow) {
-  common::memory::Owner<std::string> owner("hallo");
+  hive::common::memory::Owner<std::string> owner("hallo");
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -33,11 +33,12 @@ TEST(ExclusiveOwnershipTests, owner_borrow) {
 }
 
 TEST(ExclusiveOwnershipTests, weak_borrow) {
-  std::unique_ptr<common::memory::Reference<std::string>> weak_borrow;
+  std::unique_ptr<hive::common::memory::Reference<std::string>> weak_borrow;
   {
-    common::memory::Owner<std::string> owner("hallo");
-    weak_borrow = std::make_unique<common::memory::Reference<std::string>>(
-        owner.CreateReference());
+    hive::common::memory::Owner<std::string> owner("hallo");
+    weak_borrow =
+        std::make_unique<hive::common::memory::Reference<std::string>>(
+            owner.CreateReference());
     ASSERT_TRUE(weak_borrow->CanBorrow());
     ASSERT_TRUE(weak_borrow->TryBorrow().has_value());
     ASSERT_NO_THROW(weak_borrow->Borrow());
@@ -50,7 +51,8 @@ TEST(ExclusiveOwnershipTests, weak_borrow) {
 
   ASSERT_FALSE(weak_borrow->CanBorrow());
   ASSERT_FALSE(weak_borrow->TryBorrow().has_value());
-  ASSERT_THROW(weak_borrow->Borrow(), common::memory::BorrowFailedException);
+  ASSERT_THROW(weak_borrow->Borrow(),
+               hive::common::memory::BorrowFailedException);
 }
 
 TEST(ExclusiveOwnershipTests, destroy_after_expiration) {
@@ -59,8 +61,9 @@ TEST(ExclusiveOwnershipTests, destroy_after_expiration) {
 
   {
     auto string_pointer = std::move(shared_string);
-    auto string_owner = common::memory::Owner<std::shared_ptr<std::string>>(
-        std::move(string_pointer));
+    auto string_owner =
+        hive::common::memory::Owner<std::shared_ptr<std::string>>(
+            std::move(string_pointer));
 
     ASSERT_FALSE(weak_string.expired());
     ASSERT_EQ(std::string("hallo"), *weak_string.lock());
@@ -70,7 +73,8 @@ TEST(ExclusiveOwnershipTests, destroy_after_expiration) {
   ASSERT_TRUE(weak_string.expired());
 }
 
-class Borrowable : public common::memory::EnableBorrowFromThis<Borrowable> {
+class Borrowable
+    : public hive::common::memory::EnableBorrowFromThis<Borrowable> {
 public:
   int _i;
 
@@ -88,11 +92,11 @@ TEST(ExclusiveOwnershipTests, enable_borrow_from_this) {
   Borrowable borrowable(5);
   ASSERT_FALSE(borrowable.CanBorrow());
 
-  common::memory::Owner<Borrowable> another_borrowable(10);
+  hive::common::memory::Owner<Borrowable> another_borrowable(10);
   ASSERT_TRUE(another_borrowable->CanBorrow());
   ASSERT_EQ(another_borrowable->TestBorrow(), 10);
 
-  common::memory::Owner<Borrowable> owner(5);
+  hive::common::memory::Owner<Borrowable> owner(5);
   ASSERT_TRUE(owner->CanBorrow());
   ASSERT_EQ(owner->TestBorrow(), 5);
 
@@ -120,19 +124,19 @@ public:
 };
 
 TEST(ExclusiveOwnershipTests, base_conversion) {
-  common::memory::Owner<Derived> derived(5);
+  hive::common::memory::Owner<Derived> derived(5);
   ASSERT_EQ(derived.Borrow()->_i, 5);
 
-  common::memory::Owner<Borrowable> base(std::move(derived));
+  hive::common::memory::Owner<Borrowable> base(std::move(derived));
   ASSERT_EQ(base.Borrow()->_i, 5);
 }
 
 TEST(ExclusiveOwnershipTests, reference_state_validity) {
-  common::memory::Reference<Borrowable> reference;
+  hive::common::memory::Reference<Borrowable> reference;
   ASSERT_FALSE(reference);
 
   {
-    common::memory::Owner<Borrowable> owner(5);
+    hive::common::memory::Owner<Borrowable> owner(5);
     reference = owner.CreateReference();
     ASSERT_TRUE(reference);
   }

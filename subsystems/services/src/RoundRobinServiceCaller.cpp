@@ -3,9 +3,9 @@
 #include "jobsystem/manager/JobManager.h"
 #include <cmath>
 
-using namespace services::impl;
-using namespace services;
-using namespace jobsystem;
+using namespace hive::services::impl;
+using namespace hive::services;
+using namespace hive::jobsystem;
 
 bool RoundRobinServiceCaller::IsCallable() const noexcept {
   std::unique_lock lock(m_service_executors_mutex);

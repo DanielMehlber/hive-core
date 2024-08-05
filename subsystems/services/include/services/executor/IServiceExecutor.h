@@ -6,7 +6,7 @@
 #include "services/ServiceResponse.h"
 #include <future>
 
-namespace services {
+namespace hive::services {
 
 /**
  * Generic interface for service executors which represent a single
@@ -62,4 +62,4 @@ public:
 };
 
 typedef std::shared_ptr<IServiceExecutor> SharedServiceExecutor;
-} // namespace services
+} // namespace hive::services

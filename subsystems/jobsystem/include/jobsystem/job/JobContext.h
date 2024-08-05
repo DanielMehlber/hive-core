@@ -4,7 +4,7 @@
 #include <chrono>
 #include <memory>
 
-namespace jobsystem {
+namespace hive::jobsystem {
 
 // Forward declaration
 class JobManager;
@@ -43,4 +43,4 @@ inline common::memory::Borrower<JobManager> JobContext::GetJobManager() {
   return m_job_manager.Borrow();
 }
 
-} // namespace jobsystem
+} // namespace hive::jobsystem

@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 using namespace std::chrono_literals;
 
-namespace common::test {
+namespace hive::common::test {
 
 /**
  * Tries to repeatedly assert a condition until it is true, but only for a
@@ -42,4 +42,4 @@ void WaitForFutureUntilTimeout(const std::future<T> &future,
       [&future] { return future.wait_for(0s) == std::future_status::ready; },
       timeout);
 }
-} // namespace common::test
+} // namespace hive::common::test

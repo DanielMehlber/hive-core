@@ -1,6 +1,6 @@
 #pragma once
 
-namespace jobsystem {
+namespace hive::jobsystem {
 
 /**
  * Current state of the job manager
@@ -30,4 +30,4 @@ enum JobManagerState {
    */
   CYCLE_CLEAN_UP
 };
-} // namespace jobsystem
+} // namespace hive::jobsystem

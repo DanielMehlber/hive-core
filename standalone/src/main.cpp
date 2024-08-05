@@ -5,6 +5,7 @@
 #include "graphics/renderer/impl/OffscreenRenderer.h"
 #include "graphics/renderer/impl/OnscreenRenderer.h"
 
+using namespace hive;
 namespace po = boost::program_options;
 
 int main(int argc, const char **argv) {

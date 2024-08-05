@@ -2,7 +2,7 @@
 
 #include "resources/loader/IResourceLoader.h"
 
-namespace resources::loaders {
+namespace hive::resources::loaders {
 
 /**
  * Loads files from the device file-system
@@ -35,4 +35,4 @@ inline const std::string &FileLoader::GetId() const noexcept {
   return id;
 }
 
-} // namespace resources::loaders
+} // namespace hive::resources::loaders

@@ -4,7 +4,7 @@
 #include "events/listener/IEventListener.h"
 #include <memory>
 
-namespace events {
+namespace hive::events {
 
 /**
  * Manages events and propagates them from emitters to event listeners.
@@ -58,4 +58,4 @@ public:
   virtual void RemoveAllListeners() = 0;
 };
 
-} // namespace events
+} // namespace hive::events

@@ -3,7 +3,7 @@
 #include "networking/util/UrlParser.h"
 #include <gtest/gtest.h>
 
-using namespace networking::util;
+using namespace hive::networking::util;
 
 void testParser(const std::string &scheme, const std::string &host,
                 const std::string &port = "", const std::string &path = "",

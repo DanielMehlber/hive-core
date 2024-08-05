@@ -4,7 +4,8 @@
 #include <gtest/gtest.h>
 #include <resources/loader/IResourceLoader.h>
 
-using namespace resources;
+using namespace hive;
+using namespace hive::resources;
 using namespace std::chrono_literals;
 
 class DummyLoader : public IResourceLoader {

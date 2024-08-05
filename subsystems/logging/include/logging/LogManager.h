@@ -5,7 +5,7 @@
 #include <memory>
 #include <sstream>
 
-namespace logging {
+namespace hive::logging {
 
 /**
  * Provides a logger implementations
@@ -31,21 +31,21 @@ inline std::shared_ptr<logging::logger::ILogger> GetLogger() {
   {                                                                            \
     std::stringstream __ss;                                                    \
     __ss << x;                                                                 \
-    logging::GetLogger()->Info(__ss.str());                                    \
+    hive::logging::GetLogger()->Info(__ss.str());                              \
   }
 
 #define LOG_WARN(x)                                                            \
   {                                                                            \
     std::stringstream __ss;                                                    \
     __ss << x;                                                                 \
-    logging::GetLogger()->Warn(__ss.str());                                    \
+    hive::logging::GetLogger()->Warn(__ss.str());                              \
   }
 
 #define LOG_ERR(x)                                                             \
   {                                                                            \
     std::stringstream __ss;                                                    \
     __ss << x;                                                                 \
-    logging::GetLogger()->Error(__ss.str());                                   \
+    hive::logging::GetLogger()->Error(__ss.str());                             \
   }
 
 #ifdef NDEBUG
@@ -55,8 +55,8 @@ inline std::shared_ptr<logging::logger::ILogger> GetLogger() {
   {                                                                            \
     std::stringstream __ss;                                                    \
     __ss << x;                                                                 \
-    logging::GetLogger()->Debug(__ss.str());                                   \
+    hive::logging::GetLogger()->Debug(__ss.str());                             \
   }
 #endif
 
-} // namespace logging
+} // namespace hive::logging

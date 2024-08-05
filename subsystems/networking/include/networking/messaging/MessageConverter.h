@@ -3,7 +3,7 @@
 #include "Message.h"
 #include "common/exceptions/ExceptionsBase.h"
 
-namespace networking::messaging {
+namespace hive::networking::messaging {
 
 DECLARE_EXCEPTION(MessagePayloadInvalidException);
 
@@ -45,4 +45,4 @@ public:
    */
   static std::string ToMultipartFormData(const SharedMessage &message);
 };
-} // namespace networking::messaging
+} // namespace hive::networking::messaging

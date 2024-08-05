@@ -1,8 +1,8 @@
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
 #include "logging/LogManager.h"
 
-using namespace services::impl;
-using namespace services;
+using namespace hive::services::impl;
+using namespace hive::services;
 
 std::optional<SharedServiceResponse>
 RemoteServiceMessagesConverter::ToServiceResponse(Message &&message) {

@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace logging::logger {
+namespace hive::logging::logger {
 
 /**
  * Generic interface for logging
@@ -16,4 +16,4 @@ public:
   virtual void Error(const std::string &message) const noexcept = 0;
   virtual void Debug(const std::string &message) const noexcept = 0;
 };
-} // namespace logging::logger
+} // namespace hive::logging::logger

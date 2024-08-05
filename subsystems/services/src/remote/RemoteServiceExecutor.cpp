@@ -2,9 +2,9 @@
 #include "common/uuid/UuidGenerator.h"
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
 
-using namespace services::impl;
-using namespace services;
-using namespace jobsystem;
+using namespace hive::services::impl;
+using namespace hive::services;
+using namespace hive::jobsystem;
 
 RemoteServiceExecutor::RemoteServiceExecutor(
     std::string service_name,

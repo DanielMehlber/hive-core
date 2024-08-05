@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-namespace resources {
+namespace hive::resources {
 
 DECLARE_EXCEPTION(DuplicateLoaderIdException);
 
@@ -40,4 +40,4 @@ public:
   virtual ~IResourceManager() = default;
 };
 
-} // namespace resources
+} // namespace hive::resources

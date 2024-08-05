@@ -1,6 +1,6 @@
 #pragma once
 
-namespace jobsystem {
+namespace hive::jobsystem {
 
 /**
  * Generic interface for objects and processes that can be waited for
@@ -15,4 +15,4 @@ public:
    */
   virtual bool IsFinished() = 0;
 };
-} // namespace jobsystem
+} // namespace hive::jobsystem

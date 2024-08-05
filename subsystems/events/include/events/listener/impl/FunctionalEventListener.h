@@ -6,7 +6,7 @@
 #include <functional>
 #include <string>
 
-namespace events {
+namespace hive::events {
 
 /**
  * Allows handling events using a simple lambda functions instead of
@@ -35,4 +35,4 @@ public:
   std::string GetId() const override { return m_id; };
 };
 
-} // namespace events
+} // namespace hive::events

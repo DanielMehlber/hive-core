@@ -2,7 +2,7 @@
 
 #include "plugins/IPlugin.h"
 
-class TestPlugin : public plugins::IPlugin {
+class TestPlugin : public hive::plugins::IPlugin {
 private:
   std::atomic_size_t m_init_count;
   std::atomic_size_t m_shutdown_count;
@@ -10,8 +10,10 @@ private:
 public:
   std::string GetName() override { return "test"; };
 
-  void Init(plugins::SharedPluginContext context) override { m_init_count++; };
-  void ShutDown(plugins::SharedPluginContext context) override {
+  void Init(hive::plugins::SharedPluginContext context) override {
+    m_init_count++;
+  };
+  void ShutDown(hive::plugins::SharedPluginContext context) override {
     m_shutdown_count++;
   }
 

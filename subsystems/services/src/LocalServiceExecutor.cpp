@@ -1,8 +1,8 @@
 #include "services/executor/impl/LocalServiceExecutor.h"
 #include "common/uuid/UuidGenerator.h"
 
-using namespace services;
-using namespace services::impl;
+using namespace hive::services;
+using namespace hive::services::impl;
 
 LocalServiceExecutor::LocalServiceExecutor(
     std::string service_name,

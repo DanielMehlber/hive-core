@@ -5,7 +5,8 @@
 #include "networking/messaging/events/ConnectionClosedEvent.h"
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
 
-using namespace services::impl;
+using namespace hive::services;
+using namespace hive::services::impl;
 
 RemoteServiceResponseConsumer::RemoteServiceResponseConsumer(
     common::memory::Reference<common::subsystems::SubsystemManager> subsystems)
@@ -120,7 +121,7 @@ void RemoteServiceResponseConsumer::AddResponsePromise(
   m_pending_promises[request_id] = std::move(info);
 }
 
-std::optional<std::promise<services::SharedServiceResponse>>
+std::optional<std::promise<SharedServiceResponse>>
 RemoteServiceResponseConsumer::RemoveResponsePromise(
     const std::string &request_id) {
   std::unique_lock lock(m_pending_promises_mutex);

@@ -2,7 +2,7 @@
 
 #include "events/Event.h"
 
-namespace events {
+namespace hive::events {
 
 /**
  * Handles events propagated and managed by an event broker.
@@ -25,4 +25,4 @@ public:
 
 typedef std::shared_ptr<IEventListener> SharedEventListener;
 
-} // namespace events
+} // namespace hive::events

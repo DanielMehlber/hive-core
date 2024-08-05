@@ -11,7 +11,7 @@
 // include order matters here
 #include "boost/fiber/all.hpp"
 
-namespace jobsystem::execution::impl {
+namespace hive::jobsystem::execution::impl {
 
 /**
  * This implementation of the job execution uses a concept called fibers,
@@ -130,4 +130,4 @@ inline jobsystem::execution::JobExecutionState BoostFiberExecution::GetState() {
   return m_current_state;
 }
 
-} // namespace jobsystem::execution::impl
+} // namespace hive::jobsystem::execution::impl

@@ -4,12 +4,13 @@
 
 using namespace std::placeholders;
 
-class AddingServiceExecutor : public services::impl::LocalServiceExecutor {
+class AddingServiceExecutor
+    : public hive::services::impl::LocalServiceExecutor {
 public:
   std::atomic_size_t count{0};
 
   AddingServiceExecutor()
-      : services::impl::LocalServiceExecutor(
+      : hive::services::impl::LocalServiceExecutor(
             "add", std::bind(&AddingServiceExecutor::Add, this, _1)){};
 
   std::future<SharedServiceResponse> Add(const SharedServiceRequest &request) {

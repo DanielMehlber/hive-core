@@ -1,6 +1,7 @@
 #include "graphics/service/RenderServiceRequest.h"
 
-using namespace graphics;
+using namespace hive::graphics;
+using namespace hive::services;
 
 vsg::dvec3 toVec3(const std::string &serialized_vector) {
   // split components
@@ -119,7 +120,7 @@ RenderServiceRequest::GetPerspectiveProjection() const {
   return Perspective{near_plane, far_plane, fov};
 }
 
-services::SharedServiceRequest RenderServiceRequest::GetRequest() const {
+SharedServiceRequest RenderServiceRequest::GetRequest() const {
   return m_request;
 }
 

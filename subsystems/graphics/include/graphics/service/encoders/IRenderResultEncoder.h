@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace graphics {
+namespace hive::graphics {
 class IRenderResultEncoder {
 public:
   virtual std::string GetName() = 0;
@@ -11,4 +11,4 @@ public:
   virtual std::vector<unsigned char> Decode(const std::string &str) = 0;
   virtual ~IRenderResultEncoder() = default;
 };
-} // namespace graphics
+} // namespace hive::graphics

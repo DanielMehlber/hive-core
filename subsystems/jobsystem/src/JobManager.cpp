@@ -4,8 +4,8 @@
 #include "common/profiling/TimerManager.h"
 #include <sstream>
 
-using namespace jobsystem;
-using namespace jobsystem::job;
+using namespace hive::jobsystem;
+using namespace hive::jobsystem::job;
 using namespace std::chrono_literals;
 
 JobManager::JobManager(const common::config::SharedConfiguration &config)
@@ -164,9 +164,7 @@ void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
   WaitForCompletion(counter);
 }
 
-size_t jobsystem::JobManager::GetTotalCyclesCount() const {
-  return m_total_cycle_count;
-}
+size_t JobManager::GetTotalCyclesCount() const { return m_total_cycle_count; }
 
 void JobManager::ResetContinuationRequeueBlacklist() {
   std::unique_lock lock(m_continuation_requeue_blacklist_mutex);

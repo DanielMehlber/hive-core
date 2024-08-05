@@ -5,13 +5,13 @@
 #include "networking/NetworkingManager.h"
 #include "networking/messaging/ConnectionInfo.h"
 
-using namespace networking;
-using namespace networking::messaging;
-using namespace jobsystem;
-using namespace props;
-using namespace events;
+using namespace hive::networking;
+using namespace hive::networking::messaging;
+using namespace hive::jobsystem;
+using namespace hive::data;
+using namespace hive::events;
 using namespace std::chrono_literals;
-using namespace common::test;
+using namespace hive::common::test;
 
 struct Node {
   std::string uuid;
@@ -41,7 +41,7 @@ Node SetupWebSocketPeer(size_t port) {
           subsystems.CreateReference());
   subsystems->AddOrReplaceSubsystem<IEventBroker>(std::move(event_broker));
 
-  auto property_provider = common::memory::Owner<props::PropertyProvider>(
+  auto property_provider = common::memory::Owner<data::PropertyProvider>(
       subsystems.CreateReference());
   subsystems->AddOrReplaceSubsystem<PropertyProvider>(
       std::move(property_provider));

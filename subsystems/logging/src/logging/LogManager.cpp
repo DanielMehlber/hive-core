@@ -1,7 +1,8 @@
 #include "logging/LogManager.h"
 
-std::shared_ptr<logging::logger::ILogger>
-logging::LogManager::GetLogger() noexcept {
+using namespace hive::logging;
+
+std::shared_ptr<logger::ILogger> LogManager::GetLogger() noexcept {
   if (!m_logger) {
     m_logger = std::make_shared<logger::impl::BoostLogger>();
   }
@@ -9,4 +10,4 @@ logging::LogManager::GetLogger() noexcept {
   return m_logger;
 }
 
-std::shared_ptr<logging::logger::ILogger> logging::LogManager::m_logger;
+std::shared_ptr<logger::ILogger> LogManager::m_logger;

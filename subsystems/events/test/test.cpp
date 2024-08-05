@@ -4,8 +4,9 @@
 #include "events/listener/impl/FunctionalEventListener.h"
 #include <gtest/gtest.h>
 
-using namespace events;
-using namespace jobsystem;
+using namespace hive::events;
+using namespace hive::jobsystem;
+using namespace hive;
 
 common::memory::Owner<common::subsystems::SubsystemManager> SetupSubsystems() {
   auto subsystems =

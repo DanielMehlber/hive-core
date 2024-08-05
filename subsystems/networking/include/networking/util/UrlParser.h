@@ -4,7 +4,7 @@
 #include <regex>
 #include <string>
 
-namespace networking::util {
+namespace hive::networking::util {
 
 /**
  * Extracted tokens of an URL
@@ -29,4 +29,4 @@ public:
    */
   static std::optional<ParsedUrl> parse(const std::string &url);
 };
-} // namespace networking::util
+} // namespace hive::networking::util

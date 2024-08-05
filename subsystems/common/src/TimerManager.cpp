@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <numeric>
 
-using namespace common::profiling;
+using namespace hive::common::profiling;
 
 std::shared_ptr<TimerManager> TimerManager::m_global_instance = nullptr;
 

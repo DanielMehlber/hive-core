@@ -4,7 +4,7 @@
 #include "logging/LogManager.h"
 #include <memory>
 
-namespace props {
+namespace hive::data {
 
 /**
  * Listens to changes of a specific property or a subset of properties
@@ -35,4 +35,4 @@ public:
 
 typedef std::shared_ptr<PropertyChangeListener> SharedPropertyListener;
 
-} // namespace props
+} // namespace hive::data

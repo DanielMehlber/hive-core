@@ -2,7 +2,7 @@
 #include "common/assert/Assert.h"
 #include <boost/fiber/all.hpp>
 
-using namespace jobsystem;
+using namespace hive::jobsystem;
 
 bool isFiber() {
   return !boost::fibers::context::active()->is_context(

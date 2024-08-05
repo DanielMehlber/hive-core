@@ -10,7 +10,7 @@
 #include <mutex>
 #include <queue>
 
-namespace resources {
+namespace hive::resources {
 
 DECLARE_EXCEPTION(ResourceLoaderNotFound);
 
@@ -38,4 +38,4 @@ public:
   std::future<SharedResource> LoadResource(const std::string &uri) override;
 };
 
-} // namespace resources
+} // namespace hive::resources

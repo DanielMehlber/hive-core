@@ -4,8 +4,8 @@
 #include <boost/asio.hpp>
 #include <utility>
 
-using namespace networking::messaging;
-using namespace networking::messaging::websockets;
+using namespace hive::networking::messaging;
+using namespace hive::networking::messaging::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>

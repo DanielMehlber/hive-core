@@ -1,6 +1,6 @@
 #include "logging/logger/ILogger.h"
 
-namespace logging::logger::impl {
+namespace hive::logging::logger::impl {
 
 /**
  * Logger implementation that uses Boost.Log
@@ -18,4 +18,4 @@ public:
   void Debug(const std::string &message) const noexcept final;
 };
 
-} // namespace logging::logger::impl
+} // namespace hive::logging::logger::impl

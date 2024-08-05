@@ -26,7 +26,7 @@
 
 using namespace std::chrono_literals;
 
-namespace core {
+namespace hive::core {
 
 /**
  * Encapsulates all components belonging to the core system and allows easy
@@ -77,8 +77,8 @@ public:
   common::memory::Borrower<events::IEventBroker> GetEventBroker();
 
   void SetPropertyProvider(
-      common::memory::Owner<props::PropertyProvider> &&provider);
-  common::memory::Borrower<props::PropertyProvider> GetPropertyProvider();
+      common::memory::Owner<data::PropertyProvider> &&provider);
+  common::memory::Borrower<data::PropertyProvider> GetPropertyProvider();
 
   void SetResourceManager(
       common::memory::Owner<resources::IResourceManager> &&manager);
@@ -105,4 +105,4 @@ public:
   common::memory::Borrower<common::subsystems::SubsystemManager>
   GetSubsystemsManager();
 };
-} // namespace core
+} // namespace hive::core

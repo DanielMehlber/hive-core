@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace common::uuid {
+namespace hive::common::uuid {
 
 /**
  * Generates UUIDs randomly.
@@ -11,4 +11,4 @@ class UuidGenerator {
 public:
   static std::string Random() noexcept;
 };
-} // namespace common::uuid
+} // namespace hive::common::uuid

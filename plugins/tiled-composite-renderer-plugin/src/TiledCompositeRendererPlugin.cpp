@@ -6,6 +6,7 @@
 #include "services/messages/ServiceRegisteredNotification.h"
 #include <boost/dll/alias.hpp> // for BOOST_DLL_ALIAS
 
+using namespace hive;
 using namespace std::chrono_literals;
 
 void TiledCompositeRendererPlugin::Init(plugins::SharedPluginContext context) {

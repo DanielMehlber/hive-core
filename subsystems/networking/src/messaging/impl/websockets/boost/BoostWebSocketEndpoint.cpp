@@ -6,9 +6,9 @@
 #include "networking/util/UrlParser.h"
 #include <regex>
 
-using namespace networking;
-using namespace networking::messaging;
-using namespace networking::messaging::websockets;
+using namespace hive::networking;
+using namespace hive::networking::messaging;
+using namespace hive::networking::messaging::websockets;
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
@@ -288,7 +288,7 @@ void BoostWebSocketEndpoint::InitAndStartConnectionListener() {
 
   // get id of this node (required for handshake)
   auto property_provider =
-      m_subsystems.Borrow()->RequireSubsystem<props::PropertyProvider>();
+      m_subsystems.Borrow()->RequireSubsystem<data::PropertyProvider>();
   auto node_uuid = property_provider->GetOrElse<std::string>("net.node.id", "");
 
   if (!m_connection_listener) {
@@ -305,7 +305,7 @@ void BoostWebSocketEndpoint::InitConnectionEstablisher() {
 
   // get id of this node (required for handshake)
   auto property_provider =
-      m_subsystems.Borrow()->RequireSubsystem<props::PropertyProvider>();
+      m_subsystems.Borrow()->RequireSubsystem<data::PropertyProvider>();
   auto node_uuid = property_provider->GetOrElse<std::string>("net.node.id", "");
 
   if (!m_connection_establisher) {

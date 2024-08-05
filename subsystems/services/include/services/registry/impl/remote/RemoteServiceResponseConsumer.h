@@ -8,9 +8,9 @@
 #include "services/registry/impl/remote/RemoteExceptions.h"
 #include <future>
 
-using namespace networking::messaging;
+using namespace hive::networking::messaging;
 
-namespace services::impl {
+namespace hive::services::impl {
 
 struct PendingRequestInfo {
   /** promise that must be resolved to complete the request */
@@ -73,4 +73,4 @@ RemoteServiceResponseConsumer::GetMessageType() const noexcept {
   return "service-response";
 }
 
-} // namespace services::impl
+} // namespace hive::services::impl

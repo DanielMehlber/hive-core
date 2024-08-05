@@ -3,7 +3,7 @@
 #include "PluginContext.h"
 #include "common/exceptions/ExceptionsBase.h"
 
-namespace plugins {
+namespace hive::plugins {
 
 DECLARE_EXCEPTION(PluginSetupFailedException);
 
@@ -36,4 +36,4 @@ public:
 
 typedef std::shared_ptr<IPlugin> SharedPlugin;
 
-} // namespace plugins
+} // namespace hive::plugins

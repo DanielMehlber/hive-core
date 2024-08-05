@@ -3,9 +3,9 @@
 #include "services/executor/IServiceExecutor.h"
 #include <functional>
 
-using namespace services;
+using namespace hive::services;
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * Executes services using a direct function call.
@@ -48,4 +48,4 @@ public:
   std::string GetId() override { return m_id; }
 };
 
-} // namespace services::impl
+} // namespace hive::services::impl
