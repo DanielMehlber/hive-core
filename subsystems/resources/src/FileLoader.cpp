@@ -1,8 +1,8 @@
-#include "resourcemgmt/loader/impl/FileLoader.h"
+#include "resources/loader/impl/FileLoader.h"
 #include <fstream>
 
-using namespace resourcemgmt;
-using namespace resourcemgmt::loaders;
+using namespace resources;
+using namespace resources::loaders;
 
 SharedResource FileLoader::Load(const std::string &uri) {
 

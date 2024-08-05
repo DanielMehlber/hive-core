@@ -1,21 +1,24 @@
 cmake_minimum_required(VERSION 3.10)
-project(resourcemgmt)
+project(resources)
 
 find_package(Boost REQUIRED COMPONENTS fiber)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(resourcemgmt SHARED
+add_library(resources SHARED
         src/ThreadPoolResourceManager.cpp
         src/FileLoader.cpp
 )
 
-target_include_directories(resourcemgmt PUBLIC
-        include
+add_library(Hive::resources ALIAS resources)
+
+target_include_directories(resources PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(resourcemgmt PUBLIC
+target_link_libraries(resources PUBLIC
         ${Boost_LIBRARIES}
         logging
         jobsystem
@@ -25,15 +28,22 @@ target_link_libraries(resourcemgmt PUBLIC
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(resourcemgmt PUBLIC FILE_SET HEADERS
+target_sources(resources PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS resourcemgmt
+install(TARGETS resources
+        EXPORT resourcesTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include
+)
+
+install(EXPORT resourcesTargets
+        FILE hive-resources-targets.cmake
+        NAMESPACE Hive::
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
 
 # build test
@@ -43,7 +53,7 @@ add_subdirectory(test)
 find_package(Doxygen QUIET)
 if (GENERATE_DOCS)
     if (DOXYGEN_FOUND)
-        doxygen_add_docs(resourcemgmtdocs "include" "src" ALL)
+        doxygen_add_docs(resourcesdocs "include" "src" ALL)
     else (DOXYGEN_FOUND)
         message(WARNING "Doxygen need to be installed to generate the doxygen documentation of ${PROJECT_NAME}.")
     endif (DOXYGEN_FOUND)

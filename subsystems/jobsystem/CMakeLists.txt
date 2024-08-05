@@ -15,9 +15,9 @@ IF (MSVC)
     # Add the /GL- flag to disable global program optimization
     string(REPLACE "/GL" "/GL-" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
-     # Replace /EHsc with /EHs
+    # Replace /EHsc with /EHs
     string(REPLACE "/EHsc" "/EHs" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-ENDIF()
+ENDIF ()
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -30,8 +30,11 @@ add_library(jobsystem SHARED
         src/BoostFiberRecursiveSpinLock.cpp
         src/BoostFiberSpinLock.cpp)
 
+add_library(Hive::jobsystem ALIAS jobsystem)
+
 target_include_directories(jobsystem PUBLIC
-        include
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -49,10 +52,17 @@ target_sources(jobsystem PUBLIC FILE_SET HEADERS
         FILES ${HEADER_FILES})
 
 install(TARGETS jobsystem
+        EXPORT jobsystemTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include
+)
+
+install(EXPORT jobsystemTargets
+        FILE hive-jobsystem-targets.cmake
+        NAMESPACE Hive::
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
 
 # build tests

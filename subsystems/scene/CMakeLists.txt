@@ -10,8 +10,11 @@ add_library(scene SHARED
         src/SceneManager.cpp
 )
 
+add_library(Hive::scene ALIAS scene)
+
 target_include_directories(scene PUBLIC
-        include
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -29,10 +32,17 @@ target_sources(scene PUBLIC FILE_SET HEADERS
         FILES ${HEADER_FILES})
 
 install(TARGETS scene
+        EXPORT sceneTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include
+)
+
+install(EXPORT sceneTargets
+        FILE hive-scene-targets.cmake
+        NAMESPACE Hive::
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
 
 # create documentation using doxygen (if doxygen is installed and documentation is requested)

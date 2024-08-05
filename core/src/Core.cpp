@@ -2,8 +2,8 @@
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "graphics/service/RenderService.h"
 #include "plugins/impl/BoostPluginManager.h"
-#include "resourcemgmt/loader/impl/FileLoader.h"
-#include "resourcemgmt/manager/impl/ThreadPoolResourceManager.h"
+#include "resources/loader/impl/FileLoader.h"
+#include "resources/manager/impl/ThreadPoolResourceManager.h"
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
@@ -11,7 +11,7 @@ using namespace core;
 using namespace jobsystem;
 using namespace events;
 using namespace props;
-using namespace resourcemgmt;
+using namespace resources;
 using namespace services;
 using namespace plugins;
 using namespace networking;
@@ -35,10 +35,8 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
       common::memory::Owner<PropertyProvider>(m_subsystems.CreateReference()));
 
   // setup resource manager
-  auto resource_manager =
-      common::memory::Owner<resourcemgmt::ThreadPoolResourceManager>();
-  auto file_resource_loader =
-      std::make_shared<resourcemgmt::loaders::FileLoader>();
+  auto resource_manager = common::memory::Owner<ThreadPoolResourceManager>();
+  auto file_resource_loader = std::make_shared<loaders::FileLoader>();
   resource_manager->RegisterLoader(file_resource_loader);
   SetResourceManager(std::move(resource_manager));
 
@@ -144,12 +142,11 @@ common::memory::Borrower<props::PropertyProvider> Core::GetPropertyProvider() {
 }
 
 void Core::SetResourceManager(
-    common::memory::Owner<resourcemgmt::IResourceManager> &&broker) {
+    common::memory::Owner<IResourceManager> &&broker) {
   m_subsystems->AddOrReplaceSubsystem<IResourceManager>(std::move(broker));
 }
 
-common::memory::Borrower<resourcemgmt::IResourceManager>
-Core::GetResourceManager() {
+common::memory::Borrower<IResourceManager> Core::GetResourceManager() {
   return m_subsystems->RequireSubsystem<IResourceManager>();
 }
 

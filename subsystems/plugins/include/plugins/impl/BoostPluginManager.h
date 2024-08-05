@@ -3,7 +3,7 @@
 #include "boost/dll/shared_library.hpp"
 #include "common/subsystems/SubsystemManager.h"
 #include "plugins/IPluginManager.h"
-#include "resourcemgmt/manager/IResourceManager.h"
+#include "resources/manager/IResourceManager.h"
 #include <map>
 
 #ifndef _WIN32

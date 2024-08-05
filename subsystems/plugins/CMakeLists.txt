@@ -9,8 +9,11 @@ add_library(plugins SHARED
         src/BoostPluginManager.cpp
 )
 
+add_library(Hive::plugins ALIAS plugins)
+
 target_include_directories(plugins PUBLIC
-        include
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -22,7 +25,7 @@ target_link_libraries(plugins PUBLIC
         common
         networking
         services
-        resourcemgmt
+        resources
         scene
         graphics
 )
@@ -35,10 +38,17 @@ target_sources(plugins PUBLIC FILE_SET HEADERS
         FILES ${HEADER_FILES})
 
 install(TARGETS plugins
+        EXPORT pluginsTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include
+)
+
+install(EXPORT pluginsTargets
+        FILE hive-plugins-targets.cmake
+        NAMESPACE Hive::
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
 
 # build tests

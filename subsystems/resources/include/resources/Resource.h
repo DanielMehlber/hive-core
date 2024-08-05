@@ -5,7 +5,7 @@
 #include <memory>
 #include <typeinfo>
 
-namespace resourcemgmt {
+namespace resources {
 
 DECLARE_EXCEPTION(WrongResourceTypeRequestedException);
 
@@ -43,4 +43,4 @@ inline Resource::Resource(std::shared_ptr<ResourceType> content_ptr)
 
 typedef std::shared_ptr<Resource> SharedResource;
 
-} // namespace resourcemgmt
+} // namespace resources

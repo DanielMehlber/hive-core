@@ -10,8 +10,11 @@ add_library(logging SHARED
         src/logging/LogManager.cpp
 )
 
+add_library(Hive::logging ALIAS logging)
+
 target_include_directories(logging PUBLIC
-        include
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -27,10 +30,17 @@ target_sources(logging PUBLIC FILE_SET HEADERS
         FILES ${HEADER_FILES})
 
 install(TARGETS logging
+        EXPORT loggingTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include
+)
+
+install(EXPORT loggingTargets
+        FILE hive-logging-targets.cmake
+        NAMESPACE Hive::
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
 
 # create documentation using doxygen (if doxygen is installed and documentation is requested)

@@ -1,10 +1,10 @@
 #include "common/memory/ExclusiveOwnership.h"
-#include "resourcemgmt/manager/impl/ThreadPoolResourceManager.h"
+#include "resources/manager/impl/ThreadPoolResourceManager.h"
 #include <chrono>
 #include <gtest/gtest.h>
-#include <resourcemgmt/loader/IResourceLoader.h>
+#include <resources/loader/IResourceLoader.h>
 
-using namespace resourcemgmt;
+using namespace resources;
 using namespace std::chrono_literals;
 
 class DummyLoader : public IResourceLoader {
@@ -38,7 +38,7 @@ public:
   };
 };
 
-TEST(ResourceMgmt, register_loader) {
+TEST(resources, register_loader) {
   auto manager = common::memory::Owner<ThreadPoolResourceManager>();
   auto dummy_loader = std::make_shared<DummyLoader>(0.5s);
   manager->RegisterLoader(dummy_loader);
@@ -72,7 +72,7 @@ TEST(ResoureMgmt, loading_multiple) {
   }
 }
 
-TEST(ResourceMgmt, duplicate_loader_id) {
+TEST(resources, duplicate_loader_id) {
   auto manager = common::memory::Owner<ThreadPoolResourceManager>(2);
   auto dummy_loader = std::make_shared<DummyLoader>(0.01s);
   manager->RegisterLoader(dummy_loader);

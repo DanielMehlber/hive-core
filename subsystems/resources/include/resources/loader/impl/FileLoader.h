@@ -1,8 +1,8 @@
 #pragma once
 
-#include "resourcemgmt/loader/IResourceLoader.h"
+#include "resources/loader/IResourceLoader.h"
 
-namespace resourcemgmt::loaders {
+namespace resources::loaders {
 
 /**
  * Loads files from the device file-system
@@ -35,4 +35,4 @@ inline const std::string &FileLoader::GetId() const noexcept {
   return id;
 }
 
-} // namespace resourcemgmt::loaders
+} // namespace resources::loaders

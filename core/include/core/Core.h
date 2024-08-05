@@ -9,7 +9,7 @@
 #include "networking/NetworkingManager.h"
 #include "plugins/IPluginManager.h"
 #include "properties/PropertyProvider.h"
-#include "resourcemgmt/manager/IResourceManager.h"
+#include "resources/manager/IResourceManager.h"
 #include "scene/SceneManager.h"
 #include "services/registry/IServiceRegistry.h"
 
@@ -81,8 +81,8 @@ public:
   common::memory::Borrower<props::PropertyProvider> GetPropertyProvider();
 
   void SetResourceManager(
-      common::memory::Owner<resourcemgmt::IResourceManager> &&manager);
-  common::memory::Borrower<resourcemgmt::IResourceManager> GetResourceManager();
+      common::memory::Owner<resources::IResourceManager> &&manager);
+  common::memory::Borrower<resources::IResourceManager> GetResourceManager();
 
   void SetServiceRegistry(
       common::memory::Owner<services::IServiceRegistry> &&registry);

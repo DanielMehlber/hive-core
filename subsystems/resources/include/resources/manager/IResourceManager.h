@@ -1,13 +1,13 @@
 #pragma once
 
 #include "common/exceptions/ExceptionsBase.h"
-#include "resourcemgmt/Resource.h"
-#include "resourcemgmt/loader/IResourceLoader.h"
+#include "resources/Resource.h"
+#include "resources/loader/IResourceLoader.h"
 #include <future>
 #include <memory>
 #include <string>
 
-namespace resourcemgmt {
+namespace resources {
 
 DECLARE_EXCEPTION(DuplicateLoaderIdException);
 
@@ -40,4 +40,4 @@ public:
   virtual ~IResourceManager() = default;
 };
 
-} // namespace resourcemgmt
+} // namespace resources

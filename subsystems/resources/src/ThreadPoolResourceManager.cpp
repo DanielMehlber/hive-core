@@ -1,7 +1,7 @@
-#include "resourcemgmt/manager/impl/ThreadPoolResourceManager.h"
+#include "resources/manager/impl/ThreadPoolResourceManager.h"
 #include "logging/LogManager.h"
 
-using namespace resourcemgmt;
+using namespace resources;
 
 void ThreadPoolResourceManager::RegisterLoader(
     std::shared_ptr<IResourceLoader> loader) {

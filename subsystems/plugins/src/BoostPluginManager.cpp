@@ -205,7 +205,7 @@ void BoostPluginManager::InstallPlugins(const std::string &input_path_str) {
             // load descriptor content using loader
             auto resource_manager =
                 plugin_manager->m_subsystems.Borrow()
-                    ->RequireSubsystem<resourcemgmt::IResourceManager>();
+                    ->RequireSubsystem<resources::IResourceManager>();
             auto future_resource =
                 resource_manager->LoadResource("file://" + jsonFilePath);
             context->GetJobManager()->WaitForCompletion(future_resource);

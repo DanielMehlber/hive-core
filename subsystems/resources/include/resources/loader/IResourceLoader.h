@@ -1,12 +1,12 @@
 #pragma once
 
-#include "resourcemgmt/Resource.h"
+#include "resources/Resource.h"
 #include <any>
 #include <future>
 #include <memory>
 #include <string>
 
-namespace resourcemgmt {
+namespace resources {
 
 /**
  * Interface for a variety of resource loaders that will be used by the
@@ -34,4 +34,4 @@ public:
    */
   virtual SharedResource Load(const std::string &uri) = 0;
 };
-} // namespace resourcemgmt
+} // namespace resources

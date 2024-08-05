@@ -13,9 +13,12 @@ add_library(common SHARED
         src/SpinLock.cpp
 )
 
+add_library(Hive::common ALIAS common)
+
 target_include_directories(common PUBLIC
-        include
         ${Boost_INCLUDE_DIRS}
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
 )
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES})
@@ -24,14 +27,21 @@ target_link_libraries(common PUBLIC ${Boost_LIBRARIES})
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
 target_sources(common PUBLIC FILE_SET HEADERS
-        BASE_DIRS include
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
         FILES ${HEADER_FILES})
 
 install(TARGETS common
+        EXPORT commonTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include
+)
+
+install(EXPORT commonTargets
+        FILE hive-common-targets.cmake
+        NAMESPACE Hive::
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
 
 # build tests

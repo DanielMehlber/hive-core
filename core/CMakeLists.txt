@@ -9,16 +9,14 @@ add_library(core SHARED
         src/Core.cpp
 )
 
-install(TARGETS core
-        RUNTIME DESTINATION lib
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-)
+add_library(Hive::core ALIAS core)
 
 target_include_directories(core PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
         ${Boost_INCLUDE_DIRS}
 )
+
 
 target_link_libraries(core PUBLIC
         ${Boost_LIBRARIES}
@@ -30,10 +28,32 @@ target_link_libraries(core PUBLIC
         scene
         graphics
         services
-        resourcemgmt
+        resources
         properties
         plugins
 )
+
+file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
+
+target_sources(core PUBLIC FILE_SET HEADERS
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+        FILES ${HEADER_FILES})
+
+install(TARGETS core
+        EXPORT coreTargets
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
+)
+
+install(EXPORT coreTargets
+        FILE hive-core-targets.cmake
+        NAMESPACE Hive::
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
+)
+
+message("Link interface libraries: ${CMAKE_LINK_INTERFACE_LIBRARIES}")
 
 # create documentation using doxygen (if doxygen is installed and documentation is requested)
 find_package(Doxygen QUIET)

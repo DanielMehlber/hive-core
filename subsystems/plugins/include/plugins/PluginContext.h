@@ -7,7 +7,7 @@
 #include "jobsystem/manager/JobManager.h"
 #include "networking/NetworkingManager.h"
 #include "properties/PropertyProvider.h"
-#include "resourcemgmt/manager/IResourceManager.h"
+#include "resources/manager/IResourceManager.h"
 #include "services/registry/IServiceRegistry.h"
 #include <memory>
 #include <utility>

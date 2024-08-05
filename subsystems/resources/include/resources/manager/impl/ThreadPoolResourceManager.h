@@ -2,15 +2,15 @@
 
 #include "common/exceptions/ExceptionsBase.h"
 #include "jobsystem/synchronization/JobMutex.h"
-#include "resourcemgmt/Resource.h"
-#include "resourcemgmt/loader/IResourceLoader.h"
-#include "resourcemgmt/manager/IResourceManager.h"
+#include "resources/Resource.h"
+#include "resources/loader/IResourceLoader.h"
+#include "resources/manager/IResourceManager.h"
 #include <condition_variable>
 #include <map>
 #include <mutex>
 #include <queue>
 
-namespace resourcemgmt {
+namespace resources {
 
 DECLARE_EXCEPTION(ResourceLoaderNotFound);
 
@@ -38,4 +38,4 @@ public:
   std::future<SharedResource> LoadResource(const std::string &uri) override;
 };
 
-} // namespace resourcemgmt
+} // namespace resources

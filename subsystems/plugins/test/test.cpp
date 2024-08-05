@@ -1,8 +1,8 @@
 #include "TestPlugin.h"
 #include "common/memory/ExclusiveOwnership.h"
 #include "plugins/impl/BoostPluginManager.h"
-#include "resourcemgmt/manager/IResourceManager.h"
-#include "resourcemgmt/manager/impl/ThreadPoolResourceManager.h"
+#include "resources/manager/IResourceManager.h"
+#include "resources/manager/impl/ThreadPoolResourceManager.h"
 #include <gtest/gtest.h>
 
 TEST(PluginsTest, lifecycle_test) {
@@ -12,12 +12,12 @@ TEST(PluginsTest, lifecycle_test) {
   job_manager->StartExecution();
 
   auto resource_manager =
-      common::memory::Owner<resourcemgmt::ThreadPoolResourceManager>();
+      common::memory::Owner<resources::ThreadPoolResourceManager>();
 
   auto subsystems =
       common::memory::Owner<common::subsystems::SubsystemManager>();
   subsystems->AddOrReplaceSubsystem(std::move(job_manager));
-  subsystems->AddOrReplaceSubsystem<resourcemgmt::IResourceManager>(
+  subsystems->AddOrReplaceSubsystem<resources::IResourceManager>(
       std::move(resource_manager));
 
   auto plugin_context =

@@ -28,8 +28,11 @@ add_library(graphics SHARED
         ${GRAPHICS_SOURCES}
 )
 
+add_library(Hive::graphics ALIAS graphics)
+
 target_include_directories(graphics PUBLIC
-        include
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -46,10 +49,17 @@ target_sources(graphics PUBLIC FILE_SET HEADERS
         FILES ${HEADER_FILES})
 
 install(TARGETS graphics
+        EXPORT graphicsTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include
+)
+
+install(EXPORT graphicsTargets
+        FILE hive-graphics-targets.cmake
+        NAMESPACE Hive::
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
 
 # build tests

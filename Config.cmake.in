@@ -1,0 +1,26 @@
+@PACKAGE_INIT@
+
+# include("${CMAKE_CURRENT_LIST_DIR}/hive-targets.cmake")
+include(CMakeFindDependencyMacro)
+
+find_dependency(Boost REQUIRED COMPONENTS log log_setup system iostreams fiber context program_options json)
+find_dependency(vsg REQUIRED)
+
+set(_Hive_supported_components
+    common logging jobsystem resources events properties networking scene services graphics plugins core)
+
+foreach(_comp ${_Hive_supported_components})
+    include("${CMAKE_CURRENT_LIST_DIR}/hive-${_comp}-targets.cmake")
+endforeach()
+
+foreach(_comp ${Hive_FIND_COMPONENTS})
+  if (NOT _comp IN_LIST _Hive_supported_components)
+    set(Hive_FOUND False)
+    set(Hive_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
+    message(FATAL_ERROR "Hive does not support component: ${_comp}")
+  endif()
+endforeach()
+
+if(Hive_FOUND)
+    MESSAGE("Found Hive components: ${Hive_FIND_COMPONENTS}")
+endif()
