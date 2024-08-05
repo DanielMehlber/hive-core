@@ -32,7 +32,7 @@ add_library(Hive::graphics ALIAS graphics)
 
 target_include_directories(graphics PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -53,7 +53,7 @@ install(TARGETS graphics
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
-        FILE_SET HEADERS DESTINATION include
+        FILE_SET HEADERS DESTINATION include/hive
 )
 
 install(EXPORT graphicsTargets

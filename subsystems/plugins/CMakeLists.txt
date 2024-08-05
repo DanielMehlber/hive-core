@@ -13,7 +13,7 @@ add_library(Hive::plugins ALIAS plugins)
 
 target_include_directories(plugins PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
@@ -42,7 +42,7 @@ install(TARGETS plugins
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
-        FILE_SET HEADERS DESTINATION include
+        FILE_SET HEADERS DESTINATION include/hive
 )
 
 install(EXPORT pluginsTargets
