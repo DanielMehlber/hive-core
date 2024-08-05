@@ -1,7 +1,7 @@
 #include "services/registry/impl/remote/RemoteServiceRequestConsumer.h"
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
 
-using namespace services::impl;
+using namespace hive::services::impl;
 
 RemoteServiceRequestConsumer::RemoteServiceRequestConsumer(
     const common::memory::Reference<common::subsystems::SubsystemManager>

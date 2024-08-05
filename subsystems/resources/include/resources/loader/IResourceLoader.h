@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-namespace resources {
+namespace hive::resources {
 
 /**
  * Interface for a variety of resource loaders that will be used by the
@@ -34,4 +34,4 @@ public:
    */
   virtual SharedResource Load(const std::string &uri) = 0;
 };
-} // namespace resources
+} // namespace hive::resources

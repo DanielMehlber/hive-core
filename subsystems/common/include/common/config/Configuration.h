@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-namespace common::config {
+namespace hive::common::config {
 
 /**
  * Contains configuration data for subsystems to apply at their startup.
@@ -135,4 +135,4 @@ inline void Configuration::Set<std::string>(const std::string &name,
 
 typedef std::shared_ptr<Configuration> SharedConfiguration;
 
-} // namespace common::config
+} // namespace hive::common::config

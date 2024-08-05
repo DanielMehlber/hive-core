@@ -2,7 +2,7 @@
 #include "common/assert/Assert.h"
 #include "common/synchronization/ScopedLock.h"
 
-using namespace jobsystem;
+using namespace hive::jobsystem;
 
 OwnerInfo GetCurrentOwnerInfo() {
   bool is_called_from_fiber = !boost::fibers::context::active()->is_context(

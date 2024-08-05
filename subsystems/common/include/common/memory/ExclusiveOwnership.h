@@ -10,7 +10,7 @@
 #include <thread>
 #include <type_traits>
 
-namespace common::memory {
+namespace hive::common::memory {
 
 // forward declared
 template <typename T> class Owner;
@@ -555,4 +555,4 @@ template <typename T> Owner<T>::~Owner() {
   }
 }
 
-} // namespace common::memory
+} // namespace hive::common::memory

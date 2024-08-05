@@ -5,6 +5,8 @@
 #include "resources/manager/impl/ThreadPoolResourceManager.h"
 #include <gtest/gtest.h>
 
+using namespace hive;
+
 TEST(PluginsTest, lifecycle_test) {
   auto config = std::make_shared<common::config::Configuration>();
   auto job_manager = common::memory::Owner<jobsystem::JobManager>(config);

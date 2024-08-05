@@ -7,8 +7,9 @@
 #include "properties/PropertyProvider.h"
 #include <gtest/gtest.h>
 
-using namespace props;
-using namespace jobsystem;
+using namespace hive::data;
+using namespace hive::jobsystem;
+using namespace hive;
 
 class VerificationListener : public PropertyChangeListener {
 private:

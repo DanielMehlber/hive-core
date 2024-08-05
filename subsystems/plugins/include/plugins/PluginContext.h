@@ -12,7 +12,7 @@
 #include <memory>
 #include <utility>
 
-namespace plugins {
+namespace hive::plugins {
 
 class PluginContext {
 protected:
@@ -35,4 +35,4 @@ PluginContext::GetKernelSubsystems() const {
 
 typedef std::shared_ptr<PluginContext> SharedPluginContext;
 
-} // namespace plugins
+} // namespace hive::plugins

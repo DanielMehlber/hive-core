@@ -4,7 +4,7 @@
 #include <future>
 #include <map>
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * A registry for services that can be called directly.
@@ -25,4 +25,4 @@ public:
   std::future<std::optional<services::SharedServiceCaller>>
   Find(const std::string &name, bool only_local) noexcept override;
 };
-} // namespace services::impl
+} // namespace hive::services::impl

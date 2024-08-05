@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-namespace networking::util {
+namespace hive::networking::util {
 
 DECLARE_EXCEPTION(InvalidMultipartException);
 
@@ -21,4 +21,4 @@ std::string generateMultipartFormData(const Multipart &multipart);
 
 Multipart parseMultipartFormData(const std::string &data);
 
-} // namespace networking::util
+} // namespace hive::networking::util

@@ -6,7 +6,7 @@
 #include <boost/asio.hpp>
 #include <future>
 
-namespace networking::messaging::websockets {
+namespace hive::networking::messaging::websockets {
 
 DECLARE_EXCEPTION(UrlMalformedException);
 DECLARE_EXCEPTION(CannotResolveHostException);
@@ -123,4 +123,4 @@ public:
    */
   std::future<ConnectionInfo> EstablishConnectionTo(const std::string &uri);
 };
-} // namespace networking::messaging::websockets
+} // namespace hive::networking::messaging::websockets

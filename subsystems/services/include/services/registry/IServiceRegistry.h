@@ -3,7 +3,7 @@
 #include "services/caller/IServiceCaller.h"
 #include <memory>
 
-namespace services {
+namespace hive::services {
 
 /**
  * Acts as service look-up: Services can be centrally managed, registered and
@@ -37,4 +37,4 @@ public:
   virtual ~IServiceRegistry() = default;
 };
 
-} // namespace services
+} // namespace hive::services

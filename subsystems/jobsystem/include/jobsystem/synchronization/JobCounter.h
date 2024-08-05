@@ -6,7 +6,7 @@
 #include <memory>
 #include <mutex>
 
-namespace jobsystem::job {
+namespace hive::jobsystem::job {
 
 /**
  * Allows tracking the completion status and progress of a set of jobs.
@@ -60,4 +60,4 @@ inline bool JobCounter::IsFinished() {
 
 typedef std::shared_ptr<jobsystem::job::JobCounter> SharedJobCounter;
 
-} // namespace jobsystem::job
+} // namespace hive::jobsystem::job

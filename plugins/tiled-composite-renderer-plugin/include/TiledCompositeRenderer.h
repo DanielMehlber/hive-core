@@ -19,18 +19,20 @@ struct Tile {
  * provided rendering services to render the necessary tiles.
  */
 class TiledCompositeRenderer
-    : public graphics::IRenderer,
-      public common::memory::EnableBorrowFromThis<TiledCompositeRenderer> {
+    : public hive::graphics::IRenderer,
+      public hive::common::memory::EnableBorrowFromThis<
+          TiledCompositeRenderer> {
 private:
-  common::memory::Owner<graphics::IRenderer> m_output_renderer;
-  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
+  hive::common::memory::Owner<hive::graphics::IRenderer> m_output_renderer;
+  hive::common::memory::Reference<hive::common::subsystems::SubsystemManager>
+      m_subsystems;
 
   vsg::ref_ptr<vsg::Camera> m_camera;
 
   size_t m_current_service_count;
   std::vector<vsg::ref_ptr<vsg::Data>> m_image_buffers;
   std::vector<Tile> m_tile_infos;
-  mutable jobsystem::mutex m_image_buffers_and_tiling_mutex;
+  mutable hive::jobsystem::mutex m_image_buffers_and_tiling_mutex;
 
   std::shared_ptr<std::atomic<int>> m_frames_per_second;
 
@@ -39,9 +41,9 @@ private:
 
 public:
   TiledCompositeRenderer(
-      const common::memory::Reference<common::subsystems::SubsystemManager>
-          &subsystems,
-      common::memory::Owner<graphics::IRenderer> &&output_renderer);
+      const hive::common::memory::Reference<
+          hive::common::subsystems::SubsystemManager> &subsystems,
+      hive::common::memory::Owner<hive::graphics::IRenderer> &&output_renderer);
 
   /**
    * Render current scene from current view
@@ -53,10 +55,10 @@ public:
   /**
    * @return Last RenderResult (if one exists)
    */
-  std::optional<graphics::SharedRenderResult> GetResult() override;
+  std::optional<hive::graphics::SharedRenderResult> GetResult() override;
 
-  void SetScene(const scene::SharedScene &scene) override;
-  scene::SharedScene GetScene() const override;
+  void SetScene(const hive::scene::SharedScene &scene) override;
+  hive::scene::SharedScene GetScene() const override;
 
   void Resize(int width, int height) override;
   std::tuple<int, int> GetCurrentSize() const override;
@@ -65,9 +67,9 @@ public:
       vsg::ref_ptr<vsg::ProjectionMatrix> matrix) override;
   void SetCameraViewMatrix(vsg::ref_ptr<vsg::ViewMatrix> matrix) override;
 
-  graphics::RendererSetup GetSetup() const override;
+  hive::graphics::RendererSetup GetSetup() const override;
 };
 
-inline graphics::RendererSetup TiledCompositeRenderer::GetSetup() const {
+inline hive::graphics::RendererSetup TiledCompositeRenderer::GetSetup() const {
   return m_output_renderer->GetSetup();
 }

@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-namespace jobsystem {
+namespace hive::jobsystem {
 
 /**
  * A user-space mutex alternative which is built to integrate seamlessly with
@@ -29,4 +29,4 @@ public:
   bool try_lock();
 };
 
-} // namespace jobsystem
+} // namespace hive::jobsystem

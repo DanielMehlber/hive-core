@@ -9,7 +9,9 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <thread>
 
-void logging::logger::impl::BoostLogger::Init() {
+using namespace hive::logging::logger::impl;
+
+void BoostLogger::Init() {
   // setup console logger
   boost::log::add_console_log(
       std::clog,
@@ -18,34 +20,30 @@ void logging::logger::impl::BoostLogger::Init() {
   boost::log::add_common_attributes();
 }
 
-void logging::logger::impl::BoostLogger::ShutDown() {};
+void BoostLogger::ShutDown(){};
 
-logging::logger::impl::BoostLogger::~BoostLogger() { ShutDown(); }
-logging::logger::impl::BoostLogger::BoostLogger() { Init(); }
+BoostLogger::~BoostLogger() { ShutDown(); }
+BoostLogger::BoostLogger() { Init(); }
 
-void logging::logger::impl::BoostLogger::Info(
-    const std::string &message) const noexcept {
+void BoostLogger::Info(const std::string &message) const noexcept {
   BOOST_LOG_TRIVIAL(info) << boost::log::add_value("ThreadID",
                                                    std::this_thread::get_id())
                           << message;
 }
 
-void logging::logger::impl::BoostLogger::Error(
-    const std::string &message) const noexcept {
+void BoostLogger::Error(const std::string &message) const noexcept {
   BOOST_LOG_TRIVIAL(error) << boost::log::add_value("ThreadID",
                                                     std::this_thread::get_id())
                            << message;
 }
 
-void logging::logger::impl::BoostLogger::Warn(
-    const std::string &message) const noexcept {
+void BoostLogger::Warn(const std::string &message) const noexcept {
   BOOST_LOG_TRIVIAL(warning)
       << boost::log::add_value("ThreadID", std::this_thread::get_id())
       << message;
 }
 
-void logging::logger::impl::BoostLogger::Debug(
-    const std::string &message) const noexcept {
+void BoostLogger::Debug(const std::string &message) const noexcept {
   BOOST_LOG_TRIVIAL(debug) << boost::log::add_value("ThreadID",
                                                     std::this_thread::get_id())
                            << message;

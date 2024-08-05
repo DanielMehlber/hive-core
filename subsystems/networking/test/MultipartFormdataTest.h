@@ -5,7 +5,7 @@
 #include <iostream>
 #include <random>
 
-using namespace networking::util;
+using namespace hive::networking::util;
 
 std::string generateRandomBinaryData(size_t size) {
   // Use a random_device to seed the random number generator

@@ -9,9 +9,10 @@
 #include "networking/messaging/IMessageEndpoint.h"
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 
-using namespace services;
-using namespace networking;
-using namespace graphics;
+using namespace hive::services;
+using namespace hive::networking;
+using namespace hive::graphics;
+using namespace hive;
 
 struct Node {
   std::string uuid;
@@ -38,10 +39,10 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<events::IEventBroker>(
       std::move(event_broker));
 
-  auto property_provider = common::memory::Owner<props::PropertyProvider>(
+  auto property_provider = common::memory::Owner<data::PropertyProvider>(
       subsystems.CreateReference());
   auto property_providder_ref = property_provider.CreateReference();
-  subsystems->AddOrReplaceSubsystem<props::PropertyProvider>(
+  subsystems->AddOrReplaceSubsystem<data::PropertyProvider>(
       std::move(property_provider));
 
   // setup networking peer

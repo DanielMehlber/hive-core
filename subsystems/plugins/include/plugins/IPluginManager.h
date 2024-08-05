@@ -3,7 +3,7 @@
 #include "IPlugin.h"
 #include <string>
 
-namespace plugins {
+namespace hive::plugins {
 
 /**
  * Loads plugins and manages their life-cycle.
@@ -44,4 +44,4 @@ public:
   virtual ~IPluginManager() = default;
 };
 
-} // namespace plugins
+} // namespace hive::plugins

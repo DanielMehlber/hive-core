@@ -7,9 +7,9 @@
 #include <future>
 #include <memory>
 
-using namespace jobsystem::job;
+using namespace hive::jobsystem::job;
 
-namespace jobsystem::execution {
+namespace hive::jobsystem::execution {
 
 /**
  * Executes jobs passed by the job manager.
@@ -107,4 +107,4 @@ inline JobExecutionState IJobExecution<Impl>::GetState() {
   return static_cast<Impl *>(this)->GetState();
 }
 
-} // namespace jobsystem::execution
+} // namespace hive::jobsystem::execution

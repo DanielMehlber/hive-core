@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-namespace services {
+namespace hive::services {
 
 /**
  * Possible success and error response states
@@ -92,4 +92,4 @@ inline std::string ServiceResponse::GetTransactionId() const {
 
 typedef std::shared_ptr<ServiceResponse> SharedServiceResponse;
 
-} // namespace services
+} // namespace hive::services

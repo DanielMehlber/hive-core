@@ -1,10 +1,9 @@
-
-
 #include "graphics/renderer/impl/OnscreenRenderer.h"
 #include "common/profiling/Timer.h"
 #include "logging/LogManager.h"
 
-using namespace graphics;
+using namespace hive::graphics;
+using namespace hive::scene;
 
 void OnscreenRenderer::SetupCamera() {
 
@@ -177,7 +176,7 @@ void OnscreenRenderer::SetScene(const scene::SharedScene &scene) {
 
 void OnscreenRenderer::Resize(int width, int height) {}
 
-scene::SharedScene OnscreenRenderer::GetScene() const { return m_scene; }
+SharedScene OnscreenRenderer::GetScene() const { return m_scene; }
 
 std::tuple<int, int> OnscreenRenderer::GetCurrentSize() const {
   return std::make_tuple(m_window->extent2D().width,

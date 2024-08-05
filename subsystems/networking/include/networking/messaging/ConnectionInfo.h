@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace networking::messaging {
+namespace hive::networking::messaging {
 
 /**
  * Contains information about a connection to a remote endpoint or foreign host.
@@ -14,4 +14,4 @@ struct ConnectionInfo {
   std::string endpoint_id;
 };
 
-} // namespace networking::messaging
+} // namespace hive::networking::messaging

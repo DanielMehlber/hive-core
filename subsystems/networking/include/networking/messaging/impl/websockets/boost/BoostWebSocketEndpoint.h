@@ -10,7 +10,7 @@
 #include <list>
 #include <map>
 
-namespace networking::messaging::websockets {
+namespace hive::networking::messaging::websockets {
 
 DECLARE_EXCEPTION(NoSuchPeerException);
 
@@ -133,4 +133,4 @@ public:
 
   size_t GetActiveConnectionCount() const override;
 };
-} // namespace networking::messaging::websockets
+} // namespace hive::networking::messaging::websockets

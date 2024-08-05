@@ -3,7 +3,7 @@
 #include "properties/PropertyProvider.h"
 #include <gtest/gtest.h>
 
-using namespace props;
+using namespace hive::data;
 
 TEST(PropertyTest, prop_get_set) {
   auto subsystems =

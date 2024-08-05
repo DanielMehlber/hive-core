@@ -4,7 +4,7 @@
 
 #include "vsg/all.h"
 
-namespace graphics {
+namespace hive::graphics {
 
 /**
  * Contains the view matrix as plain matrix.
@@ -19,4 +19,4 @@ public:
   vsg::dmat4 inverse() const override { return vsg::inverse(matrix); };
   vsg::dmat4 matrix;
 };
-} // namespace graphics
+} // namespace hive::graphics

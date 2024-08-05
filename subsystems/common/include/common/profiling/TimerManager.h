@@ -2,11 +2,10 @@
 
 #include <map>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
-namespace common::profiling {
+namespace hive::common::profiling {
 
 struct Measurement {
   long total_min_ns;
@@ -29,4 +28,4 @@ public:
   void Commit(const std::string &name, long ns);
 };
 
-} // namespace common::profiling
+} // namespace hive::common::profiling

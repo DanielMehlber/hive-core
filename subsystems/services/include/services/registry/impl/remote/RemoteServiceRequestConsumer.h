@@ -5,9 +5,9 @@
 #include "networking/messaging/IMessageEndpoint.h"
 #include "services/caller/IServiceCaller.h"
 
-using namespace networking::messaging;
+using namespace hive::networking::messaging;
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * Processes service calls coming from remote remote hosts. It executes the
@@ -45,4 +45,4 @@ RemoteServiceRequestConsumer::GetMessageType() const noexcept {
   return "service-request";
 }
 
-} // namespace services::impl
+} // namespace hive::services::impl

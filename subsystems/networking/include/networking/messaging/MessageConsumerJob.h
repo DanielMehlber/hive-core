@@ -3,7 +3,7 @@
 #include "IMessageConsumer.h"
 #include <jobsystem/job/Job.h>
 
-namespace networking::messaging {
+namespace hive::networking::messaging {
 
 /**
  * A job that, when scheduled, makes a message consumer process a message
@@ -22,4 +22,4 @@ public:
   MessageConsumerJob(SharedMessageConsumer consumer, SharedMessage message,
                      ConnectionInfo connection_info);
 };
-} // namespace networking::messaging
+} // namespace hive::networking::messaging

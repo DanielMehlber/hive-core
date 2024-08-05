@@ -3,7 +3,7 @@
 #include "services/caller/IServiceCaller.h"
 #include <vector>
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * Calls service stubs in sequential order every time a call is requested.
@@ -36,4 +36,4 @@ public:
   size_t GetCallableCount() const noexcept override;
 };
 
-} // namespace services::impl
+} // namespace hive::services::impl

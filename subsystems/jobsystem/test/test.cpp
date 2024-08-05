@@ -5,7 +5,9 @@
 #include <future>
 #include <gtest/gtest.h>
 
-using namespace jobsystem;
+using namespace hive::jobsystem;
+using namespace hive;
+
 using namespace std::chrono_literals;
 
 TEST(JobSystem, allPhases) {

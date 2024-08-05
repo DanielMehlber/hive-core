@@ -6,7 +6,7 @@
 #include <memory>
 #include <optional>
 
-namespace events {
+namespace hive::events {
 
 /**
  * Encapsulates an event, its meta-data, and payload.
@@ -62,4 +62,4 @@ inline std::optional<T> Event::GetPayload(const std::string &key) const {
 inline const std::string &Event::GetTopic() const { return topic; }
 
 typedef std::shared_ptr<Event> SharedEvent;
-} // namespace events
+} // namespace hive::events

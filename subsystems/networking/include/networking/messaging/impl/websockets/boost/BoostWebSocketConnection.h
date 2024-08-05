@@ -9,7 +9,7 @@
 #include <future>
 #include <memory>
 
-namespace networking::messaging::websockets {
+namespace hive::networking::messaging::websockets {
 
 typedef boost::beast::websocket::stream<boost::beast::tcp_stream> stream_type;
 
@@ -163,4 +163,4 @@ inline const ConnectionInfo &BoostWebSocketConnection::GetInfo() const {
 typedef std::shared_ptr<BoostWebSocketConnection>
     SharedBoostWebSocketConnection;
 
-} // namespace networking::messaging::websockets
+} // namespace hive::networking::messaging::websockets

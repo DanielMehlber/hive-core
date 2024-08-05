@@ -4,9 +4,9 @@
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
 
-using namespace networking::messaging;
+using namespace hive::networking::messaging;
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * Converts web-socket message objects to service objects
@@ -49,4 +49,4 @@ public:
   static SharedMessage
   FromServiceRequest(const services::ServiceRequest &request);
 };
-} // namespace services::impl
+} // namespace hive::services::impl

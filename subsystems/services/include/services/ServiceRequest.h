@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-namespace services {
+namespace hive::services {
 
 /**
  * Request for a specific service containing parameters that the service
@@ -68,4 +68,4 @@ inline void ServiceRequest::SetParameter<std::string>(const std::string &name,
 
 typedef std::shared_ptr<ServiceRequest> SharedServiceRequest;
 
-} // namespace services
+} // namespace hive::services

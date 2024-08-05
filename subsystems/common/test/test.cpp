@@ -2,11 +2,12 @@
 #include "common/subsystems/SubsystemManager.h"
 #include <gtest/gtest.h>
 
-using namespace common::subsystems;
+using namespace hive::common::subsystems;
+using namespace hive::common::memory;
 
 TEST(SubsystemTest, subsystems) {
   // I was too lazy to write a subsystem, take a string instead
-  auto system = common::memory::Owner<std::string>("Hallo");
+  auto system = Owner<std::string>("Hallo");
 
   SubsystemManager subsystems;
   subsystems.AddOrReplaceSubsystem<std::string>(std::move(system));

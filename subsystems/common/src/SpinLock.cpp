@@ -1,6 +1,6 @@
 #include "common/synchronization/SpinLock.h"
 
-using namespace common::sync;
+using namespace hive::common::sync;
 
 bool SpinLock::try_lock() {
   // use an acquire fence to ensure all subsequent

@@ -4,7 +4,7 @@
 #include "common/synchronization/SpinLock.h"
 #include <string>
 
-namespace jobsystem {
+namespace hive::jobsystem {
 
 union OwnerId {
   boost::fibers::fiber::id fiber_id;
@@ -68,4 +68,4 @@ public:
   bool try_lock();
 };
 
-} // namespace jobsystem
+} // namespace hive::jobsystem

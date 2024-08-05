@@ -2,7 +2,7 @@
 
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 
-namespace graphics {
+namespace hive::graphics {
 
 class GzipRenderResultEncoder : public IRenderResultEncoder {
 public:
@@ -11,4 +11,4 @@ public:
   std::vector<unsigned char> Decode(const std::string &str) override;
 };
 
-} // namespace graphics
+} // namespace hive::graphics

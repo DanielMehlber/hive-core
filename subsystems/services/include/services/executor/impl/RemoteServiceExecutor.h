@@ -6,9 +6,9 @@
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 #include <memory>
 
-using namespace networking::messaging;
+using namespace hive::networking::messaging;
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * Executes remote services using web-socket events.
@@ -57,4 +57,4 @@ public:
 
   std::string GetId() override { return m_id; }
 };
-} // namespace services::impl
+} // namespace hive::services::impl

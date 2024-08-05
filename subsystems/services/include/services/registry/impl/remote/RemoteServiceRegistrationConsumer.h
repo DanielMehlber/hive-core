@@ -6,9 +6,9 @@
 #include "services/registry/impl/remote/RemoteServiceRegistrationMessage.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 
-using namespace networking::messaging;
+using namespace hive::networking::messaging;
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * Consumer for web-socket events that register remote services on the current
@@ -37,4 +37,4 @@ inline std::string
 RemoteServiceRegistrationConsumer::GetMessageType() const noexcept {
   return MESSAGE_TYPE_REMOTE_SERVICE_REGISTRATION;
 }
-} // namespace services::impl
+} // namespace hive::services::impl

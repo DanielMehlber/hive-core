@@ -12,7 +12,7 @@
 #include <queue>
 #include <string>
 
-namespace jobsystem::job {
+namespace hive::jobsystem::job {
 
 /**
  * A job is the central data structure of the job system. It contains
@@ -133,4 +133,4 @@ inline bool Job::IsAsync() const { return m_async; }
 
 typedef std::shared_ptr<jobsystem::job::Job> SharedJob;
 
-} // namespace jobsystem::job
+} // namespace hive::jobsystem::job

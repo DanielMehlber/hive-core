@@ -21,10 +21,10 @@
 typedef impl::SingleThreadedExecutionImpl JobExecutionImpl;
 #else
 #include "jobsystem/execution/impl/fiber/BoostFiberExecution.h"
-typedef jobsystem::execution::impl::BoostFiberExecution JobExecutionImpl;
+typedef hive::jobsystem::execution::impl::BoostFiberExecution JobExecutionImpl;
 #endif
 
-namespace jobsystem {
+namespace hive::jobsystem {
 
 /**
  * Manages the job processing order, controls the progress of cycles and
@@ -210,4 +210,4 @@ JobManager::WaitForCompletion(const std::future<FutureType> &future) {
   m_execution.WaitForCompletion(future);
 }
 
-} // namespace jobsystem
+} // namespace hive::jobsystem

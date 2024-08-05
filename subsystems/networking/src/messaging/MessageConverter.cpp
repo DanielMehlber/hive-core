@@ -3,7 +3,8 @@
 #include "networking/util/MultipartFormdata.h"
 #include <boost/json.hpp>
 
-using namespace networking::messaging;
+using namespace hive::networking::util;
+using namespace hive::networking::messaging;
 using namespace boost;
 
 SharedMessage MessageConverter::FromJson(const std::string &json) {
@@ -84,8 +85,7 @@ MessageConverter::ToMultipartFormData(const SharedMessage &message) {
   return generateMultipartFormData(multipart);
 }
 
-std::string extractPartContent(networking::util::Multipart &multipart,
-                               const std::string &name) {
+std::string extractPartContent(Multipart &multipart, const std::string &name) {
   if (multipart.parts.contains(name)) {
     auto part = multipart.parts.at(name);
     multipart.parts.erase(name);

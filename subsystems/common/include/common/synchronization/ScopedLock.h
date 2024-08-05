@@ -1,6 +1,6 @@
 #pragma once
 
-namespace common::sync {
+namespace hive::common::sync {
 
 /**
  * Equivalent to std::unique_lock for the spin-lock mutex alternative.
@@ -16,4 +16,4 @@ public:
   ~ScopedLock() { m_pLock->unlock(); }
 };
 
-} // namespace common::sync
+} // namespace hive::common::sync

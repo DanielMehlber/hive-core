@@ -2,7 +2,7 @@
 
 #include "jobsystem/job/TimerJob.h"
 
-using namespace jobsystem::job;
+using namespace hive::jobsystem::job;
 
 TimerJob::TimerJob(std::function<JobContinuation(JobContext *)> workload,
                    const std::string &id, std::chrono::duration<double> time,

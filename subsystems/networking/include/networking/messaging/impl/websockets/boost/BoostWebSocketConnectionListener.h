@@ -9,7 +9,7 @@
 #include <functional>
 #include <memory>
 
-namespace networking::messaging::websockets {
+namespace hive::networking::messaging::websockets {
 
 DECLARE_EXCEPTION(WebSocketTcpServerException);
 
@@ -118,4 +118,4 @@ public:
    */
   void ShutDown();
 };
-} // namespace networking::messaging::websockets
+} // namespace hive::networking::messaging::websockets

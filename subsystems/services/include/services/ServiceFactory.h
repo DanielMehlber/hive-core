@@ -3,7 +3,7 @@
 #include "ServiceRequest.h"
 #include "ServiceResponse.h"
 
-namespace services {
+namespace hive::services {
 
 /**
  * Builds frequently used instances and objects of the services
@@ -13,4 +13,4 @@ public:
   SharedServiceResponse CreateResponse(const SharedServiceRequest &request);
 };
 
-} // namespace services
+} // namespace hive::services

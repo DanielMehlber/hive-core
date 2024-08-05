@@ -7,7 +7,7 @@
 #include "networking/messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"
 #include <memory>
 
-namespace networking {
+namespace hive::networking {
 
 typedef messaging::websockets::BoostWebSocketEndpoint
     DefaultMessageEndpointImpl;
@@ -34,4 +34,4 @@ public:
       const common::config::SharedConfiguration &config);
 };
 
-} // namespace networking
+} // namespace hive::networking

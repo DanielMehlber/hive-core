@@ -4,7 +4,7 @@
 #include "services/ServiceRequest.h"
 #include <vsg/all.h>
 
-namespace graphics {
+namespace hive::graphics {
 
 /**
  * Conversion between string and vector failed.
@@ -49,4 +49,4 @@ public:
   services::SharedServiceRequest GetRequest() const;
 };
 
-} // namespace graphics
+} // namespace hive::graphics

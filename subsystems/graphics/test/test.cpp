@@ -9,8 +9,8 @@
 #include "EncoderEvaluation.h"
 #endif
 
-using namespace common::test;
-using namespace jobsystem;
+using namespace hive::common::test;
+using namespace hive::jobsystem;
 
 SharedServiceRequest GenerateRenderingRequest(int width, int height) {
   auto request = std::make_shared<ServiceRequest>("render");

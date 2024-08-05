@@ -3,7 +3,7 @@
 #include "networking/messaging/ConnectionInfo.h"
 #include "services/executor/impl/RemoteServiceExecutor.h"
 
-using namespace services::impl;
+using namespace hive::services::impl;
 
 RemoteServiceRegistrationConsumer::RemoteServiceRegistrationConsumer(
     std::function<void(SharedServiceExecutor)> consumer,

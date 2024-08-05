@@ -3,9 +3,9 @@
 #include "jobsystem/job/Job.h"
 #include "jobsystem/synchronization/JobCounter.h"
 
-using namespace jobsystem::job;
+using namespace hive::jobsystem::job;
 
-namespace jobsystem {
+namespace hive::jobsystem {
 
 class JobSystemFactory {
 public:
@@ -22,4 +22,4 @@ inline SharedJob JobSystemFactory::CreateJob(Args... arguments) {
 inline SharedJobCounter JobSystemFactory::CreateCounter() {
   return std::make_shared<JobCounter>();
 }
-} // namespace jobsystem
+} // namespace hive::jobsystem

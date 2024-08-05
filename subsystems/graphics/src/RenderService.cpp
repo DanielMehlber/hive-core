@@ -5,7 +5,8 @@
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
 
-using namespace graphics;
+using namespace hive;
+using namespace hive::graphics;
 using namespace std::placeholders;
 
 DECLARE_EXCEPTION(MatrixConversionException);
@@ -26,7 +27,7 @@ RenderService::RenderService(
   }
 }
 
-std::future<services::SharedServiceResponse>
+std::future<SharedServiceResponse>
 RenderService::Render(const services::SharedServiceRequest &raw_request) {
   // only process a single render process at a time.
   std::unique_lock lock(m_service_mutex);
@@ -167,7 +168,7 @@ RenderService::Render(const services::SharedServiceRequest &raw_request) {
   }
 }
 
-std::optional<common::memory::Borrower<graphics::IRenderer>>
+std::optional<common::memory::Borrower<IRenderer>>
 RenderService::GetRenderer() {
   if (m_renderer) {
     return m_renderer.TryBorrow();

@@ -7,7 +7,7 @@
 #include <list>
 #include <memory>
 
-namespace networking::messaging {
+namespace hive::networking::messaging {
 
 DECLARE_EXCEPTION(DuplicateConsumerTypeException);
 DECLARE_EXCEPTION(EndpointSetupException);
@@ -96,4 +96,4 @@ public:
   virtual ~IMessageEndpoint() = default;
 };
 
-} // namespace networking::messaging
+} // namespace hive::networking::messaging

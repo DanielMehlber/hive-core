@@ -3,7 +3,7 @@
 #include "common/profiling/Timer.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 
-namespace graphics {
+namespace hive::graphics {
 class PlainRenderResultEncoder : public IRenderResultEncoder {
 public:
   std::string GetName() override { return "plain"; }
@@ -32,4 +32,4 @@ PlainRenderResultEncoder::Decode(const std::string &str) {
   return std::vector<unsigned char>(str.begin(), str.end());
 }
 
-} // namespace graphics
+} // namespace hive::graphics

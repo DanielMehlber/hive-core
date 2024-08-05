@@ -2,11 +2,11 @@
 
 #include "networking/messaging/Message.h"
 
-using namespace networking::messaging;
+using namespace hive::networking::messaging;
 
 #define MESSAGE_TYPE_REMOTE_SERVICE_REGISTRATION "register-remote-service"
 
-namespace services::impl {
+namespace hive::services::impl {
 
 /**
  * Web-Socket message sent, when a peer wants to offer some if its services to
@@ -57,4 +57,4 @@ inline std::string RemoteServiceRegistrationMessage::GetId() noexcept {
   return m_message->GetAttribute("service-id").value_or("");
 }
 
-} // namespace services::impl
+} // namespace hive::services::impl

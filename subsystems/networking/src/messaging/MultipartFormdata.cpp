@@ -1,12 +1,11 @@
 #include "networking/util/MultipartFormdata.h"
-#include "common/uuid/UuidGenerator.h"
 
 #define BOUNDARY "boundary-4f20310a-8ea0-4fa7-aebb-1d8bf9e58f66"
 
-using namespace networking::util;
+using namespace hive::networking::util;
 
 std::string
-networking::util::generateMultipartFormData(const Multipart &multipart) {
+hive::networking::util::generateMultipartFormData(const Multipart &multipart) {
   std::stringstream ss;
 
   for (const auto &[name, part] : multipart.parts) {
@@ -45,7 +44,8 @@ void parseFormPart(const std::string &part_str, Multipart &result) {
   result.parts[name] = std::move(part);
 }
 
-Multipart networking::util::parseMultipartFormData(const std::string &data) {
+Multipart
+hive::networking::util::parseMultipartFormData(const std::string &data) {
   Multipart result;
 
   std::string boundary = BOUNDARY;

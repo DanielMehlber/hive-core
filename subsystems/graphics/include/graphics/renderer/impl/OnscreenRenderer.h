@@ -5,7 +5,7 @@
 #include "jobsystem/synchronization/JobMutex.h"
 #include <future>
 
-namespace graphics {
+namespace hive::graphics {
 
 DECLARE_EXCEPTION(WindowCreationFailedException);
 
@@ -66,4 +66,4 @@ inline RendererSetup OnscreenRenderer::GetSetup() const {
   return {m_window->getDevice(), m_window->getInstance()};
 }
 
-} // namespace graphics
+} // namespace hive::graphics

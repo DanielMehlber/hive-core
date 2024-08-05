@@ -1,6 +1,6 @@
 #include "services/ServiceResponse.h"
 
-using namespace services;
+using namespace hive::services;
 
 ServiceResponse::ServiceResponse(std::string transaction_id,
                                  ServiceResponseStatus status,

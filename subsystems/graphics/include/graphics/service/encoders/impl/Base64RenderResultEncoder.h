@@ -3,7 +3,7 @@
 #include "common/encoding/Base64.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 
-namespace graphics {
+namespace hive::graphics {
 class Base64RenderResultEncoder : public IRenderResultEncoder {
 public:
   std::string GetName() override { return "base-64"; }
@@ -21,4 +21,4 @@ Base64RenderResultEncoder::Decode(const std::string &str) {
   return common::coding::base64_decode(str);
 }
 
-} // namespace graphics
+} // namespace hive::graphics

@@ -2,7 +2,7 @@
 #include <sstream>
 #include <vector>
 
-using namespace props;
+using namespace hive::data;
 
 PropertyProvider::PropertyProvider(
     const common::memory::Reference<common::subsystems::SubsystemManager>

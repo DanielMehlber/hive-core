@@ -10,7 +10,7 @@
 #include <optional>
 #include <typeindex>
 
-namespace common::subsystems {
+namespace hive::common::subsystems {
 
 /**
  * Thrown when a subsystem cannot be found and wasn't requested optionally.
@@ -157,4 +157,4 @@ void SubsystemManager::AddOrReplaceSubsystem(
   m_subsystems[typeid(subsystem_t)] = subsystem_any;
 }
 
-} // namespace common::subsystems
+} // namespace hive::common::subsystems

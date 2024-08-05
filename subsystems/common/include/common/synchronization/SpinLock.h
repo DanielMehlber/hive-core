@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-namespace common::sync {
+namespace hive::common::sync {
 
 /**
  * In contrast to the kernel-space std::mutex (causing expensive system calls),
@@ -20,4 +20,4 @@ public:
   void unlock();
   bool try_lock();
 };
-} // namespace common::sync
+} // namespace hive::common::sync
