@@ -9,8 +9,8 @@ using namespace hive::networking::messaging;
 namespace hive::services::impl {
 
 /**
- * Web-Socket message sent, when a peer wants to offer some if its services to
- * another one.
+ * Web-Socket message sent, when a node wants to offer some if its services
+ * to another one.
  */
 class RemoteServiceRegistrationMessage {
 private:
@@ -21,21 +21,21 @@ public:
       SharedMessage message =
           std::make_shared<Message>(MESSAGE_TYPE_REMOTE_SERVICE_REGISTRATION));
 
-  SharedMessage GetMessage() const noexcept;
+  SharedMessage GetMessage() const;
 
-  void SetId(const std::string &id) noexcept;
-  std::string GetId() noexcept;
+  void SetId(const std::string &id);
+  std::string GetId();
 
-  void SetServiceName(const std::string &service_name) noexcept;
-  std::string GetServiceName() noexcept;
+  void SetServiceName(const std::string &service_name);
+  std::string GetServiceName();
 };
 
 inline void RemoteServiceRegistrationMessage::SetServiceName(
-    const std::string &service_name) noexcept {
+    const std::string &service_name) {
   m_message->SetAttribute("service-name", service_name);
 }
 
-inline std::string RemoteServiceRegistrationMessage::GetServiceName() noexcept {
+inline std::string RemoteServiceRegistrationMessage::GetServiceName() {
   return m_message->GetAttribute("service-name").value_or("");
 }
 
@@ -43,17 +43,15 @@ inline RemoteServiceRegistrationMessage::RemoteServiceRegistrationMessage(
     SharedMessage message)
     : m_message(std::move(message)) {}
 
-inline SharedMessage
-RemoteServiceRegistrationMessage::GetMessage() const noexcept {
+inline SharedMessage RemoteServiceRegistrationMessage::GetMessage() const {
   return m_message;
 }
 
-inline void
-RemoteServiceRegistrationMessage::SetId(const std::string &id) noexcept {
+inline void RemoteServiceRegistrationMessage::SetId(const std::string &id) {
   m_message->SetAttribute("service-id", id);
 }
 
-inline std::string RemoteServiceRegistrationMessage::GetId() noexcept {
+inline std::string RemoteServiceRegistrationMessage::GetId() {
   return m_message->GetAttribute("service-id").value_or("");
 }
 

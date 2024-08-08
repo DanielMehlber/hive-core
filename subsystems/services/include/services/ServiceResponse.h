@@ -4,7 +4,6 @@
 #include <memory>
 #include <optional>
 #include <set>
-#include <sstream>
 #include <string>
 
 namespace hive::services {
@@ -20,7 +19,10 @@ enum ServiceResponseStatus {
   /** Service failed due to internal errors */
   INTERNAL_ERROR = 20,
   /** Service implementation is not longer available */
-  GONE = 30
+  GONE = 30,
+  /** The limit of concurrent calls for this service is reached. Try again
+     later or call another exector. */
+  BUSY = 40,
 };
 
 /**

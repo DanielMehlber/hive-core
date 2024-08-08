@@ -2,6 +2,7 @@
 
 #include "AddingServiceExecutor.h"
 #include "DelayServiceExecutor.h"
+#include "LimitedLocalService.h"
 #include "common/test/TryAssertUntilTimeout.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "jobsystem/manager/JobManager.h"
@@ -385,4 +386,97 @@ TEST(ServiceTest, service_peer_disconnected) {
 
   WaitForFutureUntilTimeout(future_response, 10s);
   ASSERT_THROW(future_response.get(), std::exception);
+}
+
+TEST(ServiceTest, service_executor_busy) {
+  auto config = std::make_shared<common::config::Configuration>();
+
+  auto servicing_node = setupNode(config, 9005);
+  auto calling_node = setupNode(config, 9006);
+
+  // first establish connection in order to broadcast the connection
+  auto connection_progress =
+      servicing_node.network_endpoint.Borrow()->EstablishConnectionTo(
+          "127.0.0.1:9006");
+
+  connection_progress.wait();
+  ASSERT_NO_THROW(connection_progress.get());
+
+  std::promise<void> completion_promise;
+  std::shared_future<void> completion_future =
+      completion_promise.get_future().share();
+
+  auto waiting_executions_counter = std::make_shared<std::atomic_size_t>(0);
+
+  SharedServiceExecutor limited_service = std::make_shared<LimitedLocalService>(
+      1, completion_future, waiting_executions_counter,
+      servicing_node.job_manager);
+
+  servicing_node.service_registry.Borrow()->Register(limited_service);
+  servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+
+  TryAssertUntilTimeout(
+      [&calling_node]() mutable {
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return calling_node.service_registry.Borrow()
+            ->Find("limited")
+            .get()
+            .has_value();
+      },
+      10s);
+
+  SharedServiceCaller caller =
+      calling_node.service_registry.Borrow()->Find("limited").get().value();
+
+  auto request = std::make_shared<ServiceRequest>("limited");
+
+  // first call keeps service busy (remember: a single active call is allowed)
+  auto future_response_resolve =
+      caller->IssueCallAsJob(request, calling_node.job_manager.Borrow(), false,
+                             true, BUSY_RESPONSE_RETURN);
+
+  // let the first call be processed. Continue when its waiting.
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &waiting_executions_counter]() mutable {
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return *waiting_executions_counter == 1;
+      },
+      10s);
+
+  // second call should return that the service is busy
+  auto future_response_busy = caller->IssueCallAsJob(
+      request->Duplicate(), calling_node.job_manager.Borrow(), false, true,
+      BUSY_RESPONSE_RETURN);
+
+  // wait until the second call has returned its busy status
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &future_response_busy]() mutable {
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        auto future_status = future_response_busy.wait_for(0ms);
+        return future_status == std::future_status::ready;
+      },
+      120s);
+
+  SharedServiceResponse expected_busy_response;
+  ASSERT_NO_THROW(expected_busy_response = future_response_busy.get());
+  ASSERT_EQ(expected_busy_response->GetStatus(), ServiceResponseStatus::BUSY);
+
+  // allow all other calls to complete
+  completion_promise.set_value();
+
+  // wait until the first call has been resolved
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &future_response_resolve]() mutable {
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return future_response_resolve.wait_for(0s) ==
+               std::future_status::ready;
+      },
+      120s);
+
+  SharedServiceResponse expected_ok_response;
+  ASSERT_NO_THROW(expected_ok_response = future_response_resolve.get());
+  ASSERT_EQ(expected_ok_response->GetStatus(), ServiceResponseStatus::OK);
 }

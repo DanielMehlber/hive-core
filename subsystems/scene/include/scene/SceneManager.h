@@ -15,10 +15,10 @@ public:
   SceneManager();
   virtual ~SceneManager() = default;
 
-  vsg::ref_ptr<vsg::StateGroup> GetRoot() const noexcept;
+  vsg::ref_ptr<vsg::StateGroup> GetRoot() const ;
 };
 
-inline vsg::ref_ptr<vsg::StateGroup> SceneManager::GetRoot() const noexcept {
+inline vsg::ref_ptr<vsg::StateGroup> SceneManager::GetRoot() const  {
   return m_scene;
 }
 

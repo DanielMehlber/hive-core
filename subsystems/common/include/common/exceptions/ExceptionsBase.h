@@ -5,6 +5,16 @@
 #include <sstream>
 #include <utility>
 
+inline std::string get_content_of_exception_ptr(const std::exception_ptr &ptr) {
+  try {
+    std::rethrow_exception(ptr);
+  } catch (const std::exception &e) {
+    return e.what();
+  } catch (...) {
+    return "unknown exception";
+  }
+}
+
 class ExceptionBase : public std::exception {
 protected:
   const boost::stacktrace::stacktrace m_stacktrace_print;

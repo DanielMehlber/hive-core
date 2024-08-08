@@ -1,9 +1,11 @@
-#include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
+#include <utility>
+
 #include "common/exceptions/ExceptionsBase.h"
 #include "events/broker/IEventBroker.h"
 #include "logging/LogManager.h"
 #include "networking/messaging/events/ConnectionClosedEvent.h"
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
+#include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 
 using namespace hive::services;
 using namespace hive::services::impl;
@@ -13,7 +15,7 @@ RemoteServiceResponseConsumer::RemoteServiceResponseConsumer(
     : m_subsystems(subsystems) {}
 
 void RemoteServiceResponseConsumer::ProcessReceivedMessage(
-    SharedMessage received_message, ConnectionInfo connection_info) noexcept {
+    SharedMessage received_message, ConnectionInfo connection_info) {
 
   auto maybe_response = RemoteServiceMessagesConverter::ToServiceResponse(
       std::move(*received_message));
@@ -29,12 +31,12 @@ void RemoteServiceResponseConsumer::ProcessReceivedMessage(
   std::string transaction_id = response->GetTransactionId();
 
   std::unique_lock lock(m_pending_promises_mutex);
-  if (!m_pending_promises.contains(transaction_id)) {
+  if (!m_pending_requests.contains(transaction_id)) {
     LOG_WARN("received service response for unknown request " << transaction_id)
     return;
   }
 
-  auto pending_request = std::move(m_pending_promises.at(transaction_id));
+  auto pending_request = m_pending_requests.at(transaction_id);
 
   switch (response->GetStatus()) {
   case OK:
@@ -54,20 +56,34 @@ void RemoteServiceResponseConsumer::ProcessReceivedMessage(
              << response->GetStatusMessage())
     break;
   case GONE:
-    LOG_WARN("received service response for request "
+    LOG_WARN("received service response for pending request "
              << transaction_id << " from " << connection_info.hostname
              << ", but service is gone from endpoint: "
              << response->GetStatusMessage())
     break;
+  case BUSY:
+    LOG_WARN("received service response for pending request "
+             << transaction_id << " from " << connection_info.hostname
+             << ", but service is busy: " << response->GetStatusMessage())
+    break;
   }
 
-  pending_request.promise.set_value(response);
-  m_pending_promises.erase(transaction_id);
+  DEBUG_ASSERT(pending_request.request->IsCurrentlyProcessed(),
+               "request should be in the processing state")
+  pending_request.request->MarkAsCurrentlyProcessed(false);
+  pending_request.promise->set_value(response);
+  m_pending_requests.erase(transaction_id);
 }
 
 void RemoteServiceResponseConsumer::AddResponsePromise(
-    const std::string &request_id, const ConnectionInfo &connection_info,
-    std::promise<SharedServiceResponse> &&response_promise) {
+    SharedServiceRequest request, const ConnectionInfo &connection_info,
+    std::shared_ptr<std::promise<SharedServiceResponse>> response_promise) {
+
+  DEBUG_ASSERT(request != nullptr, "request should not be null")
+  DEBUG_ASSERT(!request->GetTransactionId().empty(),
+               "request id should not be empty")
+  DEBUG_ASSERT(response_promise != nullptr,
+               "response promise should not be null")
 
   std::weak_ptr<RemoteServiceResponseConsumer> weak_response_consumer =
       std::dynamic_pointer_cast<RemoteServiceResponseConsumer>(
@@ -78,7 +94,7 @@ void RemoteServiceResponseConsumer::AddResponsePromise(
   // blocking.
   auto connection_closed_handler = std::make_shared<
       events::FunctionalEventListener>([connection_info, weak_response_consumer,
-                                        request_id](
+                                        request](
                                            events::SharedEvent event) mutable {
     networking::ConnectionClosedEvent connection_closed(std::move(event));
     std::string endpoint_id = connection_closed.GetEndpointId();
@@ -89,19 +105,23 @@ void RemoteServiceResponseConsumer::AddResponsePromise(
               << "' has been closed mid service request. Request cancelled.")
 
       if (auto response_consumer = weak_response_consumer.lock()) {
-        auto promise =
-            std::move(response_consumer->RemoveResponsePromise(request_id));
-        auto exception = BUILD_EXCEPTION(
-            ServiceEndpointDisconnectedException,
-            "connection to remote endpoint '"
-                << endpoint_id
-                << "' has been closed mid service request. Request cancelled.");
-        promise->set_exception(std::make_exception_ptr(exception));
+        if (auto maybe_promise = response_consumer->RemoveResponsePromise(
+                request->GetTransactionId())) {
+          auto promise = maybe_promise.value();
+          auto exception =
+              BUILD_EXCEPTION(ServiceEndpointDisconnectedException,
+                              "connection to remote endpoint '"
+                                  << endpoint_id
+                                  << "' has been closed mid service request. "
+                                     "Request cancelled.");
+          promise->set_exception(std::make_exception_ptr(exception));
+        }
       }
     }
   });
 
-  PendingRequestInfo info{.promise = std::move(response_promise),
+  PendingRequestInfo info{.request = request,
+                          .promise = response_promise,
                           .endpoint_info = connection_info,
                           .connection_close_handler =
                               connection_closed_handler};
@@ -118,18 +138,21 @@ void RemoteServiceResponseConsumer::AddResponsePromise(
   }
 
   std::unique_lock lock(m_pending_promises_mutex);
-  m_pending_promises[request_id] = std::move(info);
+  DEBUG_ASSERT(!m_pending_requests.contains(request->GetTransactionId()),
+               "request is aleady in "
+               "pending state. Double-using the same request is prohibited. "
+               "Duplicate it instead.")
+  m_pending_requests[request->GetTransactionId()] = std::move(info);
 }
 
-std::optional<std::promise<SharedServiceResponse>>
+std::optional<std::shared_ptr<std::promise<SharedServiceResponse>>>
 RemoteServiceResponseConsumer::RemoveResponsePromise(
     const std::string &request_id) {
   std::unique_lock lock(m_pending_promises_mutex);
-  if (m_pending_promises.contains(request_id)) {
-    auto pending_request_info = std::move(m_pending_promises.at(request_id));
-    m_pending_promises.erase(request_id);
-    return std::move(pending_request_info.promise);
-  } else {
-    return {};
+  if (m_pending_requests.contains(request_id)) {
+    auto pending_request_info = m_pending_requests.at(request_id);
+    m_pending_requests.erase(request_id);
+    return pending_request_info.promise;
   }
+  return {};
 }

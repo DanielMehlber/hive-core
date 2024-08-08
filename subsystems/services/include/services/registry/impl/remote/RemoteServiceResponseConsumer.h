@@ -13,8 +13,11 @@ using namespace hive::networking::messaging;
 namespace hive::services::impl {
 
 struct PendingRequestInfo {
+  /** request object associated with this pending call */
+  SharedServiceRequest request;
+
   /** promise that must be resolved to complete the request */
-  std::promise<SharedServiceResponse> promise;
+  std::shared_ptr<std::promise<SharedServiceResponse>> promise;
 
   /** contains information about the remote endpoint that has been called */
   ConnectionInfo endpoint_info;
@@ -31,7 +34,7 @@ struct PendingRequestInfo {
 class RemoteServiceResponseConsumer : public IMessageConsumer {
 private:
   mutable jobsystem::mutex m_pending_promises_mutex;
-  std::map<std::string, PendingRequestInfo> m_pending_promises;
+  std::map<std::string, PendingRequestInfo> m_pending_requests;
 
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
@@ -41,22 +44,21 @@ public:
       common::memory::Reference<common::subsystems::SubsystemManager>
           m_subsystems);
 
-  std::string GetMessageType() const noexcept override;
+  std::string GetMessageType() const override;
 
   void ProcessReceivedMessage(SharedMessage received_message,
-                              ConnectionInfo connection_info) noexcept override;
+                              ConnectionInfo connection_info) override;
 
   /**
    * Adds response promise to this consumer. The consumer will resolve this
    * promise when its response has been received and consumed.
-   * @param request_id id of request (response will have same id)
+   * @param request request object associated with this promise
    * @param connection_info connection info of endpoint that sent the response
    * @param response_promise response promise
    */
-  void
-  AddResponsePromise(const std::string &request_id,
-                     const ConnectionInfo &connection_info,
-                     std::promise<SharedServiceResponse> &&response_promise);
+  void AddResponsePromise(
+      SharedServiceRequest request, const ConnectionInfo &connection_info,
+      std::shared_ptr<std::promise<SharedServiceResponse>> response_promise);
 
   /**
    * Retrieves response promise for given request id and removes it from the
@@ -64,12 +66,11 @@ public:
    * @param request_id id of request
    * @return response promise or empty optional if no promise was found
    */
-  std::optional<std::promise<SharedServiceResponse>>
+  std::optional<std::shared_ptr<std::promise<SharedServiceResponse>>>
   RemoveResponsePromise(const std::string &request_id);
 };
 
-inline std::string
-RemoteServiceResponseConsumer::GetMessageType() const noexcept {
+inline std::string RemoteServiceResponseConsumer::GetMessageType() const {
   return "service-response";
 }
 

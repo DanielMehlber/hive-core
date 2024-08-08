@@ -157,7 +157,7 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
   OnMessageSent(std::move(sending_promise), message, str_payload,
                 std::move(lock), error_code, bytes_transferred);
 
-  return std::move(sending_future);
+  return sending_future;
 }
 
 void BoostWebSocketConnection::OnMessageSent(

@@ -36,7 +36,7 @@ public:
    * @return a consumer if one has been found for the given type
    */
   virtual std::list<SharedMessageConsumer>
-  GetConsumersOfMessageType(const std::string &type_name) noexcept = 0;
+  GetConsumersOfMessageType(const std::string &type_name)  = 0;
 
   /**
    * Sends a message to an endpoint associated with the id.
@@ -76,14 +76,14 @@ public:
    * will not be established.
    */
   virtual std::future<ConnectionInfo>
-  EstablishConnectionTo(const std::string &uri) noexcept = 0;
+  EstablishConnectionTo(const std::string &uri)  = 0;
 
   /**
    * Closes a connection to an endpoint (if the connection is still open).
    * @param node_id unique identifier of a node in the cluster.
    * @note connections that are not established will be ignored.
    */
-  virtual void CloseConnectionTo(const std::string &node_id) noexcept = 0;
+  virtual void CloseConnectionTo(const std::string &node_id)  = 0;
 
   /**
    * Checks if this endpoint is currently connected to another one with this
@@ -91,7 +91,7 @@ public:
    * @param node_id unique identifier of a node in the cluster.
    * @return true, if there is an established connection to this host
    */
-  virtual bool HasConnectionTo(const std::string &node_id) const noexcept = 0;
+  virtual bool HasConnectionTo(const std::string &node_id) const  = 0;
 
   virtual ~IMessageEndpoint() = default;
 };

@@ -16,7 +16,7 @@ public:
   events::SharedEvent GetEvent() const;
 
   std::string GetEndpointId() const;
-  void SetEndpointId(const std::string &peer_id);
+  void SetEndpointId(const std::string &endpoint_id);
 };
 
 inline events::SharedEvent ConnectionEstablishedEvent::GetEvent() const {
@@ -24,12 +24,12 @@ inline events::SharedEvent ConnectionEstablishedEvent::GetEvent() const {
 }
 
 inline std::string ConnectionEstablishedEvent::GetEndpointId() const {
-  return m_event->GetPayload<std::string>("peer-id").value();
+  return m_event->GetPayload<std::string>("endpoint-id").value();
 }
 
 inline void
-ConnectionEstablishedEvent::SetEndpointId(const std::string &peer_id) {
-  m_event->SetPayload<std::string>("peer-id", peer_id);
+ConnectionEstablishedEvent::SetEndpointId(const std::string &endpoint_id) {
+  m_event->SetPayload<std::string>("endpoint-id", endpoint_id);
 }
 
 } // namespace hive::networking

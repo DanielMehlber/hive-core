@@ -6,13 +6,18 @@ using namespace hive::services::impl;
 RemoteServiceRequestConsumer::RemoteServiceRequestConsumer(
     const common::memory::Reference<common::subsystems::SubsystemManager>
         &subsystems,
-    RemoteServiceRequestConsumer::query_func_type query_func,
+    RemoteServiceRequestConsumer::query_func_t query_func,
     const common::memory::Reference<IMessageEndpoint> &endpoint)
     : m_subsystems(subsystems), m_service_query_func(std::move(query_func)),
       m_endpoint(endpoint) {}
 
 void RemoteServiceRequestConsumer::ProcessReceivedMessage(
-    SharedMessage received_message, ConnectionInfo connection_info) noexcept {
+    SharedMessage received_message, ConnectionInfo connection_info) {
+
+  DEBUG_ASSERT(received_message != nullptr,
+               "received message should not be null")
+  DEBUG_ASSERT(!received_message->GetId().empty(),
+               "received message should have an id")
 
   if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
     auto subsystems = maybe_subsystems.value();
@@ -27,14 +32,14 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
     }
 
     SharedServiceRequest request = maybe_request.value();
-    LOG_DEBUG("received service request for service "
-              << request->GetServiceName())
+    LOG_DEBUG("received remote service request for service '"
+              << request->GetServiceName() << "'")
 
     SharedJob job = jobsystem::JobSystemFactory::CreateJob(
         [_this = std::static_pointer_cast<RemoteServiceRequestConsumer>(
              shared_from_this()),
          request, connection_info](jobsystem::JobContext *context) {
-          LOG_DEBUG("processing service request for service '"
+          LOG_DEBUG("processing remote service request for service '"
                     << request->GetServiceName() << "'")
 
           auto job_manager = _this->m_subsystems.TryBorrow()
@@ -55,13 +60,14 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
 
               // call service locally
               std::future<SharedServiceResponse> future_response =
-                  service_caller->IssueCallAsJob(request, job_manager, true);
+                  service_caller->IssueCallAsJob(request, job_manager, true,
+                                                 true);
 
               context->GetJobManager()->WaitForCompletion(future_response);
               response = future_response.get();
 
             } else {
-              LOG_WARN("received service request for service '"
+              LOG_WARN("received remote service request for service '"
                        << request->GetServiceName()
                        << "' that does not exist locally")
               response = std::make_shared<ServiceResponse>(
@@ -71,7 +77,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
           } catch (std::exception &exception) {
             LOG_ERR("cannot execute service "
                     << request->GetServiceName()
-                    << " called from remote peer via web-socket: internal "
+                    << " called from remote endpoint: internal "
                        "error occurred "
                        "during local service execution: "
                     << exception.what())
@@ -93,21 +99,24 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
 
             try {
               sending_progress.get();
+              LOG_DEBUG("sent remote service response for request "
+                        << request->GetTransactionId() << " to node "
+                        << connection_info.endpoint_id)
             } catch (std::exception &exception) {
-              LOG_ERR("error while sending response for service request "
+              LOG_ERR("error while sending response for remote service request "
                       << request->GetTransactionId() << " for service "
                       << request->GetServiceName()
                       << " due to sending error: " << exception.what())
             }
           } else {
-            LOG_ERR("cannot send service response for request "
+            LOG_ERR("cannot send service response for remote service request "
                     << request->GetTransactionId()
                     << " because web-socket peer has shut down")
           }
 
           return JobContinuation::DISPOSE;
         },
-        "process-service-request-" + request->GetTransactionId());
+        "process-service-request-" + request->GetTransactionId(), MAIN, true);
 
     job_manager->KickJob(job);
   } else /* if subsystems are not available */ {

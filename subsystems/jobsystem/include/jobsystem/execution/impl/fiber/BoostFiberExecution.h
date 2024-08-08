@@ -59,8 +59,8 @@ private:
 
 public:
   BoostFiberExecution() = delete;
-  explicit BoostFiberExecution(
-      const common::config::SharedConfiguration &config);
+  explicit
+  BoostFiberExecution(const common::config::SharedConfiguration &config);
   virtual ~BoostFiberExecution();
 
   /**
@@ -91,6 +91,24 @@ public:
   void WaitForCompletion(const std::future<FutureType> &future);
 
   /**
+   * Execution of the calling party will wait (or will be deferred,
+   * depending on the execution environment) until the passed future has been
+   * resolved.
+   * @tparam FutureType type of the future object
+   * @param future future that must resolve in order for the calling party to
+   * continue.
+   */
+  template <typename FutureType>
+  void WaitForCompletion(const std::shared_future<FutureType> &future);
+
+  /**
+   * Waits for a fixed duration before continuing the job's execution.
+   * @param duration duration to wait
+   */
+  template <typename Rep, typename Period>
+  void WaitForDuration(std::chrono::duration<Rep, Period> duration);
+
+  /**
    * Starts processing scheduled jobs and invoke the execution
    * @param manager managing instance that started the execution
    */
@@ -112,8 +130,8 @@ public:
 bool IsExecutedByFiber();
 
 template <typename FutureType>
-inline void
-BoostFiberExecution::WaitForCompletion(const std::future<FutureType> &future) {
+void BoostFiberExecution::WaitForCompletion(
+    const std::future<FutureType> &future) {
   if (IsExecutedByFiber()) {
     // caller is a fiber, so yield
     while (future.wait_for(std::chrono::seconds(0)) !=
@@ -126,7 +144,32 @@ BoostFiberExecution::WaitForCompletion(const std::future<FutureType> &future) {
   }
 }
 
-inline jobsystem::execution::JobExecutionState BoostFiberExecution::GetState() {
+template <typename FutureType>
+void BoostFiberExecution::WaitForCompletion(
+    const std::shared_future<FutureType> &future) {
+  if (IsExecutedByFiber()) {
+    // caller is a fiber, so yield
+    while (future.wait_for(std::chrono::seconds(0)) !=
+           std::future_status::ready) {
+      boost::this_fiber::yield();
+    }
+  } else {
+    // caller is a thread, so block
+    future.wait();
+  }
+}
+
+template <typename Rep, typename Period>
+void BoostFiberExecution::WaitForDuration(
+    std::chrono::duration<Rep, Period> duration) {
+  if (IsExecutedByFiber()) {
+    boost::this_fiber::sleep_for(duration);
+  } else {
+    std::this_thread::sleep_for(duration);
+  }
+}
+
+inline JobExecutionState BoostFiberExecution::GetState() {
   return m_current_state;
 }
 

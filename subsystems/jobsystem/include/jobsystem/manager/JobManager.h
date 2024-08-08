@@ -193,6 +193,24 @@ public:
   void WaitForCompletion(const std::future<FutureType> &future);
 
   /**
+   * Execution of the calling party will wait (or will be deferred,
+   * depending on the execution environment) until the passed future has been
+   * resolved.
+   * @tparam FutureType type of the future object
+   * @param future future that must resolve in order for the calling party to
+   * continue.
+   */
+  template <typename FutureType>
+  void WaitForCompletion(const std::shared_future<FutureType> &future);
+
+  /**
+   * Wait for a fixed amount of time before continuing the job's execution.
+   * @param duration duration to wait before continuing.
+   */
+  template <typename Rep, typename Period>
+  void WaitForDuration(std::chrono::duration<Rep, Period> duration);
+
+  /**
    * Return total count of cycles that have been completed
    * @return total count of cycles
    */
@@ -205,9 +223,19 @@ JobManager::WaitForCompletion(std::shared_ptr<IJobWaitable> counter) {
 }
 
 template <typename FutureType>
-inline void
-JobManager::WaitForCompletion(const std::future<FutureType> &future) {
+void JobManager::WaitForCompletion(const std::future<FutureType> &future) {
   m_execution.WaitForCompletion(future);
+}
+
+template <typename FutureType>
+void JobManager::WaitForCompletion(
+    const std::shared_future<FutureType> &future) {
+  m_execution.WaitForCompletion(future);
+}
+
+template <typename Rep, typename Period>
+void JobManager::WaitForDuration(std::chrono::duration<Rep, Period> duration) {
+  m_execution.WaitForDuration(duration);
 }
 
 } // namespace hive::jobsystem

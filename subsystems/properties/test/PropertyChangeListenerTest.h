@@ -16,7 +16,7 @@ private:
   std::atomic_int m_change_notification_received{0};
 
 public:
-  void ProcessPropertyChange(const std::string &key) noexcept override {
+  void ProcessPropertyChange(const std::string &key)  override {
     m_change_notification_received++;
     LOG_DEBUG("received property change notification for "
               << key << " for a total of " << m_change_notification_received

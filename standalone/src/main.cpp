@@ -151,14 +151,14 @@ int main(int argc, const char **argv) {
     core.GetPluginManager()->InstallPlugins(plugin_path);
   }
 
-  /* CONNECT TO OTHER PEERS (IF ANY WERE SPECIFIED AND SUBSYSTEM IS PROVIDED) */
+  /* CONNECT TO OTHER NODES (IF ANY WERE SPECIFIED AND SUBSYSTEM IS PROVIDED) */
   if (core.GetSubsystemsManager()
           ->ProvidesSubsystem<networking::messaging::IMessageEndpoint>()) {
-    auto peer_networking_subsystem =
+    auto networking_subsystem =
         core.GetSubsystemsManager()
             ->RequireSubsystem<networking::messaging::IMessageEndpoint>();
     for (const auto &connection_url : connections_to_establish) {
-      peer_networking_subsystem->EstablishConnectionTo(connection_url);
+      networking_subsystem->EstablishConnectionTo(connection_url);
     }
   }
 
