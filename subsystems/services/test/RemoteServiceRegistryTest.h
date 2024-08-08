@@ -394,7 +394,6 @@ TEST(ServiceTest, service_executor_busy) {
   auto servicing_node = setupNode(config, 9005);
   auto calling_node = setupNode(config, 9006);
 
-  // first establish connection in order to broadcast the connection
   auto connection_progress =
       servicing_node.network_endpoint.Borrow()->EstablishConnectionTo(
           "127.0.0.1:9006");
@@ -402,12 +401,16 @@ TEST(ServiceTest, service_executor_busy) {
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
 
+  // controls when the limited service is allowed to complete
   std::promise<void> completion_promise;
   std::shared_future<void> completion_future =
       completion_promise.get_future().share();
 
+  // used to count how many calls are currently processed by the service
   auto waiting_executions_counter = std::make_shared<std::atomic_size_t>(0);
 
+  /* service will not complete until the passed future is resolved, rendering
+   the service busy for testing purposes */
   SharedServiceExecutor limited_service = std::make_shared<LimitedLocalService>(
       1, completion_future, waiting_executions_counter,
       servicing_node.job_manager);
@@ -415,6 +418,7 @@ TEST(ServiceTest, service_executor_busy) {
   servicing_node.service_registry.Borrow()->Register(limited_service);
   servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
 
+  // wait until service is available for the calling node
   TryAssertUntilTimeout(
       [&calling_node]() mutable {
         calling_node.job_manager.Borrow()->InvokeCycleAndWait();
@@ -428,6 +432,7 @@ TEST(ServiceTest, service_executor_busy) {
   SharedServiceCaller caller =
       calling_node.service_registry.Borrow()->Find("limited").get().value();
 
+  // no parameters necessary
   auto request = std::make_shared<ServiceRequest>("limited");
 
   // first call keeps service busy (remember: a single active call is allowed)
@@ -438,6 +443,7 @@ TEST(ServiceTest, service_executor_busy) {
   // let the first call be processed. Continue when its waiting.
   TryAssertUntilTimeout(
       [&servicing_node, &calling_node, &waiting_executions_counter]() mutable {
+        // these calls do not block because they are asynchronous
         calling_node.job_manager.Borrow()->InvokeCycleAndWait();
         servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
         return *waiting_executions_counter == 1;
@@ -452,6 +458,7 @@ TEST(ServiceTest, service_executor_busy) {
   // wait until the second call has returned its busy status
   TryAssertUntilTimeout(
       [&servicing_node, &calling_node, &future_response_busy]() mutable {
+        // these calls do not block because they are asynchronous
         calling_node.job_manager.Borrow()->InvokeCycleAndWait();
         servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
         auto future_status = future_response_busy.wait_for(0ms);
@@ -463,7 +470,7 @@ TEST(ServiceTest, service_executor_busy) {
   ASSERT_NO_THROW(expected_busy_response = future_response_busy.get());
   ASSERT_EQ(expected_busy_response->GetStatus(), ServiceResponseStatus::BUSY);
 
-  // allow all other calls to complete
+  // signal the service to let calls complete
   completion_promise.set_value();
 
   // wait until the first call has been resolved
