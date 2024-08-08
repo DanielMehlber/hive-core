@@ -12,7 +12,6 @@
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/TimerJob.h"
 #include "jobsystem/synchronization/JobMutex.h"
-#include "logging/LogManager.h"
 #include <set>
 #include <utility>
 
@@ -127,13 +126,14 @@ public:
   JobManager(JobManager &other) = delete;
 
   /**
-   * Starts the job system execution cycle.
-   * @note This must be called after the job system has been initialized.
+   * Activate the job system execution. Jobs will be processed when passed to
+   * the execution.
    */
   void StartExecution();
 
   /**
-   * Stops the job system execution cycle.
+   * Stops the job system execution cycle. Jobs will not be processed, even when
+   * passed to the execution. They will simply pile up.
    */
   void StopExecution();
 
@@ -152,7 +152,8 @@ public:
 
   /**
    * Ensures that a job which is not yet in execution will not be
-   * executed (again)
+   * executed (again). It will be renoved from the queue or intercepted before
+   * it can requeue.
    * @param job_id id of this job
    */
   void DetachJob(const std::string &job_id);
@@ -166,8 +167,9 @@ public:
   void KickJobForNextCycle(const SharedJob &job);
 
   /**
-   * Starts a new execution cycle and passes queued jobs to the
-   * execution. The calling thread will be blocked until the cycle has finished.
+   * Starts a new execution cycle and passes queued jobs to the execution. The
+   * calling thread will be blocked until all synchronous jobs are done.
+   * @attention Asynchronous functions will not be waited for.
    */
   void InvokeCycleAndWait();
 
@@ -179,7 +181,7 @@ public:
    * @note On single-threaded implementations, this cannot be called from inside
    * a job because it would deadlock the worker thread.
    */
-  void WaitForCompletion(std::shared_ptr<IJobWaitable> counter);
+  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
 
   /**
    * Execution of the calling party will wait (or will be deferred,
@@ -218,8 +220,8 @@ public:
 };
 
 inline void
-JobManager::WaitForCompletion(std::shared_ptr<IJobWaitable> counter) {
-  m_execution.WaitForCompletion(std::move(counter));
+JobManager::WaitForCompletion(std::shared_ptr<IJobWaitable> waitable) {
+  m_execution.WaitForCompletion(std::move(waitable));
 }
 
 template <typename FutureType>
