@@ -67,10 +67,6 @@ SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
           maybe_executor = caller->SelectNextCallableExecutor(only_local);
         }
 
-        LOG_DEBUG("> promise " << promise.get()
-                               << " passed to caller job for request "
-                               << request->GetTransactionId())
-
         if (maybe_executor.has_value()) {
           // call stub
           SharedServiceExecutor executor = maybe_executor.value();
@@ -84,7 +80,7 @@ SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
 
             // if called executor is busy, react using busy behavior
             if (response->GetStatus() == ServiceResponseStatus::BUSY) {
-              if (retry_on_busy.max_retries > attempt_number) {
+              if (retry_on_busy.max_retries >= attempt_number) {
 
                 // wait before retrying
                 job_manager->WaitForDuration(retry_on_busy.retry_interval);
@@ -102,6 +98,7 @@ SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
               }
             }
 
+            response->SetResolutionAttempts(attempt_number);
             promise->set_value(response);
           } catch (...) {
             std::string what =

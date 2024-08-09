@@ -45,7 +45,7 @@ private:
       CallRetryPolicy retry_on_busy, bool only_local = false,
       bool async = false,
       std::optional<SharedServiceExecutor> maybe_executor = {},
-      int attempt_number = 0);
+      int attempt_number = 1);
 
 public:
   std::future<SharedServiceResponse>

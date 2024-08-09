@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AddingServiceExecutor.h"
+#include "services/AddingServiceExecutor.h"
 #include "services/executor/impl/LocalServiceExecutor.h"
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
 #include <gtest/gtest.h>
@@ -9,7 +9,7 @@ using namespace hive;
 using namespace hive::services;
 using namespace std::placeholders;
 
-TEST(ServiceTests, adding_service) {
+TEST(LocalServiceTests, adding_service) {
   auto config = std::make_shared<common::config::Configuration>();
 
   common::memory::Owner<services::IServiceRegistry> registry =
