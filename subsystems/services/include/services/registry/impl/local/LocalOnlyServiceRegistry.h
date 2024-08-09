@@ -23,6 +23,6 @@ public:
   void Unregister(const std::string &name) override;
 
   std::future<std::optional<services::SharedServiceCaller>>
-  Find(const std::string &name, bool only_local) noexcept override;
+  Find(const std::string &name, bool only_local)  override;
 };
 } // namespace hive::services::impl

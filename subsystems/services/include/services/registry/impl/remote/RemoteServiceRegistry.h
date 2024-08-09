@@ -24,25 +24,26 @@ protected:
   SharedMessageConsumer m_response_consumer;
   SharedMessageConsumer m_request_consumer;
 
-  events::SharedEventListener m_new_peer_connection_listener;
+  events::SharedEventListener m_new_endpoint_connection_listener;
 
   static SharedJob CreateRemoteServiceRegistrationJob(
-      const std::string &peer_id, const std::string &service_name,
+      const std::string &endpoint_id, const std::string &service_name,
+      const std::string &service_id,
       common::memory::Reference<networking::messaging::IMessageEndpoint>
-          sending_peer);
+          sending_endpoint);
 
 public:
   explicit RemoteServiceRegistry(
       const common::memory::Reference<common::subsystems::SubsystemManager>
           &subsystems);
 
-  void Register(const SharedServiceExecutor &stub) override;
+  void Register(const SharedServiceExecutor &executor) override;
   void Unregister(const std::string &name) override;
 
-  void SendServicePortfolioToPeer(const std::string &id);
+  void SendServicePortfolioToEndpoint(const std::string &endpoint_id);
 
   std::future<std::optional<SharedServiceCaller>>
-  Find(const std::string &name, bool only_local) noexcept override;
+  Find(const std::string &service_name, bool only_local) override;
   void SetupMessageConsumers();
   void SetupEventSubscribers();
 };

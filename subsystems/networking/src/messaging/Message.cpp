@@ -26,7 +26,7 @@ Message::GetAttribute(const std::string &attribute_key) {
   }
 }
 
-std::set<std::string> Message::GetAttributeNames() const noexcept {
+std::set<std::string> Message::GetAttributeNames() const  {
   std::set<std::string> attribute_names;
   std::map<std::string, std::string>::const_iterator it;
 
@@ -37,7 +37,7 @@ std::set<std::string> Message::GetAttributeNames() const noexcept {
   return attribute_names;
 }
 
-bool Message::EqualsTo(const std::shared_ptr<Message> &other) const noexcept {
+bool Message::EqualsTo(const std::shared_ptr<Message> &other) const  {
   if (m_uuid != other->m_uuid) {
     return false;
   } else if (m_type != other->m_type) {

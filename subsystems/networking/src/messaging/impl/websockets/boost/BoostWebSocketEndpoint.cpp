@@ -90,7 +90,7 @@ void BoostWebSocketEndpoint::SetupCleanUpJob() {
           return DISPOSE;
         }
       },
-      "boost-web-socket-peer-clean-up-" +
+      "boost-web-socket-endpoints-clean-up-" +
           std::to_string(m_local_endpoint->port()),
       1s, CLEAN_UP);
 
@@ -124,7 +124,7 @@ BoostWebSocketEndpoint::~BoostWebSocketEndpoint() {
     execution.join();
   }
 
-  LOG_DEBUG("local web-socket peer has been shut down")
+  LOG_DEBUG("local web-socket endpoint has been shut down")
 }
 
 void BoostWebSocketEndpoint::AddMessageConsumer(
@@ -139,13 +139,13 @@ void BoostWebSocketEndpoint::AddMessageConsumer(
               << consumer_message_type << "'")
   } else {
     LOG_WARN("given web-socket message consumer has expired and cannot be "
-             "added to the web-socket peer")
+             "added to the web-socket endpoint")
   }
 }
 
 std::list<SharedMessageConsumer>
 BoostWebSocketEndpoint::GetConsumersOfMessageType(
-    const std::string &type_name) noexcept {
+    const std::string &type_name) {
   std::list<SharedMessageConsumer> ret_consumer_list;
 
   std::unique_lock consumers_lock(m_consumers_mutex);
@@ -169,7 +169,7 @@ BoostWebSocketEndpoint::GetConsumersOfMessageType(
 }
 
 void BoostWebSocketEndpoint::CleanUpConsumersOfMessageType(
-    const std::string &type) noexcept {
+    const std::string &type) {
   if (m_consumers.contains(type)) {
     std::unique_lock consumers_lock(m_consumers_mutex);
     auto &consumer_list = m_consumers[type];
@@ -323,7 +323,7 @@ std::future<void> BoostWebSocketEndpoint::Send(const std::string &node_id,
 
   bool no_connection_to_node_exists = !maybe_connection.has_value();
   if (no_connection_to_node_exists) {
-    THROW_EXCEPTION(NoSuchPeerException,
+    THROW_EXCEPTION(NoSuchEndpointException,
                     "node " << node_id << " does not exist")
   }
 
@@ -331,7 +331,7 @@ std::future<void> BoostWebSocketEndpoint::Send(const std::string &node_id,
 }
 
 std::future<ConnectionInfo>
-BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
+BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) {
   // check if connection establishment component has been initialized.
   if (!m_connection_establisher) {
     InitConnectionEstablisher();
@@ -340,8 +340,7 @@ BoostWebSocketEndpoint::EstablishConnectionTo(const std::string &uri) noexcept {
   return m_connection_establisher->EstablishConnectionTo(uri);
 }
 
-void BoostWebSocketEndpoint::CloseConnectionTo(
-    const std::string &node_id) noexcept {
+void BoostWebSocketEndpoint::CloseConnectionTo(const std::string &node_id) {
   std::unique_lock lock(m_connections_mutex);
   if (m_connections.contains(node_id)) {
     m_connections.at(node_id)->Close();
@@ -349,8 +348,7 @@ void BoostWebSocketEndpoint::CloseConnectionTo(
   }
 }
 
-bool BoostWebSocketEndpoint::HasConnectionTo(
-    const std::string &node_id) const noexcept {
+bool BoostWebSocketEndpoint::HasConnectionTo(const std::string &node_id) const {
   std::unique_lock lock(m_connections_mutex);
   if (m_connections.contains(node_id)) {
     return m_connections.at(node_id)->IsUsable();
@@ -361,6 +359,9 @@ bool BoostWebSocketEndpoint::HasConnectionTo(
 
 std::future<size_t>
 BoostWebSocketEndpoint::IssueBroadcastAsJob(const SharedMessage &message) {
+
+  DEBUG_ASSERT(!message->GetId().empty(), "message id should not be empty")
+  DEBUG_ASSERT(!message->GetType().empty(), "message type should not be empty")
 
   std::shared_ptr<std::promise<size_t>> promise =
       std::make_shared<std::promise<size_t>>();

@@ -45,11 +45,12 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<data::PropertyProvider>(
       std::move(property_provider));
 
-  // setup networking peer
+  // setup networking manager
   config->Set("net.port", port);
-  auto networking_peer = common::memory::Owner<networking::NetworkingManager>(
-      subsystems.CreateReference(), config);
-  subsystems->AddOrReplaceSubsystem(std::move(networking_peer));
+  auto networking_manager =
+      common::memory::Owner<networking::NetworkingManager>(
+          subsystems.CreateReference(), config);
+  subsystems->AddOrReplaceSubsystem(std::move(networking_manager));
 
   auto endpoint_ref =
       subsystems->RequireSubsystem<IMessageEndpoint>().ToReference();

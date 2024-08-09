@@ -1,16 +1,19 @@
 #undef min
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "jobsystem/manager/JobManager.h"
+#include "logging/LogManager.h"
+#include "services/registry/impl/remote/RemoteExceptions.h"
+
 #include <cmath>
 
 using namespace hive::services::impl;
 using namespace hive::services;
 using namespace hive::jobsystem;
 
-bool RoundRobinServiceCaller::IsCallable() const noexcept {
+bool RoundRobinServiceCaller::IsCallable() const {
   std::unique_lock lock(m_service_executors_mutex);
-  for (const auto &stub : m_service_executors) {
-    if (stub->IsCallable()) {
+  for (const auto &executor : m_service_executors) {
+    if (executor->IsCallable()) {
       return true;
     }
   }
@@ -20,6 +23,11 @@ bool RoundRobinServiceCaller::IsCallable() const noexcept {
 
 void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor executor) {
   std::unique_lock lock(m_service_executors_mutex);
+
+  DEBUG_ASSERT(!executor->GetId().empty(), "executor id should not be empty")
+  DEBUG_ASSERT(!executor->GetServiceName().empty(),
+               "service name should not be empty")
+  DEBUG_ASSERT(executor->IsCallable(), "executor should be callable")
 
   // no duplicate services allowed
   for (const auto &registered_executor : m_service_executors) {
@@ -35,38 +43,80 @@ void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor executor) {
   m_service_executors.push_back(executor);
 }
 
-std::future<SharedServiceResponse> RoundRobinServiceCaller::IssueCallAsJob(
+SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
     SharedServiceRequest request,
+    std::shared_ptr<std::promise<SharedServiceResponse>> promise,
     common::memory::Borrower<jobsystem::JobManager> job_manager,
-    bool only_local, bool async) noexcept {
+    CallRetryPolicy retry_on_busy, bool only_local, bool async,
+    std::optional<SharedServiceExecutor> maybe_executor, int attempt_number) {
 
-  std::shared_ptr<std::promise<SharedServiceResponse>> promise =
-      std::make_shared<std::promise<SharedServiceResponse>>();
-  std::future<SharedServiceResponse> future = promise->get_future();
+  DEBUG_ASSERT(request != nullptr, "request should not be null")
+  DEBUG_ASSERT(!request->GetServiceName().empty(),
+               "service name should not be empty")
+  DEBUG_ASSERT(!request->GetTransactionId().empty(),
+               "transaction id should not be empty")
+  DEBUG_ASSERT(promise != nullptr, "promise should not be null")
+  DEBUG_ASSERT(attempt_number >= 0, "attempt number should be positive")
 
   SharedJob job = std::make_shared<Job>(
-      [_this = shared_from_this(), promise, request, only_local,
-       job_manager](JobContext *context) {
-        std::optional<SharedServiceExecutor> maybe_executor =
-            _this->SelectNextUsableCaller(only_local);
+      [caller = shared_from_this(), promise, request, only_local, job_manager,
+       attempt_number, retry_on_busy, async,
+       maybe_executor](JobContext *context) mutable {
+        // if no executor is specified, select one
+        if (!maybe_executor.has_value()) {
+          maybe_executor = caller->SelectNextCallableExecutor(only_local);
+        }
 
         if (maybe_executor.has_value()) {
           // call stub
           SharedServiceExecutor executor = maybe_executor.value();
-          auto future_result = executor->IssueCallAsJob(request, job_manager);
+          auto future_response =
+              executor->IssueCallAsJob(request, job_manager, async);
 
           // wait for call to complete
-          context->GetJobManager()->WaitForCompletion(future_result);
+          context->GetJobManager()->WaitForCompletion(future_response);
           try {
-            SharedServiceResponse response = future_result.get();
+            SharedServiceResponse response = future_response.get();
+
+            // if called executor is busy, react using busy behavior
+            if (response->GetStatus() == ServiceResponseStatus::BUSY) {
+              if (retry_on_busy.max_retries >= attempt_number) {
+
+                // wait before retrying
+                job_manager->WaitForDuration(retry_on_busy.retry_interval);
+
+                if (retry_on_busy.try_next_executor) {
+                  maybe_executor.reset();
+                }
+
+                SharedJob retry_call = caller->BuildServiceCallJob(
+                    request, promise, job_manager, retry_on_busy, only_local,
+                    async, maybe_executor, attempt_number + 1);
+
+                job_manager->KickJob(retry_call);
+                return DISPOSE;
+              }
+            }
+
+            response->SetResolutionAttempts(attempt_number);
             promise->set_value(response);
           } catch (...) {
-            promise->set_exception(std::current_exception());
+            std::string what =
+                get_content_of_exception_ptr(std::current_exception());
+            auto exception = BUILD_EXCEPTION(
+                CallFailedException,
+                "exception occurred while calling service '"
+                    << request->GetServiceName() << "' from executor '"
+                    << executor->GetId() << "': " << what);
+            LOG_WARN("exception occurred while calling service '"
+                     << request->GetServiceName() << "' from executor "
+                     << executor->GetId() << ": " << what)
+            promise->set_exception(std::make_exception_ptr(exception));
           }
         } else {
-          auto exception = BUILD_EXCEPTION(NoCallableServiceFound,
-                                           "no callable stub for service "
-                                               << request->GetServiceName());
+          auto exception = BUILD_EXCEPTION(
+              NoCallableServiceFound, "no callable stub for service '"
+                                          << request->GetServiceName() << "'");
           promise->set_exception(std::make_exception_ptr(exception));
         }
 
@@ -74,12 +124,26 @@ std::future<SharedServiceResponse> RoundRobinServiceCaller::IssueCallAsJob(
       },
       "round-robin-service-call-" + request->GetServiceName(), MAIN, async);
 
+  return job;
+}
+
+std::future<SharedServiceResponse> RoundRobinServiceCaller::IssueCallAsJob(
+    SharedServiceRequest request,
+    common::memory::Borrower<JobManager> job_manager, bool only_local,
+    bool async, CallRetryPolicy retry_on_busy) {
+
+  auto promise = std::make_shared<std::promise<SharedServiceResponse>>();
+  std::future<SharedServiceResponse> future = promise->get_future();
+
+  SharedJob job = BuildServiceCallJob(request, promise, job_manager,
+                                      retry_on_busy, only_local, async);
+
   job_manager->KickJob(job);
   return future;
 }
 
 std::optional<SharedServiceExecutor>
-RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
+RoundRobinServiceCaller::SelectNextCallableExecutor(bool only_local) {
   std::unique_lock lock(m_service_executors_mutex);
   // just do one round-trip searching for finding a callable service stub.
   // Otherwise, there is none.
@@ -105,7 +169,7 @@ RoundRobinServiceCaller::SelectNextUsableCaller(bool only_local) {
   return {};
 }
 
-bool RoundRobinServiceCaller::ContainsLocallyCallable() const noexcept {
+bool RoundRobinServiceCaller::ContainsLocallyCallable() const {
   std::unique_lock lock(m_service_executors_mutex);
   for (const auto &some_executor : m_service_executors) {
     if (some_executor->IsCallable() && some_executor->IsLocal()) {
@@ -116,7 +180,7 @@ bool RoundRobinServiceCaller::ContainsLocallyCallable() const noexcept {
   return false;
 }
 
-size_t RoundRobinServiceCaller::GetCallableCount() const noexcept {
+size_t RoundRobinServiceCaller::GetCallableCount() const {
   std::unique_lock lock(m_service_executors_mutex);
   size_t callable_count = 0;
   for (auto &some_executor : m_service_executors) {
@@ -126,4 +190,21 @@ size_t RoundRobinServiceCaller::GetCallableCount() const noexcept {
   }
 
   return callable_count;
+}
+
+std::vector<SharedServiceExecutor>
+RoundRobinServiceCaller::GetCallableServiceExecutors(bool local_only) {
+  std::unique_lock lock(m_service_executors_mutex);
+  std::vector<SharedServiceExecutor> executors;
+  for (auto &some_executor : m_service_executors) {
+    if (some_executor->IsCallable()) {
+      if (local_only && !some_executor->IsLocal()) {
+        continue;
+      }
+
+      executors.push_back(some_executor);
+    }
+  }
+
+  return executors;
 }

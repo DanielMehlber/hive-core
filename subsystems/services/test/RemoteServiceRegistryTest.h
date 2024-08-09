@@ -1,11 +1,12 @@
 #pragma once
 
-#include "AddingServiceExecutor.h"
-#include "DelayServiceExecutor.h"
 #include "common/test/TryAssertUntilTimeout.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/NetworkingManager.h"
+#include "services/AddingServiceExecutor.h"
+#include "services/DelayServiceExecutor.h"
+#include "services/LimitedLocalService.h"
 #include "services/executor/impl/LocalServiceExecutor.h"
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 #include <gtest/gtest.h>
@@ -76,7 +77,7 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
               port};
 }
 
-TEST(ServiceTests, run_single_remote_service) {
+TEST(RemoteServiceTests, run_single_remote_service) {
   auto config = std::make_shared<common::config::Configuration>();
 
   auto node_1 = setupNode(config, 9005);
@@ -130,7 +131,7 @@ TEST(ServiceTests, run_single_remote_service) {
   node_2.job_manager.Borrow()->StopExecution();
 }
 
-TEST(ServiceTests, remote_service_load_balancing) {
+TEST(RemoteServiceTests, remote_service_load_balancing) {
   auto config = std::make_shared<common::config::Configuration>();
 
   auto central_node = setupNode(config, 9004);
@@ -230,7 +231,7 @@ TEST(ServiceTests, remote_service_load_balancing) {
   central_node.job_manager.Borrow()->StopExecution();
 }
 
-TEST(ServiceTests, web_socket_node_destroyed) {
+TEST(RemoteServiceTests, web_socket_node_destroyed) {
   auto config = std::make_shared<common::config::Configuration>();
 
   auto node_1 = setupNode(config, 9005);
@@ -277,7 +278,7 @@ TEST(ServiceTests, web_socket_node_destroyed) {
   ASSERT_FALSE(node_1.service_registry.Borrow()->Find("add").get().has_value());
 }
 
-TEST(ServiceTest, async_service_call) {
+TEST(RemoteServiceTests, async_service_call) {
   auto config = std::make_shared<common::config::Configuration>();
 
   auto node_1 = setupNode(config, 9005);
@@ -338,7 +339,7 @@ TEST(ServiceTest, async_service_call) {
   ASSERT_TRUE(cycles > 1);
 }
 
-TEST(ServiceTest, service_peer_disconnected) {
+TEST(RemoteServiceTests, service_endpoint_disconnected) {
   auto config = std::make_shared<common::config::Configuration>();
 
   auto node_1 = setupNode(config, 9005);
@@ -385,4 +386,211 @@ TEST(ServiceTest, service_peer_disconnected) {
 
   WaitForFutureUntilTimeout(future_response, 10s);
   ASSERT_THROW(future_response.get(), std::exception);
+}
+
+TEST(RemoteServiceTests, service_executor_busy) {
+  auto config = std::make_shared<common::config::Configuration>();
+
+  auto servicing_node = setupNode(config, 9005);
+  auto calling_node = setupNode(config, 9006);
+
+  auto connection_progress =
+      servicing_node.network_endpoint.Borrow()->EstablishConnectionTo(
+          "127.0.0.1:9006");
+
+  connection_progress.wait();
+  ASSERT_NO_THROW(connection_progress.get());
+
+  // controls when the limited service is allowed to complete
+  std::promise<void> completion_promise;
+  std::shared_future<void> completion_future =
+      completion_promise.get_future().share();
+
+  // used to count how many calls are currently processed by the service
+  auto waiting_executions_counter = std::make_shared<std::atomic_size_t>(0);
+
+  /* service will not complete until the passed future is resolved, rendering
+   the service busy for testing purposes */
+  SharedServiceExecutor limited_service = std::make_shared<LimitedLocalService>(
+      1, completion_future, waiting_executions_counter,
+      servicing_node.job_manager);
+
+  servicing_node.service_registry.Borrow()->Register(limited_service);
+  servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+
+  // wait until service is available for the calling node
+  TryAssertUntilTimeout(
+      [&calling_node]() mutable {
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return calling_node.service_registry.Borrow()
+            ->Find("limited")
+            .get()
+            .has_value();
+      },
+      10s);
+
+  SharedServiceCaller caller =
+      calling_node.service_registry.Borrow()->Find("limited").get().value();
+
+  // no parameters necessary
+  auto request = std::make_shared<ServiceRequest>("limited");
+
+  // first call keeps service busy (remember: a single active call is allowed)
+  auto future_response_resolve =
+      caller->IssueCallAsJob(request, calling_node.job_manager.Borrow(), false,
+                             true, RETRY_POLICY_NONE);
+
+  // let the first call be processed. Continue when its waiting.
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &waiting_executions_counter]() mutable {
+        // these calls do not block because they are asynchronous
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return *waiting_executions_counter == 1;
+      },
+      10s);
+
+  // second call should return that the service is busy
+  auto future_response_busy = caller->IssueCallAsJob(
+      request->Duplicate(), calling_node.job_manager.Borrow(), false, true,
+      RETRY_POLICY_NONE);
+
+  // wait until the second call has returned its busy status
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &future_response_busy]() mutable {
+        // these calls do not block because they are asynchronous
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        auto future_status = future_response_busy.wait_for(0ms);
+        return future_status == std::future_status::ready;
+      },
+      10s);
+
+  SharedServiceResponse expected_busy_response;
+  ASSERT_NO_THROW(expected_busy_response = future_response_busy.get());
+  ASSERT_EQ(expected_busy_response->GetStatus(), ServiceResponseStatus::BUSY);
+
+  // signal the service to let calls complete
+  completion_promise.set_value();
+
+  // wait until the first call has been resolved
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &future_response_resolve]() mutable {
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return future_response_resolve.wait_for(0s) ==
+               std::future_status::ready;
+      },
+      10s);
+
+  SharedServiceResponse expected_ok_response;
+  ASSERT_NO_THROW(expected_ok_response = future_response_resolve.get());
+  ASSERT_EQ(expected_ok_response->GetStatus(), ServiceResponseStatus::OK);
+}
+
+TEST(RemoteServiceTests, busy_retry_policy) {
+  auto config = std::make_shared<common::config::Configuration>();
+
+  auto servicing_node = setupNode(config, 9005);
+  auto calling_node = setupNode(config, 9006);
+
+  auto connection_progress =
+      servicing_node.network_endpoint.Borrow()->EstablishConnectionTo(
+          "127.0.0.1:9006");
+
+  connection_progress.wait();
+  ASSERT_NO_THROW(connection_progress.get());
+
+  // controls when the limited service is allowed to complete
+  std::promise<void> completion_promise;
+  std::shared_future<void> completion_future =
+      completion_promise.get_future().share();
+
+  // used to count how many calls are currently processed by the service
+  auto waiting_executions_counter = std::make_shared<std::atomic_size_t>(0);
+
+  /* service will not complete until the passed future is resolved, rendering
+   the service busy for testing purposes */
+  SharedServiceExecutor limited_service = std::make_shared<LimitedLocalService>(
+      1, completion_future, waiting_executions_counter,
+      servicing_node.job_manager);
+
+  servicing_node.service_registry.Borrow()->Register(limited_service);
+  servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+
+  // wait until service is available for the calling node
+  TryAssertUntilTimeout(
+      [&calling_node]() mutable {
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return calling_node.service_registry.Borrow()
+            ->Find("limited")
+            .get()
+            .has_value();
+      },
+      10s);
+
+  SharedServiceCaller caller =
+      calling_node.service_registry.Borrow()->Find("limited").get().value();
+
+  // no parameters necessary
+  auto request = std::make_shared<ServiceRequest>("limited");
+
+  // first call keeps service busy (remember: a single active call is allowed)
+  auto future_response_resolve =
+      caller->IssueCallAsJob(request, calling_node.job_manager.Borrow(), false,
+                             true, RETRY_POLICY_NONE);
+
+  // let the first call be processed. Continue when its waiting.
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &waiting_executions_counter]() mutable {
+        // these calls do not block because they are asynchronous
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return *waiting_executions_counter == 1;
+      },
+      10s);
+
+  // create a retry policy
+  CallRetryPolicy retry_policy;
+  retry_policy.max_retries = 3;
+  retry_policy.retry_interval = 100ms;
+  retry_policy.try_next_executor = false;
+
+  auto future_response_retry = caller->IssueCallAsJob(
+      request->Duplicate(), calling_node.job_manager.Borrow(), false, true,
+      retry_policy);
+
+  // wait until the second call has returned its busy status
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &future_response_retry]() mutable {
+        // these calls do not block because they are asynchronous
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        auto future_status = future_response_retry.wait_for(0ms);
+        return future_status == std::future_status::ready;
+      },
+      10s);
+
+  SharedServiceResponse expected_busy_response;
+  ASSERT_NO_THROW(expected_busy_response = future_response_retry.get());
+  ASSERT_EQ(expected_busy_response->GetStatus(), ServiceResponseStatus::BUSY);
+  ASSERT_EQ(expected_busy_response->GetResolutionAttempts(),
+            retry_policy.max_retries + 1);
+
+  // signal the service to let calls complete
+  completion_promise.set_value();
+
+  // wait until the first call has been resolved
+  TryAssertUntilTimeout(
+      [&servicing_node, &calling_node, &future_response_resolve]() mutable {
+        calling_node.job_manager.Borrow()->InvokeCycleAndWait();
+        servicing_node.job_manager.Borrow()->InvokeCycleAndWait();
+        return future_response_resolve.wait_for(0s) ==
+               std::future_status::ready;
+      },
+      10s);
+
+  SharedServiceResponse expected_ok_response;
+  ASSERT_NO_THROW(expected_ok_response = future_response_resolve.get());
+  ASSERT_EQ(expected_ok_response->GetStatus(), ServiceResponseStatus::OK);
 }

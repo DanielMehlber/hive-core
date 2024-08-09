@@ -12,20 +12,24 @@ using namespace std::placeholders;
 
 void broadcastServiceRegistration(
     common::memory::Reference<IMessageEndpoint> weak_sender,
-    const SharedServiceExecutor &stub,
+    const SharedServiceExecutor &executor,
     common::memory::Borrower<jobsystem::JobManager> job_manager) {
 
   DEBUG_ASSERT(weak_sender.CanBorrow(), "sender should exist")
-  DEBUG_ASSERT(stub->IsCallable(), "executor should be callable")
-  DEBUG_ASSERT(stub->IsLocal(), "only local services can be offered to others")
+  DEBUG_ASSERT(!executor->GetId().empty(), "executor id should not be empty")
+  DEBUG_ASSERT(!executor->GetServiceName().empty(),
+               "executor service name should not be empty")
+  DEBUG_ASSERT(executor->IsCallable(), "executor should be callable")
+  DEBUG_ASSERT(executor->IsLocal(),
+               "only local services can be offered to others")
 
   SharedJob job = jobsystem::JobSystemFactory::CreateJob(
-      [weak_sender, stub](jobsystem::JobContext *context) mutable {
+      [weak_sender, executor](jobsystem::JobContext *context) mutable {
         if (auto maybe_sender = weak_sender.TryBorrow()) {
           auto sender = maybe_sender.value();
           RemoteServiceRegistrationMessage registration;
-          registration.SetServiceName(stub->GetServiceName());
-          registration.SetId(stub->GetId());
+          registration.SetServiceName(executor->GetServiceName());
+          registration.SetId(executor->GetId());
 
           std::future<size_t> progress =
               sender->IssueBroadcastAsJob(registration.GetMessage());
@@ -34,32 +38,36 @@ void broadcastServiceRegistration(
 
           try {
             size_t receivers = progress.get();
-            LOG_DEBUG("broadcast local service " << stub->GetServiceName()
+            LOG_DEBUG("broadcast local service " << executor->GetServiceName()
                                                  << " to " << receivers
-                                                 << " other peers")
+                                                 << " other endpoints")
           } catch (std::exception &exception) {
             LOG_ERR("broadcasting local service "
-                    << stub->GetServiceName()
+                    << executor->GetServiceName()
                     << " failed due to internal error: " << exception.what())
           }
         } else {
           LOG_WARN("cannot broadcast local service "
-                   << stub->GetServiceName()
-                   << " because web-socket peer has been destroyed")
+                   << executor->GetServiceName()
+                   << " because web-socket endpoint has been destroyed")
         }
 
         return JobContinuation::DISPOSE;
       },
-      "broadcast-service-registration-" + stub->GetServiceName());
+      "broadcast-service-registration-" + executor->GetServiceName());
 
   job_manager->KickJob(job);
 }
 
-void RemoteServiceRegistry::Register(const SharedServiceExecutor &stub) {
+void RemoteServiceRegistry::Register(const SharedServiceExecutor &executor) {
 
-  if (!stub->IsCallable()) {
-    LOG_WARN("cannot register " << (stub->IsLocal() ? "local" : "remote")
-                                << " service '" << stub->GetServiceName()
+  DEBUG_ASSERT(!executor->GetId().empty(), "executor id should not be empty")
+  DEBUG_ASSERT(!executor->GetServiceName().empty(),
+               "executor service name should not be empty")
+
+  if (!executor->IsCallable()) {
+    LOG_WARN("cannot register " << (executor->IsLocal() ? "local" : "remote")
+                                << " service '" << executor->GetServiceName()
                                 << "' because it is not callable (anymore)")
     return;
   }
@@ -69,21 +77,22 @@ void RemoteServiceRegistry::Register(const SharedServiceExecutor &stub) {
     auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
     auto message_endpoint = subsystems->RequireSubsystem<IMessageEndpoint>();
 
-    std::string name = stub->GetServiceName();
+    std::string name = executor->GetServiceName();
 
     std::unique_lock lock(m_registered_callers_mutex);
     if (!m_registered_callers.contains(name)) {
       m_registered_callers[name] = std::make_shared<RoundRobinServiceCaller>();
     }
 
-    if (stub->IsLocal()) {
-      broadcastServiceRegistration(message_endpoint.ToReference(), stub,
+    if (executor->IsLocal()) {
+      broadcastServiceRegistration(message_endpoint.ToReference(), executor,
                                    job_manager);
     }
 
-    m_registered_callers.at(name)->AddExecutor(stub);
-    LOG_DEBUG("new service '" << name
-                              << "' has been registered in web-socket registry")
+    m_registered_callers.at(name)->AddExecutor(executor);
+    LOG_DEBUG("new " << (executor->IsLocal() ? "local" : "remote")
+                     << " service '" << name
+                     << "' has been registered in web-socket registry")
 
     // send notification that new service has been registered
     if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {
@@ -100,6 +109,8 @@ void RemoteServiceRegistry::Register(const SharedServiceExecutor &stub) {
 }
 
 void RemoteServiceRegistry::Unregister(const std::string &name) {
+  DEBUG_ASSERT(!name.empty(), "name should not be empty")
+
   std::unique_lock lock(m_registered_callers_mutex);
   if (m_registered_callers.contains(name)) {
     m_registered_callers.erase(name);
@@ -133,13 +144,15 @@ void RemoteServiceRegistry::Unregister(const std::string &name) {
 }
 
 std::future<std::optional<SharedServiceCaller>>
-RemoteServiceRegistry::Find(const std::string &name, bool only_local) noexcept {
+RemoteServiceRegistry::Find(const std::string &service_name, bool only_local) {
+  DEBUG_ASSERT(!service_name.empty(), "name should not be empty")
+
   std::promise<std::optional<SharedServiceCaller>> promise;
   std::future<std::optional<SharedServiceCaller>> future = promise.get_future();
 
   std::unique_lock lock(m_registered_callers_mutex);
-  if (m_registered_callers.contains(name)) {
-    SharedServiceCaller caller = m_registered_callers.at(name);
+  if (m_registered_callers.contains(service_name)) {
+    SharedServiceCaller caller = m_registered_callers.at(service_name);
 
     // check if this is callable at all
     if (caller->IsCallable()) {
@@ -148,7 +161,7 @@ RemoteServiceRegistry::Find(const std::string &name, bool only_local) noexcept {
       if (only_local) {
         if (!caller->ContainsLocallyCallable()) {
           LOG_WARN("service '"
-                   << name
+                   << service_name
                    << "' is registered in web-socket registry, but not "
                       "locally callable")
           promise.set_value({});
@@ -156,7 +169,7 @@ RemoteServiceRegistry::Find(const std::string &name, bool only_local) noexcept {
       }
       promise.set_value(caller);
     } else {
-      LOG_WARN("service '" << name
+      LOG_WARN("service '" << service_name
                            << "' was registered in web-socket registry, but is "
                               "not usable anymore")
       promise.set_value({});
@@ -185,15 +198,15 @@ void RemoteServiceRegistry::SetupEventSubscribers() {
 
   auto event_system = subsystems->RequireSubsystem<events::IEventBroker>();
 
-  m_new_peer_connection_listener =
+  m_new_endpoint_connection_listener =
       std::make_shared<events::FunctionalEventListener>(
           [this](const events::SharedEvent event) {
             networking::ConnectionEstablishedEvent established_event(event);
-            auto peer_id = established_event.GetEndpointId();
-            SendServicePortfolioToPeer(peer_id);
+            auto endpoint_id = established_event.GetEndpointId();
+            SendServicePortfolioToEndpoint(endpoint_id);
           });
 
-  event_system->RegisterListener(m_new_peer_connection_listener,
+  event_system->RegisterListener(m_new_endpoint_connection_listener,
                                  "connection-established");
 }
 
@@ -203,7 +216,7 @@ void RemoteServiceRegistry::SetupMessageConsumers() {
                "peer networking subsystem should exist")
 
   auto subsystems = m_subsystems.Borrow();
-  auto web_socket_peer = subsystems->RequireSubsystem<IMessageEndpoint>();
+  auto web_socket_endpoint = subsystems->RequireSubsystem<IMessageEndpoint>();
 
   auto response_consumer =
       std::make_shared<RemoteServiceResponseConsumer>(m_subsystems);
@@ -211,32 +224,32 @@ void RemoteServiceRegistry::SetupMessageConsumers() {
   m_response_consumer = response_consumer;
   m_registration_consumer = std::make_shared<RemoteServiceRegistrationConsumer>(
       std::bind(&RemoteServiceRegistry::Register, this, _1), response_consumer,
-      web_socket_peer.ToReference());
+      web_socket_endpoint.ToReference());
   m_request_consumer = std::make_shared<RemoteServiceRequestConsumer>(
       subsystems.ToReference(),
       std::bind(&RemoteServiceRegistry::Find, this, _1, _2),
-      web_socket_peer.ToReference());
+      web_socket_endpoint.ToReference());
 
-  web_socket_peer->AddMessageConsumer(m_registration_consumer);
-  web_socket_peer->AddMessageConsumer(m_response_consumer);
-  web_socket_peer->AddMessageConsumer(m_request_consumer);
+  web_socket_endpoint->AddMessageConsumer(m_registration_consumer);
+  web_socket_endpoint->AddMessageConsumer(m_response_consumer);
+  web_socket_endpoint->AddMessageConsumer(m_request_consumer);
 }
 
-void RemoteServiceRegistry::SendServicePortfolioToPeer(
-    const std::string &peer_id) {
+void RemoteServiceRegistry::SendServicePortfolioToEndpoint(
+    const std::string &endpoint_id) {
 
   DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
 
   auto subsystems = m_subsystems.Borrow();
   DEBUG_ASSERT(subsystems->ProvidesSubsystem<IMessageEndpoint>(),
-               "peer networking subsystem should exist")
+               "networking subsystem should exist")
   DEBUG_ASSERT(subsystems->ProvidesSubsystem<jobsystem::JobManager>(),
                "job system should exist")
 
   if (!subsystems
            ->ProvidesSubsystem<networking::messaging::IMessageEndpoint>()) {
-    LOG_ERR("Cannot transmit service portfolio to remote peer "
-            << peer_id << ": this peer cannot be found as subsystem")
+    LOG_ERR("Cannot transmit service portfolio to remote endpoint "
+            << endpoint_id << ": this peer cannot be found as subsystem")
     return;
   }
 
@@ -249,42 +262,53 @@ void RemoteServiceRegistry::SendServicePortfolioToPeer(
   std::unique_lock callers_lock(m_registered_callers_mutex);
   for (const auto &[service_name, caller] : m_registered_callers) {
 
-    // only offer locally provided services to other nodes.
-    if (caller->ContainsLocallyCallable()) {
+    std::vector<SharedServiceExecutor> executors =
+        caller->GetCallableServiceExecutors(true);
+
+    for (const auto &executor : executors) {
+      // only offer locally provided services to other nodes.
+      std::string service_id = executor->GetId();
       auto job = CreateRemoteServiceRegistrationJob(
-          peer_id, service_name, this_message_endpoint.ToReference());
+          endpoint_id, service_name, service_id,
+          this_message_endpoint.ToReference());
       job_manager->KickJob(job);
     }
   }
 }
 
 SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
-    const std::string &peer_id, const std::string &service_name,
+    const std::string &endpoint_id, const std::string &service_name,
+    const std::string &service_id,
     common::memory::Reference<networking::messaging::IMessageEndpoint>
         weak_endpoint) {
 
   DEBUG_ASSERT(weak_endpoint.CanBorrow(), "sending endpoint should exist")
+  DEBUG_ASSERT(!endpoint_id.empty(), "endpoint id should not be empty")
+  DEBUG_ASSERT(!service_name.empty(), "service name should not be empty")
+  DEBUG_ASSERT(!service_id.empty(), "service id should not be empty")
 
   auto job = std::make_shared<Job>(
-      [weak_endpoint, peer_id,
-       service_name](jobsystem::JobContext *context) mutable {
+      [weak_endpoint, endpoint_id, service_name,
+       service_id](jobsystem::JobContext *context) mutable {
         if (auto maybe_endpoint = weak_endpoint.TryBorrow()) {
-          auto this_peer = maybe_endpoint.value();
+          auto this_endpoint = maybe_endpoint.value();
 
           RemoteServiceRegistrationMessage registration;
           registration.SetServiceName(service_name);
+          registration.SetId(service_id);
 
-          this_peer->Send(peer_id, registration.GetMessage());
+          this_endpoint->Send(endpoint_id, registration.GetMessage());
 
           return DISPOSE;
         } else {
           LOG_WARN("Cannot transmit service "
-                   << service_name << " to remote peer " << peer_id
-                   << " because peer subsystem has expired")
+                   << service_name << " to remote endpoint " << endpoint_id
+                   << " because endpoint subsystem has expired")
           return DISPOSE;
         }
       },
-      "register-service-{" + service_name + "}-at-peer-{" + peer_id + "}",
+      "register-service-{" + service_name + "}-at-endpoint-{" + endpoint_id +
+          "}",
       MAIN);
   return job;
 }

@@ -8,21 +8,27 @@ using namespace hive::services::impl;
 RemoteServiceRegistrationConsumer::RemoteServiceRegistrationConsumer(
     std::function<void(SharedServiceExecutor)> consumer,
     std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
-    common::memory::Reference<IMessageEndpoint> web_socket_peer)
+    common::memory::Reference<IMessageEndpoint> messaging_endpoint)
     : m_consumer(std::move(consumer)),
       m_response_consumer(std::move(response_consumer)),
-      m_message_endpoint(std::move(web_socket_peer)) {}
+      m_message_endpoint(std::move(messaging_endpoint)) {}
 
 void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
-    SharedMessage received_message, ConnectionInfo connection_info) noexcept {
+    SharedMessage received_message, ConnectionInfo connection_info) {
+
+  DEBUG_ASSERT(received_message != nullptr,
+               "received message should not be null")
 
   RemoteServiceRegistrationMessage registration_message(received_message);
-  LOG_INFO("received web-socket service registration of service '"
-           << registration_message.GetServiceName() << "' from host "
-           << connection_info.hostname)
-
   auto service_id = registration_message.GetId();
   auto service_name = registration_message.GetServiceName();
+
+  DEBUG_ASSERT(!service_id.empty(), "remote service id should not be empty")
+  DEBUG_ASSERT(!service_name.empty(), "remote service name should not be empty")
+
+  LOG_INFO("received web-socket service registration of service '"
+           << service_name << "' (" << service_id << ") from host "
+           << connection_info.endpoint_id)
 
   SharedServiceExecutor stub = std::make_shared<RemoteServiceExecutor>(
       service_name, m_message_endpoint, connection_info, service_id,

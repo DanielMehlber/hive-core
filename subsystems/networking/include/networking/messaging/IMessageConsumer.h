@@ -16,7 +16,7 @@ public:
    * Returns the web-socket message type this consumer listens to
    * @return string that contains the unique type name
    */
-  virtual std::string GetMessageType() const noexcept = 0;
+  virtual std::string GetMessageType() const  = 0;
 
   /**
    * Reacts to received events and processes them
@@ -24,7 +24,7 @@ public:
    */
   virtual void
   ProcessReceivedMessage(SharedMessage received_message,
-                         ConnectionInfo connection_info) noexcept = 0;
+                         ConnectionInfo connection_info)  = 0;
 };
 
 typedef std::shared_ptr<IMessageConsumer> SharedMessageConsumer;

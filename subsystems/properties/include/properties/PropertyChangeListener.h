@@ -30,7 +30,7 @@ public:
    * @param key absolute path in the property tree of the property that has been
    * changed.
    */
-  virtual void ProcessPropertyChange(const std::string &key) noexcept = 0;
+  virtual void ProcessPropertyChange(const std::string &key)  = 0;
 };
 
 typedef std::shared_ptr<PropertyChangeListener> SharedPropertyListener;

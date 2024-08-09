@@ -67,10 +67,9 @@ class TestConsumer : public IMessageConsumer {
 public:
   mutable jobsystem::mutex counter_mutex;
   size_t counter{0};
-  std::string GetMessageType() const noexcept override { return "test-type"; }
-  void
-  ProcessReceivedMessage(SharedMessage received_message,
-                         ConnectionInfo connection_info) noexcept override {
+  std::string GetMessageType() const override { return "test-type"; }
+  void ProcessReceivedMessage(SharedMessage received_message,
+                              ConnectionInfo connection_info) override {
     std::unique_lock lock(counter_mutex);
     counter++;
   }
@@ -239,19 +238,19 @@ TEST(WebSockets, websockets_message_broadcast) {
 
   std::vector<Node> peers;
   for (size_t i = 9005; i < 9010; i++) {
-    Node recipient_peer = SetupWebSocketPeer(i);
+    Node recipient_node = SetupWebSocketPeer(i);
 
-    auto result = recipient_peer.endpoint.Borrow()->EstablishConnectionTo(
+    auto result = recipient_node.endpoint.Borrow()->EstablishConnectionTo(
         "127.0.0.1:9003");
     result.wait();
     ASSERT_NO_THROW(result.get());
 
     // process established connections
-    recipient_peer.job_manager.Borrow()->InvokeCycleAndWait();
+    recipient_node.job_manager.Borrow()->InvokeCycleAndWait();
     broadcasting_peer.job_manager.Borrow()->InvokeCycleAndWait();
 
-    recipient_peer.endpoint.Borrow()->AddMessageConsumer(test_consumer_1);
-    peers.push_back(std::move(recipient_peer));
+    recipient_node.endpoint.Borrow()->AddMessageConsumer(test_consumer_1);
+    peers.push_back(std::move(recipient_node));
   }
 
   // wait until central peer has recognized connections

@@ -4,9 +4,10 @@ using namespace hive::services;
 
 ServiceResponse::ServiceResponse(std::string transaction_id,
                                  ServiceResponseStatus status,
-                                 std::string status_message)
+                                 std::string status_message, size_t attempts)
     : m_transaction_id(std::move(transaction_id)), m_status(status),
-      m_status_message(std::move(status_message)) {}
+      m_status_message(std::move(status_message)),
+      m_resolution_attempts(attempts) {}
 
 std::optional<std::string> ServiceResponse::GetResult(const std::string &name) {
   if (m_result_values.contains(name)) {

@@ -35,14 +35,14 @@ public:
       : topic{std::move(topic)}, m_id{common::uuid::UuidGenerator::Random()} {};
   virtual ~Event() = default;
 
-  std::string GetId() const noexcept;
+  std::string GetId() const ;
   template <typename T> void SetPayload(const std::string &key, T value);
   template <typename T>
   std::optional<T> GetPayload(const std::string &key) const;
   const std::string &GetTopic() const;
 };
 
-inline std::string Event::GetId() const noexcept { return m_id; }
+inline std::string Event::GetId() const  { return m_id; }
 
 template <typename T>
 inline void Event::SetPayload(const std::string &key, T value) {

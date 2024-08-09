@@ -32,7 +32,7 @@ public:
    * @return a service stub, if the service exists, when it has been resolved
    */
   virtual std::future<std::optional<SharedServiceCaller>>
-  Find(const std::string &name, bool only_local = false) noexcept = 0;
+  Find(const std::string &name, bool only_local = false)  = 0;
 
   virtual ~IServiceRegistry() = default;
 };

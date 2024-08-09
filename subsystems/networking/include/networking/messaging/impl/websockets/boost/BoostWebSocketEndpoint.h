@@ -12,7 +12,7 @@
 
 namespace hive::networking::messaging::websockets {
 
-DECLARE_EXCEPTION(NoSuchPeerException);
+DECLARE_EXCEPTION(NoSuchEndpointException);
 
 /**
  * This implementation of IWebSocketServer uses WebSocket++ to provide
@@ -80,7 +80,7 @@ private:
    * pointers that can be removed.
    * @param type message type name of consumers to clean up
    */
-  void CleanUpConsumersOfMessageType(const std::string &type) noexcept;
+  void CleanUpConsumersOfMessageType(const std::string &type) ;
 
   /**
    * Constructs a new connection object from a stream
@@ -116,20 +116,20 @@ public:
   void AddMessageConsumer(std::weak_ptr<IMessageConsumer> consumer) override;
 
   std::list<SharedMessageConsumer>
-  GetConsumersOfMessageType(const std::string &type_name) noexcept override;
+  GetConsumersOfMessageType(const std::string &type_name)  override;
 
   std::future<void> Send(const std::string &node_id,
                          SharedMessage message) override;
 
   std::future<ConnectionInfo>
-  EstablishConnectionTo(const std::string &uri) noexcept override;
+  EstablishConnectionTo(const std::string &uri)  override;
 
-  void CloseConnectionTo(const std::string &node_id) noexcept override;
+  void CloseConnectionTo(const std::string &node_id)  override;
 
   std::future<size_t>
   IssueBroadcastAsJob(const SharedMessage &message) override;
 
-  bool HasConnectionTo(const std::string &node_id) const noexcept override;
+  bool HasConnectionTo(const std::string &node_id) const  override;
 
   size_t GetActiveConnectionCount() const override;
 };

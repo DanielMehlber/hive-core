@@ -25,26 +25,54 @@ bool RemoteServiceExecutor::IsCallable() {
   }
 }
 
+std::string get_exception_string(const std::exception_ptr &ptr) {
+  try {
+    std::rethrow_exception(ptr);
+  } catch (const std::exception &e) {
+    return e.what();
+  } catch (...) {
+    return "unknown exception";
+  }
+}
+
 std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
     SharedServiceRequest request,
     common::memory::Borrower<jobsystem::JobManager> job_manager, bool async) {
 
+  DEBUG_ASSERT(request != nullptr, "request should not be null")
+  DEBUG_ASSERT(!request->GetServiceName().empty(),
+               "service name should not be empty")
+  DEBUG_ASSERT(!request->GetTransactionId().empty(),
+               "service transaction id should not be empty")
+  DEBUG_ASSERT(
+      !request->IsCurrentlyProcessed(),
+      "double using requests is prohibited while it is still pending because "
+      "of the identical transaction id. Duplicate the requests instead before "
+      "second use.")
+
   auto promise = std::make_shared<std::promise<SharedServiceResponse>>();
   std::future<SharedServiceResponse> future = promise->get_future();
-  SharedJob job = jobsystem::JobSystemFactory::CreateJob(
-      [_this = shared_from_this(), request, promise](JobContext *context) {
-        if (_this->IsCallable()) {
+
+  SharedJob job = std::make_shared<Job>(
+      [executor = shared_from_this(), request,
+       promise](JobContext *context) mutable {
+        if (executor->IsCallable()) {
           LOG_DEBUG("calling remote web-socket service '"
                     << request->GetServiceName() << "' at node "
-                    << _this->m_remote_host_info.endpoint_id)
+                    << executor->m_remote_host_info.endpoint_id)
 
-          if (!_this->m_response_consumer.expired()) {
+          if (!executor->m_response_consumer.expired()) {
             /* pass the promise (resolving the service request) to the response
             consumer. When its response arrives, the request promise will be
             resolved. */
-            _this->m_response_consumer.lock()->AddResponsePromise(
-                request->GetTransactionId(), _this->m_remote_host_info,
-                std::move(*promise));
+            DEBUG_ASSERT(
+                !request->IsCurrentlyProcessed(),
+                "double processing the same request while it's still pending "
+                "is prohibited. Duplicate the request for that purpose or wait "
+                "until it has been resolved once.")
+            request->MarkAsCurrentlyProcessed(true);
+            executor->m_response_consumer.lock()->AddResponsePromise(
+                request, executor->m_remote_host_info, promise);
           } else {
             LOG_ERR("cannot receive response to service request "
                     << request->GetTransactionId() << " of service "
@@ -54,14 +82,16 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
                 CallFailedException, "called remote web-socket service, but "
                                      "cannot receive response because "
                                      "its consumer has been destroyed");
+            request->MarkAsCurrentlyProcessed(false);
             promise->set_exception(std::make_exception_ptr(exception));
           }
 
           SharedMessage message =
               RemoteServiceMessagesConverter::FromServiceRequest(*request);
 
-          std::future<void> sending_progress = _this->m_endpoint.Borrow()->Send(
-              _this->m_remote_host_info.endpoint_id, message);
+          std::future<void> sending_progress =
+              executor->m_endpoint.Borrow()->Send(
+                  executor->m_remote_host_info.endpoint_id, message);
 
           // wait until request has been sent and register promise for
           // resolution
@@ -70,40 +100,38 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
           try {
             // check if sending was successful (or threw exception)
             sending_progress.get();
-          } catch (std::exception &sending_exception) {
-            auto maybe_promise =
-                _this->m_response_consumer.lock()->RemoveResponsePromise(
-                    request->GetTransactionId());
+          } catch (...) {
+            std::string what = get_exception_string(std::current_exception());
+            executor->m_response_consumer.lock()->RemoveResponsePromise(
+                request->GetTransactionId());
 
-            if (maybe_promise.has_value()) {
-              auto response_promise = std::move(maybe_promise.value());
-              LOG_ERR("failed to call remote service '"
-                      << request->GetServiceName() << "' of node "
-                      << _this->m_remote_host_info.endpoint_id << " at "
-                      << _this->m_remote_host_info.hostname << ": "
-                      << sending_exception.what())
-              auto except = BUILD_EXCEPTION(
-                  CallFailedException,
-                  "failed to call remote service '"
-                      << request->GetServiceName() << "' of node "
-                      << _this->m_remote_host_info.endpoint_id << " at "
-                      << _this->m_remote_host_info.hostname << ": "
-                      << sending_exception.what());
+            LOG_ERR("failed to call remote service '"
+                    << request->GetServiceName() << "' of node "
+                    << executor->m_remote_host_info.endpoint_id << " at "
+                    << executor->m_remote_host_info.hostname << ": " << what)
+            auto except = BUILD_EXCEPTION(
+                CallFailedException,
+                "failed to call remote service '"
+                    << request->GetServiceName() << "' of node "
+                    << executor->m_remote_host_info.endpoint_id << " at "
+                    << executor->m_remote_host_info.hostname << ": " << what);
 
-              response_promise.set_exception(std::make_exception_ptr(except));
-            }
+            request->MarkAsCurrentlyProcessed(false);
+            promise->set_exception(std::make_exception_ptr(except));
           }
         } else {
           LOG_ERR("cannot call remote web-socket service "
                   << request->GetServiceName() << " of node "
-                  << _this->m_remote_host_info.endpoint_id << " at "
-                  << _this->m_remote_host_info.hostname)
+                  << executor->m_remote_host_info.endpoint_id << " at "
+                  << executor->m_remote_host_info.hostname)
           auto exception = BUILD_EXCEPTION(
               CallFailedException,
               "cannot call remote web-socket service "
                   << request->GetServiceName() << " of node "
-                  << _this->m_remote_host_info.endpoint_id << " at "
-                  << _this->m_remote_host_info.hostname);
+                  << executor->m_remote_host_info.endpoint_id << " at "
+                  << executor->m_remote_host_info.hostname);
+
+          request->MarkAsCurrentlyProcessed(false);
           promise->set_exception(std::make_exception_ptr(exception));
         }
         return JobContinuation::DISPOSE;

@@ -15,7 +15,7 @@ public:
   events::SharedEvent GetEvent() const;
 
   std::string GetEndpointId() const;
-  void SetEndpointId(const std::string &peer_id);
+  void SetEndpointId(const std::string &endpoint_id);
 
   static constexpr const char *c_event_name = "connection-closed";
 };
@@ -28,8 +28,9 @@ inline std::string ConnectionClosedEvent::GetEndpointId() const {
   return m_event->GetPayload<std::string>("endpoint-id").value();
 }
 
-inline void ConnectionClosedEvent::SetEndpointId(const std::string &peer_id) {
-  m_event->SetPayload<std::string>("endpoint-id", peer_id);
+inline void
+ConnectionClosedEvent::SetEndpointId(const std::string &endpoint_id) {
+  m_event->SetPayload<std::string>("endpoint-id", endpoint_id);
 }
 
 } // namespace hive::networking

@@ -4,6 +4,7 @@
 #include "graphics/service/SimpleViewMatrix.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
+#include "logging/LogManager.h"
 
 using namespace hive;
 using namespace hive::graphics;

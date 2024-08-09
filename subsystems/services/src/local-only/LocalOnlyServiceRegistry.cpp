@@ -31,7 +31,7 @@ void LocalOnlyServiceRegistry::Unregister(const std::string &name) {
 
 std::future<std::optional<SharedServiceCaller>>
 LocalOnlyServiceRegistry::Find(const std::string &name,
-                               bool only_local) noexcept {
+                               bool only_local)  {
   std::promise<std::optional<SharedServiceCaller>> promise;
   std::future<std::optional<SharedServiceCaller>> future = promise.get_future();
 

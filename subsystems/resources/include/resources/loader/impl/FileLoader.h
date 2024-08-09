@@ -15,7 +15,7 @@ public:
    * request.
    * @return id of this loader
    */
-  const std::string &GetId() const noexcept override;
+  const std::string &GetId() const  override;
 
   /**
    * Loads some resource of arbitrary type (e.g. from filesystem or
@@ -30,7 +30,7 @@ public:
   SharedResource Load(const std::string &uri) override;
 };
 
-inline const std::string &FileLoader::GetId() const noexcept {
+inline const std::string &FileLoader::GetId() const  {
   static std::string id = "file";
   return id;
 }

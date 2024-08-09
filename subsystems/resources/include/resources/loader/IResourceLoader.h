@@ -20,7 +20,7 @@ public:
    * request.
    * @return id of this loader
    */
-  virtual const std::string &GetId() const noexcept = 0;
+  virtual const std::string &GetId() const  = 0;
 
   /**
    * Loads some resource of arbitrary type (e.g. from filesystem or

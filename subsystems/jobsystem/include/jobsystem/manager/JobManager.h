@@ -12,7 +12,6 @@
 #include "jobsystem/job/Job.h"
 #include "jobsystem/job/TimerJob.h"
 #include "jobsystem/synchronization/JobMutex.h"
-#include "logging/LogManager.h"
 #include <set>
 #include <utility>
 
@@ -127,13 +126,14 @@ public:
   JobManager(JobManager &other) = delete;
 
   /**
-   * Starts the job system execution cycle.
-   * @note This must be called after the job system has been initialized.
+   * Activate the job system execution. Jobs will be processed when passed to
+   * the execution.
    */
   void StartExecution();
 
   /**
-   * Stops the job system execution cycle.
+   * Stops the job system execution cycle. Jobs will not be processed, even when
+   * passed to the execution. They will simply pile up.
    */
   void StopExecution();
 
@@ -152,7 +152,8 @@ public:
 
   /**
    * Ensures that a job which is not yet in execution will not be
-   * executed (again)
+   * executed (again). It will be renoved from the queue or intercepted before
+   * it can requeue.
    * @param job_id id of this job
    */
   void DetachJob(const std::string &job_id);
@@ -166,8 +167,9 @@ public:
   void KickJobForNextCycle(const SharedJob &job);
 
   /**
-   * Starts a new execution cycle and passes queued jobs to the
-   * execution. The calling thread will be blocked until the cycle has finished.
+   * Starts a new execution cycle and passes queued jobs to the execution. The
+   * calling thread will be blocked until all synchronous jobs are done.
+   * @attention Asynchronous jobs will not be waited for.
    */
   void InvokeCycleAndWait();
 
@@ -179,7 +181,7 @@ public:
    * @note On single-threaded implementations, this cannot be called from inside
    * a job because it would deadlock the worker thread.
    */
-  void WaitForCompletion(std::shared_ptr<IJobWaitable> counter);
+  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
 
   /**
    * Execution of the calling party will wait (or will be deferred,
@@ -193,6 +195,24 @@ public:
   void WaitForCompletion(const std::future<FutureType> &future);
 
   /**
+   * Execution of the calling party will wait (or will be deferred,
+   * depending on the execution environment) until the passed future has been
+   * resolved.
+   * @tparam FutureType type of the future object
+   * @param future future that must resolve in order for the calling party to
+   * continue.
+   */
+  template <typename FutureType>
+  void WaitForCompletion(const std::shared_future<FutureType> &future);
+
+  /**
+   * Wait for a fixed amount of time before continuing the job's execution.
+   * @param duration duration to wait before continuing.
+   */
+  template <typename Rep, typename Period>
+  void WaitForDuration(std::chrono::duration<Rep, Period> duration);
+
+  /**
    * Return total count of cycles that have been completed
    * @return total count of cycles
    */
@@ -200,14 +220,24 @@ public:
 };
 
 inline void
-JobManager::WaitForCompletion(std::shared_ptr<IJobWaitable> counter) {
-  m_execution.WaitForCompletion(std::move(counter));
+JobManager::WaitForCompletion(std::shared_ptr<IJobWaitable> waitable) {
+  m_execution.WaitForCompletion(std::move(waitable));
 }
 
 template <typename FutureType>
-inline void
-JobManager::WaitForCompletion(const std::future<FutureType> &future) {
+void JobManager::WaitForCompletion(const std::future<FutureType> &future) {
   m_execution.WaitForCompletion(future);
+}
+
+template <typename FutureType>
+void JobManager::WaitForCompletion(
+    const std::shared_future<FutureType> &future) {
+  m_execution.WaitForCompletion(future);
+}
+
+template <typename Rep, typename Period>
+void JobManager::WaitForDuration(std::chrono::duration<Rep, Period> duration) {
+  m_execution.WaitForDuration(duration);
 }
 
 } // namespace hive::jobsystem

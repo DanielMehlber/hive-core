@@ -25,16 +25,15 @@ public:
   explicit RemoteServiceRegistrationConsumer(
       std::function<void(SharedServiceExecutor)> consumer,
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
-      common::memory::Reference<IMessageEndpoint> web_socket_peer);
+      common::memory::Reference<IMessageEndpoint> messaging_endpoint);
 
-  std::string GetMessageType() const noexcept override;
+  std::string GetMessageType() const override;
 
   void ProcessReceivedMessage(SharedMessage received_message,
-                              ConnectionInfo connection_info) noexcept override;
+                              ConnectionInfo connection_info) override;
 };
 
-inline std::string
-RemoteServiceRegistrationConsumer::GetMessageType() const noexcept {
+inline std::string RemoteServiceRegistrationConsumer::GetMessageType() const {
   return MESSAGE_TYPE_REMOTE_SERVICE_REGISTRATION;
 }
 } // namespace hive::services::impl

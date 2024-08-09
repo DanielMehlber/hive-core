@@ -1,4 +1,5 @@
 #include "events/broker/impl/JobBasedEventBroker.h"
+#include "logging/LogManager.h"
 
 using namespace hive::events;
 using namespace hive::events::brokers;
