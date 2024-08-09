@@ -438,7 +438,7 @@ TEST(ServiceTest, service_executor_busy) {
   // first call keeps service busy (remember: a single active call is allowed)
   auto future_response_resolve =
       caller->IssueCallAsJob(request, calling_node.job_manager.Borrow(), false,
-                             true, BUSY_RESPONSE_RETURN);
+                             true, RETRY_POLICY_NONE);
 
   // let the first call be processed. Continue when its waiting.
   TryAssertUntilTimeout(
@@ -453,7 +453,7 @@ TEST(ServiceTest, service_executor_busy) {
   // second call should return that the service is busy
   auto future_response_busy = caller->IssueCallAsJob(
       request->Duplicate(), calling_node.job_manager.Borrow(), false, true,
-      BUSY_RESPONSE_RETURN);
+      RETRY_POLICY_NONE);
 
   // wait until the second call has returned its busy status
   TryAssertUntilTimeout(

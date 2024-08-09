@@ -3,7 +3,7 @@
 #include "common/exceptions/ExceptionsBase.h"
 #include "common/memory/ExclusiveOwnership.h"
 #include "jobsystem/manager/JobManager.h"
-#include "services/caller/ExecutorBusyBehavior.h"
+#include "services/caller/CallRetryPolicy.h"
 #include "services/executor/IServiceExecutor.h"
 #include <future>
 #include <vector>
@@ -31,7 +31,7 @@ public:
    * @param async if the call should be executed asynchronously. If
    * executed synchronously, it will block the execution cycle until the
    * request has been resolved.
-   * @param busy_response behavior to implement if the called executor
+   * @param retry_on_busy behavior to implement if the called executor
    * is busy.
    * @return future response from service
    */
@@ -39,7 +39,7 @@ public:
   IssueCallAsJob(SharedServiceRequest request,
                  common::memory::Borrower<jobsystem::JobManager> job_manager,
                  bool only_local = false, bool async = false,
-                 ExecutorBusyBehavior busy_response = BUSY_RESPONSE_RETURN) = 0;
+                 CallRetryPolicy retry_on_busy = RETRY_POLICY_NONE) = 0;
 
   /**
    * Checks if there are currently callable and usable service executions

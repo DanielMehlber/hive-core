@@ -2,6 +2,7 @@
 #include "boost/core/demangle.hpp"
 #include "common/profiling/Timer.h"
 #include "common/profiling/TimerManager.h"
+#include "logging/LogManager.h"
 #include <sstream>
 
 using namespace hive::jobsystem;

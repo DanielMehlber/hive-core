@@ -169,7 +169,7 @@ public:
   /**
    * Starts a new execution cycle and passes queued jobs to the execution. The
    * calling thread will be blocked until all synchronous jobs are done.
-   * @attention Asynchronous functions will not be waited for.
+   * @attention Asynchronous jobs will not be waited for.
    */
   void InvokeCycleAndWait();
 

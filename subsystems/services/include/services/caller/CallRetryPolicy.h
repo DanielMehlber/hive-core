@@ -11,7 +11,7 @@ using namespace std::chrono_literals;
 /**
  * Describes the behavior of a caller when the called service executor is busy.
  */
-struct ExecutorBusyBehavior {
+struct CallRetryPolicy {
   /** maximum amount of retries before simply returning the busy response */
   size_t max_retries;
 
@@ -25,14 +25,14 @@ struct ExecutorBusyBehavior {
 /**
  * Does not retry and directly returns the response.
  */
-constexpr ExecutorBusyBehavior BUSY_RESPONSE_RETURN{
+constexpr CallRetryPolicy RETRY_POLICY_NONE{
     .max_retries = 0, .retry_interval = 0s, .try_next_executor = false};
 
 /**
  * Continues immediately with the next executor in line for another 3 times
  * before returning the busy response.
  */
-constexpr ExecutorBusyBehavior BUSY_RESPONSE_NEXT{
+constexpr CallRetryPolicy RETRY_POLICY_TRY_NEXT{
     .max_retries = 3,
     .retry_interval = std::chrono::milliseconds(0),
     .try_next_executor = true};
@@ -40,7 +40,7 @@ constexpr ExecutorBusyBehavior BUSY_RESPONSE_NEXT{
 /**
  * Retries the same executor 3 times before returning the busy response.
  */
-constexpr ExecutorBusyBehavior BUSY_RESPONSE_RETRY_SAME{
+constexpr CallRetryPolicy RETRY_POLICY_RETRY_SAME{
     .max_retries = 3,
     .retry_interval = std::chrono::milliseconds(1000),
     .try_next_executor = false};

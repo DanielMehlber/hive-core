@@ -1,5 +1,6 @@
 #include "services/executor/impl/LocalServiceExecutor.h"
 #include "common/uuid/UuidGenerator.h"
+#include "logging/LogManager.h"
 #include "services/registry/impl/remote/RemoteExceptions.h"
 
 using namespace hive::services;

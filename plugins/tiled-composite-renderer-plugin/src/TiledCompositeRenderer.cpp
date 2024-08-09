@@ -4,6 +4,7 @@
 #include "graphics/service/SimpleViewMatrix.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "jobsystem/manager/JobManager.h"
+#include "logging/LogManager.h"
 #include "services/registry/IServiceRegistry.h"
 
 using namespace std::chrono_literals;

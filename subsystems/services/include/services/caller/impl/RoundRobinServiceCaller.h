@@ -25,7 +25,7 @@ private:
    * @param promise promise that resolves the response future passed to the
    * caller
    * @param job_manager job manager that will execute the call job
-   * @param busy_behavior behavior to apply if an executor refuses processing
+   * @param retry_on_busy behavior to apply if an executor refuses processing
    * the request because it is too busy
    * @param only_local if true, only local jobs (running on the same instance)
    * will be considered and called. Remote services will be ignored.
@@ -42,7 +42,7 @@ private:
       SharedServiceRequest request,
       std::shared_ptr<std::promise<SharedServiceResponse>> promise,
       common::memory::Borrower<jobsystem::JobManager> job_manager,
-      ExecutorBusyBehavior busy_behavior, bool only_local = false,
+      CallRetryPolicy retry_on_busy, bool only_local = false,
       bool async = false,
       std::optional<SharedServiceExecutor> maybe_executor = {},
       int attempt_number = 0);
@@ -52,7 +52,7 @@ public:
   IssueCallAsJob(SharedServiceRequest request,
                  common::memory::Borrower<jobsystem::JobManager> job_manager,
                  bool only_local, bool async,
-                 ExecutorBusyBehavior busy_behavior) override;
+                 CallRetryPolicy retry_on_busy) override;
 
   bool IsCallable() const override;
 

@@ -1,6 +1,7 @@
 #undef min
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "jobsystem/manager/JobManager.h"
+#include "logging/LogManager.h"
 #include "services/registry/impl/remote/RemoteExceptions.h"
 
 #include <cmath>
@@ -46,7 +47,7 @@ SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
     SharedServiceRequest request,
     std::shared_ptr<std::promise<SharedServiceResponse>> promise,
     common::memory::Borrower<jobsystem::JobManager> job_manager,
-    ExecutorBusyBehavior busy_behavior, bool only_local, bool async,
+    CallRetryPolicy retry_on_busy, bool only_local, bool async,
     std::optional<SharedServiceExecutor> maybe_executor, int attempt_number) {
 
   DEBUG_ASSERT(request != nullptr, "request should not be null")
@@ -59,7 +60,7 @@ SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
 
   SharedJob job = std::make_shared<Job>(
       [caller = shared_from_this(), promise, request, only_local, job_manager,
-       attempt_number, busy_behavior, async,
+       attempt_number, retry_on_busy, async,
        maybe_executor](JobContext *context) mutable {
         // if no executor is specified, select one
         if (!maybe_executor.has_value()) {
@@ -83,17 +84,17 @@ SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
 
             // if called executor is busy, react using busy behavior
             if (response->GetStatus() == ServiceResponseStatus::BUSY) {
-              if (busy_behavior.max_retries > attempt_number) {
+              if (retry_on_busy.max_retries > attempt_number) {
 
                 // wait before retrying
-                job_manager->WaitForDuration(busy_behavior.retry_interval);
+                job_manager->WaitForDuration(retry_on_busy.retry_interval);
 
-                if (busy_behavior.try_next_executor) {
+                if (retry_on_busy.try_next_executor) {
                   maybe_executor.reset();
                 }
 
                 SharedJob retry_call = caller->BuildServiceCallJob(
-                    request, promise, job_manager, busy_behavior, only_local,
+                    request, promise, job_manager, retry_on_busy, only_local,
                     async, maybe_executor, attempt_number + 1);
 
                 job_manager->KickJob(retry_call);
@@ -132,13 +133,13 @@ SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
 std::future<SharedServiceResponse> RoundRobinServiceCaller::IssueCallAsJob(
     SharedServiceRequest request,
     common::memory::Borrower<JobManager> job_manager, bool only_local,
-    bool async, ExecutorBusyBehavior busy_behavior) {
+    bool async, CallRetryPolicy retry_on_busy) {
 
   auto promise = std::make_shared<std::promise<SharedServiceResponse>>();
   std::future<SharedServiceResponse> future = promise->get_future();
 
   SharedJob job = BuildServiceCallJob(request, promise, job_manager,
-                                      busy_behavior, only_local, async);
+                                      retry_on_busy, only_local, async);
 
   job_manager->KickJob(job);
   return future;

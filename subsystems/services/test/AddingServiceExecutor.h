@@ -1,5 +1,6 @@
 #pragma once
 
+#include "logging/LogManager.h"
 #include "services/executor/impl/LocalServiceExecutor.h"
 
 using namespace std::placeholders;

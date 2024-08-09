@@ -2,6 +2,7 @@
 #include "common/assert/Assert.h"
 #include "common/profiling/Timer.h"
 #include "jobsystem/manager/JobManager.h"
+#include "logging/LogManager.h"
 
 using namespace hive::jobsystem::execution::impl;
 using namespace hive::jobsystem::job;
