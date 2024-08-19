@@ -50,7 +50,7 @@ private:
    */
   const std::shared_ptr<boost::asio::ip::tcp::endpoint> m_local_endpoint;
 
-  /** UUID of this node in the cluster required for node handshake */
+  /** UUID of this node in the hive required for node handshake */
   const std::string m_this_node_uuid;
 
   /**

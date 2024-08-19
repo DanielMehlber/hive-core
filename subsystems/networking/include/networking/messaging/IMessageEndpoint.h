@@ -42,7 +42,7 @@ public:
    * Sends a message to an endpoint associated with the id.
    * @attention If there is no existing connection with the node,
    * this operation will try to establish the connection.
-   * @param node_id unique identifier of a node in the cluster. There must be a
+   * @param node_id unique identifier of a node in the hive. There must be a
    * connection between this endpoint and the node with this id.
    * @param message message that should be sent
    * @return a future indicating the completion of the sending process or
@@ -80,7 +80,7 @@ public:
 
   /**
    * Closes a connection to an endpoint (if the connection is still open).
-   * @param node_id unique identifier of a node in the cluster.
+   * @param node_id unique identifier of a node in the hive.
    * @note connections that are not established will be ignored.
    */
   virtual void CloseConnectionTo(const std::string &node_id)  = 0;
@@ -88,7 +88,7 @@ public:
   /**
    * Checks if this endpoint is currently connected to another one with this
    * id.
-   * @param node_id unique identifier of a node in the cluster.
+   * @param node_id unique identifier of a node in the hive.
    * @return true, if there is an established connection to this host
    */
   virtual bool HasConnectionTo(const std::string &node_id) const  = 0;

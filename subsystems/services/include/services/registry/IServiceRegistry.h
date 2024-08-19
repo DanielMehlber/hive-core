@@ -41,6 +41,7 @@ public:
   /**
    * Tries to find a service in the registry asynchronously.
    * @param name unique service name
+   * @param only_local if only local services should be considered for execution
    * @return a service stub, if the service exists, when it has been resolved
    */
   virtual std::future<std::optional<SharedServiceCaller>>

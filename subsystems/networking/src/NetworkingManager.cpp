@@ -44,5 +44,5 @@ void NetworkingManager::ConfigureNode(
   property_provider->Set("net.node.id", node_id);
 
   LOG_INFO("this node is online and identifies as " << node_id
-                                                    << " in the cluster")
+                                                    << " in the hive")
 }
