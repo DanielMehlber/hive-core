@@ -1,8 +1,8 @@
 #pragma once
 
 #include "common/config/Configuration.h"
+#include "common/memory/ExclusiveOwnership.h"
 #include "jobsystem/execution/IJobExecution.h"
-#include <condition_variable>
 #include <future>
 #include <memory>
 #include <thread>
@@ -22,11 +22,10 @@ namespace hive::jobsystem::execution::impl {
  * share their work. When a job yields, the fiber it's running on might be
  * executed on a different thread after it has been revoked as last time.
  */
-class BoostFiberExecution
-    : jobsystem::execution::IJobExecution<BoostFiberExecution> {
+class BoostFiberExecution : IJobExecution<BoostFiberExecution> {
 private:
   common::config::SharedConfiguration m_config;
-  jobsystem::execution::JobExecutionState m_current_state{STOPPED};
+  JobExecutionState m_current_state{STOPPED};
 
   int m_worker_thread_count;
 
@@ -44,7 +43,7 @@ private:
    * @note This is set when starting the execution and cleared when the
    * execution has stopped.
    */
-  common::memory::Reference<JobManager> m_managing_instance;
+  common::memory::Reference<jobsystem::JobManager> m_managing_instance;
 
   void Init();
   void ShutDown();
@@ -67,7 +66,7 @@ public:
    * Schedules the job for execution
    * @param job job to be executed.
    */
-  void Schedule(std::shared_ptr<Job> job);
+  void Schedule(const std::shared_ptr<jobsystem::Job> &job);
 
   /**
    * Wait for the counter to become 0. The implementation can vary
@@ -77,7 +76,7 @@ public:
    * block the only execution thread)
    * @param waitable counter to wait for
    */
-  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
+  void WaitForCompletion(const std::shared_ptr<IJobWaitable> &waitable);
 
   /**
    * Execution of the calling party will wait (or will be deferred,

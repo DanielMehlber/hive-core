@@ -16,6 +16,7 @@ using namespace hive::services;
 using namespace hive::services::impl;
 using namespace hive::networking;
 using namespace hive::common::test;
+using namespace hive::networking::messaging;
 
 struct Node {
   std::string uuid;

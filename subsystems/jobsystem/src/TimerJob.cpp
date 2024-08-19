@@ -1,8 +1,6 @@
+#include "jobsystem/jobs/TimerJob.h"
 
-
-#include "jobsystem/job/TimerJob.h"
-
-using namespace hive::jobsystem::job;
+using namespace hive::jobsystem;
 
 TimerJob::TimerJob(std::function<JobContinuation(JobContext *)> workload,
                    const std::string &id, std::chrono::duration<double> time,

@@ -1,20 +1,24 @@
 #include "services/executor/impl/RemoteServiceExecutor.h"
-#include "common/uuid/UuidGenerator.h"
+#include "logging/LogManager.h"
+#include "services/registry/impl/remote/RemoteExceptions.h"
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
 
 using namespace hive::services::impl;
 using namespace hive::services;
 using namespace hive::jobsystem;
+using namespace hive::networking::messaging;
 
 RemoteServiceExecutor::RemoteServiceExecutor(
     std::string service_name,
     common::memory::Reference<IMessageEndpoint> endpoint,
     ConnectionInfo remote_host_info, std::string id,
-    std::weak_ptr<RemoteServiceResponseConsumer> response_consumer)
+    std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
+    size_t capacity)
     : m_endpoint(std::move(endpoint)),
       m_remote_host_info(std::move(remote_host_info)),
       m_service_name(std::move(service_name)),
-      m_response_consumer(std::move(response_consumer)), m_id(std::move(id)) {}
+      m_response_consumer(std::move(response_consumer)), m_id(std::move(id)),
+      m_capacity(capacity) {}
 
 bool RemoteServiceExecutor::IsCallable() {
   if (auto maybe_endpoint = m_endpoint.TryBorrow()) {
@@ -141,5 +145,3 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
   job_manager->KickJob(job);
   return future;
 }
-
-std::string RemoteServiceExecutor::GetServiceName() { return m_service_name; }

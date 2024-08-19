@@ -3,6 +3,7 @@
 
 using namespace hive::services::impl;
 using namespace hive::services;
+using namespace hive::networking::messaging;
 
 std::optional<SharedServiceResponse>
 RemoteServiceMessagesConverter::ToServiceResponse(Message &&message) {

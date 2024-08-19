@@ -7,10 +7,9 @@
 
 #include "JobManagerState.h"
 #include "common/config/Configuration.h"
-#include "jobsystem/JobSystemFactory.h"
 #include "jobsystem/execution/IJobExecution.h"
-#include "jobsystem/job/Job.h"
-#include "jobsystem/job/TimerJob.h"
+#include "jobsystem/jobs/Job.h"
+#include "jobsystem/jobs/TimerJob.h"
 #include "jobsystem/synchronization/JobMutex.h"
 #include <set>
 #include <utility>

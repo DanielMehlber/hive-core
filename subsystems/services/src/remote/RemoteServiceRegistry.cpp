@@ -1,5 +1,7 @@
 #include "services/registry/impl/remote/RemoteServiceRegistry.h"
 #include "common/assert/Assert.h"
+#include "events/broker/IEventBroker.h"
+#include "logging/LogManager.h"
 #include "networking/messaging/events/ConnectionEstablishedEvent.h"
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "services/messages/ServiceRegisteredNotification.h"
@@ -9,6 +11,8 @@ using namespace hive;
 using namespace hive::services;
 using namespace hive::services::impl;
 using namespace std::placeholders;
+using namespace hive::networking::messaging;
+using namespace hive::jobsystem;
 
 void broadcastServiceRegistration(
     common::memory::Reference<IMessageEndpoint> weak_sender,
@@ -23,13 +27,15 @@ void broadcastServiceRegistration(
   DEBUG_ASSERT(executor->IsLocal(),
                "only local services can be offered to others")
 
-  SharedJob job = jobsystem::JobSystemFactory::CreateJob(
+  SharedJob job = std::make_shared<Job>(
       [weak_sender, executor](jobsystem::JobContext *context) mutable {
         if (auto maybe_sender = weak_sender.TryBorrow()) {
           auto sender = maybe_sender.value();
+
           RemoteServiceRegistrationMessage registration;
           registration.SetServiceName(executor->GetServiceName());
           registration.SetId(executor->GetId());
+          registration.SetCapacity(executor->GetCapacity());
 
           std::future<size_t> progress =
               sender->IssueBroadcastAsJob(registration.GetMessage());
@@ -81,7 +87,8 @@ void RemoteServiceRegistry::Register(const SharedServiceExecutor &executor) {
 
     std::unique_lock lock(m_registered_callers_mutex);
     if (!m_registered_callers.contains(name)) {
-      m_registered_callers[name] = std::make_shared<RoundRobinServiceCaller>();
+      m_registered_callers[name] =
+          std::make_shared<RoundRobinServiceCaller>(name);
     }
 
     if (executor->IsLocal()) {
@@ -108,7 +115,7 @@ void RemoteServiceRegistry::Register(const SharedServiceExecutor &executor) {
   }
 }
 
-void RemoteServiceRegistry::Unregister(const std::string &name) {
+void RemoteServiceRegistry::UnregisterAll(const std::string &name) {
   DEBUG_ASSERT(!name.empty(), "name should not be empty")
 
   std::unique_lock lock(m_registered_callers_mutex);
@@ -140,6 +147,15 @@ void RemoteServiceRegistry::Unregister(const std::string &name) {
              << name
              << "' from the remote service registry: required subsystems are "
                 "not available or have been shut down")
+  }
+}
+
+void RemoteServiceRegistry::Unregister(const std::string &executor_id) {
+  DEBUG_ASSERT(!executor_id.empty(), "executor id should not be empty")
+
+  std::unique_lock lock(m_registered_callers_mutex);
+  for (auto &[service_name, caller] : m_registered_callers) {
+    caller->RemoveExecutor(executor_id);
   }
 }
 
@@ -235,6 +251,11 @@ void RemoteServiceRegistry::SetupMessageConsumers() {
   web_socket_endpoint->AddMessageConsumer(m_request_consumer);
 }
 
+void RemoteServiceRegistry::Unregister(const SharedServiceExecutor &executor) {
+  DEBUG_ASSERT(executor != nullptr, "executor should not be null")
+  Unregister(executor->GetId());
+}
+
 void RemoteServiceRegistry::SendServicePortfolioToEndpoint(
     const std::string &endpoint_id) {
 
@@ -269,7 +290,7 @@ void RemoteServiceRegistry::SendServicePortfolioToEndpoint(
       // only offer locally provided services to other nodes.
       std::string service_id = executor->GetId();
       auto job = CreateRemoteServiceRegistrationJob(
-          endpoint_id, service_name, service_id,
+          endpoint_id, service_name, service_id, executor->GetCapacity(),
           this_message_endpoint.ToReference());
       job_manager->KickJob(job);
     }
@@ -278,7 +299,7 @@ void RemoteServiceRegistry::SendServicePortfolioToEndpoint(
 
 SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
     const std::string &endpoint_id, const std::string &service_name,
-    const std::string &service_id,
+    const std::string &service_id, size_t capacity,
     common::memory::Reference<networking::messaging::IMessageEndpoint>
         weak_endpoint) {
 
@@ -288,14 +309,15 @@ SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
   DEBUG_ASSERT(!service_id.empty(), "service id should not be empty")
 
   auto job = std::make_shared<Job>(
-      [weak_endpoint, endpoint_id, service_name,
-       service_id](jobsystem::JobContext *context) mutable {
+      [weak_endpoint, endpoint_id, service_name, service_id,
+       capacity](jobsystem::JobContext *context) mutable {
         if (auto maybe_endpoint = weak_endpoint.TryBorrow()) {
           auto this_endpoint = maybe_endpoint.value();
 
           RemoteServiceRegistrationMessage registration;
           registration.SetServiceName(service_name);
           registration.SetId(service_id);
+          registration.SetCapacity(capacity);
 
           this_endpoint->Send(endpoint_id, registration.GetMessage());
 

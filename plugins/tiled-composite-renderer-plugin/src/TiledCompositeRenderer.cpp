@@ -9,6 +9,7 @@
 
 using namespace std::chrono_literals;
 using namespace hive;
+using namespace hive::jobsystem;
 
 TiledCompositeRenderer::TiledCompositeRenderer(
     const common::memory::Reference<common::subsystems::SubsystemManager>
@@ -137,7 +138,7 @@ bool TiledCompositeRenderer::Render() {
 
   auto service_caller = maybe_caller->get();
 
-  auto counter = std::make_shared<jobsystem::job::JobCounter>();
+  auto counter = std::make_shared<jobsystem::JobCounter>();
   for (int i = 0; i < m_tile_infos.size(); i++) {
 
     Tile current_tile = m_tile_infos[i];
@@ -163,7 +164,7 @@ bool TiledCompositeRenderer::Render() {
 
     auto rendering_service_request = request.GetRequest();
 
-    auto job = std::make_shared<jobsystem::job::Job>(
+    auto job = std::make_shared<jobsystem::Job>(
         [_this = ReferenceFromThis(), rendering_service_request,
          subsystems = m_subsystems, service_caller,
          i](jobsystem::JobContext *context) mutable {

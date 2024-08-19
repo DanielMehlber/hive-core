@@ -14,15 +14,17 @@ namespace hive::services::impl {
  */
 class LocalOnlyServiceRegistry : public services::IServiceRegistry {
 protected:
-  mutable jobsystem::mutex m_registered_services_mutex;
-  std::map<std::string, services::SharedServiceCaller> m_registered_services;
+  mutable jobsystem::mutex m_service_callers_mutex;
+  std::map<std::string, services::SharedServiceCaller> m_service_callers;
 
 public:
-  void Register(const services::SharedServiceExecutor &stub) override;
+  void Register(const services::SharedServiceExecutor &executor) override;
 
-  void Unregister(const std::string &name) override;
+  void UnregisterAll(const std::string &service_name) override;
+  void Unregister(const SharedServiceExecutor &executor) override;
+  void Unregister(const std::string &executor_id) override;
 
   std::future<std::optional<services::SharedServiceCaller>>
-  Find(const std::string &name, bool only_local)  override;
+  Find(const std::string &name, bool only_local) override;
 };
 } // namespace hive::services::impl

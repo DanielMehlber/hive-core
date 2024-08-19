@@ -24,7 +24,19 @@ public:
    * @param name of service
    * @attention This will remote all executors, both remote and local.
    */
-  virtual void Unregister(const std::string &name) = 0;
+  virtual void UnregisterAll(const std::string &name) = 0;
+
+  /**
+   * Unregister the service executor from this service registry.
+   * @param executor executor to unregister.
+   */
+  virtual void Unregister(const SharedServiceExecutor &executor) = 0;
+
+  /**
+   * Unregister the service executor from this service registry by its ID.
+   * @param executor_id id of the executor to unregister.
+   */
+  virtual void Unregister(const std::string &executor_id) = 0;
 
   /**
    * Tries to find a service in the registry asynchronously.
@@ -32,7 +44,7 @@ public:
    * @return a service stub, if the service exists, when it has been resolved
    */
   virtual std::future<std::optional<SharedServiceCaller>>
-  Find(const std::string &name, bool only_local = false)  = 0;
+  Find(const std::string &name, bool only_local = false) = 0;
 
   virtual ~IServiceRegistry() = default;
 };

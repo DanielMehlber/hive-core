@@ -1,6 +1,6 @@
 #pragma once
 
-namespace hive::jobsystem::job {
+namespace hive::jobsystem {
 
 /**
  * The job system has multiple phases of execution for each processing
@@ -26,4 +26,4 @@ enum JobExecutionPhase {
    */
   CLEAN_UP
 };
-} // namespace hive::jobsystem::job
+} // namespace hive::jobsystem

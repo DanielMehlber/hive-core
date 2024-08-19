@@ -8,6 +8,9 @@
 
 namespace hive::services {
 
+typedef int32_t capacity_t;
+#define UNLIMITED_CAPACITY (-1)
+
 /**
  * Generic interface for service executors which represent a single
  * service implementation
@@ -51,6 +54,14 @@ public:
   virtual bool IsLocal() = 0;
 
   /**
+   * Get max concurrent calls that this executor can process in parallel. Some
+   * services may be more heavy-weight than others and may need to limit the
+   * number of concurrent calls.
+   * @return capacity of concurrent calls of this service executor
+   */
+  virtual capacity_t GetCapacity() const = 0;
+
+  /**
    * Return unique ID of the underlying logical service. This allows services of
    * the same name to be distinguished from one another (e.g. by the caller).
    * @note Multiple executors referring to the same logical service must carry
@@ -59,6 +70,8 @@ public:
    * @return id of the logical service.
    */
   virtual std::string GetId() = 0;
+
+  virtual ~IServiceExecutor() = default;
 };
 
 typedef std::shared_ptr<IServiceExecutor> SharedServiceExecutor;

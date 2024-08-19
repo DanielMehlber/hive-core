@@ -1,5 +1,4 @@
-#include "jobsystem/job/Job.h"
-#include "common/uuid/UuidGenerator.h"
+#include "jobsystem/jobs/Job.h"
 #include "logging/LogManager.h"
 #include <chrono>
 
@@ -11,7 +10,7 @@ using namespace std::chrono_literals;
 
 #define JOB_DEADLINE 1s
 
-using namespace hive::jobsystem::job;
+using namespace hive::jobsystem;
 
 JobContinuation Job::Execute(JobContext *context) {
 #ifdef ENABLE_PROFILING

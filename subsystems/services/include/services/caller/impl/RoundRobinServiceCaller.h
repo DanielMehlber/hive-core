@@ -19,6 +19,9 @@ private:
   /** Last selected index (necessary for round robin) */
   size_t m_last_index{0};
 
+  /** service name of contained executors */
+  std::string m_service_name;
+
   /**
    * Builds a job for calling the service.
    * @param request request that will be passed to the selected executor
@@ -38,7 +41,7 @@ private:
    * Used to limit retry attempts.
    * @return
    */
-  SharedJob BuildServiceCallJob(
+  jobsystem::SharedJob BuildServiceCallJob(
       SharedServiceRequest request,
       std::shared_ptr<std::promise<SharedServiceResponse>> promise,
       common::memory::Borrower<jobsystem::JobManager> job_manager,
@@ -48,6 +51,9 @@ private:
       int attempt_number = 1);
 
 public:
+  RoundRobinServiceCaller() = delete;
+  explicit RoundRobinServiceCaller(std::string service_name);
+
   std::future<SharedServiceResponse>
   IssueCallAsJob(SharedServiceRequest request,
                  common::memory::Borrower<jobsystem::JobManager> job_manager,
@@ -58,9 +64,12 @@ public:
 
   bool ContainsLocallyCallable() const override;
 
-  void AddExecutor(SharedServiceExecutor executor) override;
+  void AddExecutor(const SharedServiceExecutor &executor) override;
+  void RemoveExecutor(const SharedServiceExecutor &executor) override;
+  void RemoveExecutor(const std::string &executor_id) override;
 
   size_t GetCallableCount() const override;
+  capacity_t GetCapacity(bool local_only) override;
 
   std::optional<SharedServiceExecutor>
   SelectNextCallableExecutor(bool only_local) override;

@@ -4,8 +4,6 @@
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
 
-using namespace hive::networking::messaging;
-
 namespace hive::services::impl {
 
 /**
@@ -22,7 +20,7 @@ public:
    * @return service response object (or nothing if message was invalid)
    */
   static std::optional<SharedServiceResponse>
-  ToServiceResponse(Message &&message);
+  ToServiceResponse(networking::messaging::Message &&message);
 
   /**
    * Consumes and converts a response object to a web-socket message.
@@ -31,7 +29,8 @@ public:
    * @param response response object that will be moved and converted
    * @return a web-socket message
    */
-  static SharedMessage FromServiceResponse(ServiceResponse &&response);
+  static networking::messaging::SharedMessage
+  FromServiceResponse(ServiceResponse &&response);
 
   /**
    * Converts a received web-socket message to a service request object
@@ -39,14 +38,14 @@ public:
    * @return service request object
    */
   static std::optional<SharedServiceRequest>
-  ToServiceRequest(const SharedMessage &message);
+  ToServiceRequest(const networking::messaging::SharedMessage &message);
 
   /**
    * Consumes and Converts a request object to a web-socket message.
    * @param request
    * @return web socket message containing request information
    */
-  static SharedMessage
+  static networking::messaging::SharedMessage
   FromServiceRequest(const services::ServiceRequest &request);
 };
 } // namespace hive::services::impl

@@ -3,7 +3,7 @@
 #include "Job.h"
 #include <chrono>
 
-namespace hive::jobsystem::job {
+namespace hive::jobsystem {
 
 /**
  * While regular jobs are executed right away in the next execution
@@ -38,9 +38,9 @@ public:
    * @param async if the job is asynchronous, the cycle will not wait for it to
    * finish.
    */
-  TimerJob(std::function<JobContinuation(JobContext *)>, const std::string &id,
-           std::chrono::duration<double> time, JobExecutionPhase phase = MAIN,
-           bool async = false);
+  TimerJob(std::function<JobContinuation(JobContext *)> workload,
+           const std::string &id, std::chrono::duration<double> time,
+           JobExecutionPhase phase = MAIN, bool async = false);
 
   ~TimerJob() override = default;
 
@@ -51,4 +51,4 @@ public:
 
   bool IsReadyForExecution(const JobContext &context) final;
 };
-} // namespace hive::jobsystem::job
+} // namespace hive::jobsystem

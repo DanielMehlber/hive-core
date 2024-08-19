@@ -1,6 +1,6 @@
 #pragma once
 
-namespace hive::jobsystem::job {
+namespace hive::jobsystem {
 
 /**
  * Behavior, that will be applied as soon as a job has been successfully
@@ -22,4 +22,4 @@ enum JobContinuation {
    */
   REQUEUE
 };
-} // namespace hive::jobsystem::job
+} // namespace hive::jobsystem

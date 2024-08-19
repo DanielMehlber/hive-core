@@ -4,6 +4,7 @@
 #include "services/executor/impl/LocalServiceExecutor.h"
 
 using namespace std::placeholders;
+using namespace hive::services;
 
 class AddingServiceExecutor
     : public hive::services::impl::LocalServiceExecutor {

@@ -5,10 +5,14 @@
 #include "services/registry/impl/remote/RemoteExceptions.h"
 
 #include <cmath>
+#include <utility>
 
 using namespace hive::services::impl;
 using namespace hive::services;
 using namespace hive::jobsystem;
+
+RoundRobinServiceCaller::RoundRobinServiceCaller(std::string service_name)
+    : m_service_name(std::move(service_name)) {}
 
 bool RoundRobinServiceCaller::IsCallable() const {
   std::unique_lock lock(m_service_executors_mutex);
@@ -21,9 +25,11 @@ bool RoundRobinServiceCaller::IsCallable() const {
   return false;
 }
 
-void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor executor) {
+void RoundRobinServiceCaller::AddExecutor(
+    const SharedServiceExecutor &executor) {
   std::unique_lock lock(m_service_executors_mutex);
 
+  DEBUG_ASSERT(executor != nullptr, "executor should not be null")
   DEBUG_ASSERT(!executor->GetId().empty(), "executor id should not be empty")
   DEBUG_ASSERT(!executor->GetServiceName().empty(),
                "service name should not be empty")
@@ -41,6 +47,35 @@ void RoundRobinServiceCaller::AddExecutor(SharedServiceExecutor executor) {
   }
 
   m_service_executors.push_back(executor);
+}
+
+void RoundRobinServiceCaller::RemoveExecutor(
+    const SharedServiceExecutor &executor) {
+
+  DEBUG_ASSERT(executor != nullptr, "executor should not be null")
+  RemoveExecutor(executor->GetId());
+}
+
+void RoundRobinServiceCaller::RemoveExecutor(const std::string &executor_id) {
+  DEBUG_ASSERT(!executor_id.empty(), "executor id should not be empty")
+
+  // remove executor from list
+  std::unique_lock lock(m_service_executors_mutex);
+  auto count_before = m_service_executors.size();
+  m_service_executors.erase(
+      std::remove_if(
+          m_service_executors.begin(), m_service_executors.end(),
+          [&executor_id](const SharedServiceExecutor &some_executor) {
+            return some_executor->GetId() == executor_id;
+          }),
+      m_service_executors.end());
+  auto count_after = m_service_executors.size();
+  lock.unlock();
+
+  if (count_before > count_after) {
+    LOG_DEBUG("service executor '" << executor_id << "' for service '"
+                                   << m_service_name << "' removed from caller")
+  }
 }
 
 SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
@@ -190,6 +225,24 @@ size_t RoundRobinServiceCaller::GetCallableCount() const {
   }
 
   return callable_count;
+}
+
+capacity_t RoundRobinServiceCaller::GetCapacity(bool local_only) {
+  std::unique_lock lock(m_service_executors_mutex);
+  capacity_t capacity = 0;
+  for (const auto &some_executor : m_service_executors) {
+    if (some_executor->IsCallable() &&
+        (!local_only || some_executor->IsLocal())) {
+      auto some_executor_capacity = some_executor->GetCapacity();
+      // capacity < 0 means unlimited. In this case, return unlimited as well
+      if (some_executor_capacity < 0) {
+        return UNLIMITED_CAPACITY;
+      }
+      capacity += some_executor->GetCapacity();
+    }
+  }
+
+  return capacity;
 }
 
 std::vector<SharedServiceExecutor>

@@ -4,11 +4,9 @@
 #include "events/listener/impl/FunctionalEventListener.h"
 #include "jobsystem/synchronization/JobMutex.h"
 #include "networking/messaging/IMessageConsumer.h"
+#include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
-#include "services/registry/impl/remote/RemoteExceptions.h"
 #include <future>
-
-using namespace hive::networking::messaging;
 
 namespace hive::services::impl {
 
@@ -20,7 +18,7 @@ struct PendingRequestInfo {
   std::shared_ptr<std::promise<SharedServiceResponse>> promise;
 
   /** contains information about the remote endpoint that has been called */
-  ConnectionInfo endpoint_info;
+  networking::messaging::ConnectionInfo endpoint_info;
 
   /** handles the case that the remote endpoint can't respond because the
    * connection has been severed. */
@@ -31,7 +29,8 @@ struct PendingRequestInfo {
  * Processes incoming service responses of recently called remote services. It
  * also manages pending requests and their promises.
  */
-class RemoteServiceResponseConsumer : public IMessageConsumer {
+class RemoteServiceResponseConsumer
+    : public networking::messaging::IMessageConsumer {
 private:
   mutable jobsystem::mutex m_pending_promises_mutex;
   std::map<std::string, PendingRequestInfo> m_pending_requests;
@@ -44,10 +43,13 @@ public:
       common::memory::Reference<common::subsystems::SubsystemManager>
           m_subsystems);
 
+  virtual ~RemoteServiceResponseConsumer() = default;
+
   std::string GetMessageType() const override;
 
-  void ProcessReceivedMessage(SharedMessage received_message,
-                              ConnectionInfo connection_info) override;
+  void ProcessReceivedMessage(
+      networking::messaging::SharedMessage received_message,
+      networking::messaging::ConnectionInfo connection_info) override;
 
   /**
    * Adds response promise to this consumer. The consumer will resolve this
@@ -57,7 +59,8 @@ public:
    * @param response_promise response promise
    */
   void AddResponsePromise(
-      SharedServiceRequest request, const ConnectionInfo &connection_info,
+      SharedServiceRequest request,
+      const networking::messaging::ConnectionInfo &connection_info,
       std::shared_ptr<std::promise<SharedServiceResponse>> response_promise);
 
   /**

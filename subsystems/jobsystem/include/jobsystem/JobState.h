@@ -1,6 +1,6 @@
 #pragma once
 
-namespace hive::jobsystem::job {
+namespace hive::jobsystem {
 
 /**
  * Current state of a job instance.
@@ -49,4 +49,4 @@ enum JobState {
    */
   FAILED
 };
-} // namespace hive::jobsystem::job
+} // namespace hive::jobsystem

@@ -5,7 +5,7 @@
 #include "logging/LogManager.h"
 
 using namespace hive::jobsystem::execution::impl;
-using namespace hive::jobsystem::job;
+using namespace hive::jobsystem;
 using namespace std::chrono_literals;
 
 BoostFiberExecution::BoostFiberExecution(
@@ -25,7 +25,7 @@ void BoostFiberExecution::Init() {
 
 void BoostFiberExecution::ShutDown() { Stop(); }
 
-void BoostFiberExecution::Schedule(std::shared_ptr<Job> job) {
+void BoostFiberExecution::Schedule(const std::shared_ptr<Job> &job) {
 #ifdef ENABLE_PROFILING
   common::profiling::Timer schedule_timer("job-scheduling");
 #endif
@@ -74,7 +74,7 @@ void BoostFiberExecution::Schedule(std::shared_ptr<Job> job) {
 }
 
 void BoostFiberExecution::WaitForCompletion(
-    std::shared_ptr<IJobWaitable> waitable) {
+    const std::shared_ptr<IJobWaitable> &waitable) {
 
 #ifdef ENABLE_PROFILING
   common::profiling::Timer waiting_timer("job-waiting-for-completion");

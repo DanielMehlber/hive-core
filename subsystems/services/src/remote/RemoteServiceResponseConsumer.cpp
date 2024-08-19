@@ -1,14 +1,14 @@
-#include <utility>
-
+#include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 #include "common/exceptions/ExceptionsBase.h"
 #include "events/broker/IEventBroker.h"
 #include "logging/LogManager.h"
 #include "networking/messaging/events/ConnectionClosedEvent.h"
+#include "services/registry/impl/remote/RemoteExceptions.h"
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
-#include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 
 using namespace hive::services;
 using namespace hive::services::impl;
+using namespace hive::networking::messaging;
 
 RemoteServiceResponseConsumer::RemoteServiceResponseConsumer(
     common::memory::Reference<common::subsystems::SubsystemManager> subsystems)

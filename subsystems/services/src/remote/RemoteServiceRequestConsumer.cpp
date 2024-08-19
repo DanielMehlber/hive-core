@@ -1,7 +1,10 @@
 #include "services/registry/impl/remote/RemoteServiceRequestConsumer.h"
+#include "logging/LogManager.h"
 #include "services/registry/impl/remote/RemoteServiceMessagesConverter.h"
 
 using namespace hive::services::impl;
+using namespace hive::networking::messaging;
+using namespace hive::jobsystem;
 
 RemoteServiceRequestConsumer::RemoteServiceRequestConsumer(
     const common::memory::Reference<common::subsystems::SubsystemManager>
@@ -35,7 +38,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
     LOG_DEBUG("received remote service request for service '"
               << request->GetServiceName() << "'")
 
-    SharedJob job = jobsystem::JobSystemFactory::CreateJob(
+    SharedJob job = std::make_shared<Job>(
         [_this = std::static_pointer_cast<RemoteServiceRequestConsumer>(
              shared_from_this()),
          request, connection_info](jobsystem::JobContext *context) {

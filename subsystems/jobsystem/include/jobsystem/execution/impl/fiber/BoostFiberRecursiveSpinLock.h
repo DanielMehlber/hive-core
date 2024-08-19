@@ -2,7 +2,6 @@
 
 #include "boost/fiber/all.hpp"
 #include "common/synchronization/SpinLock.h"
-#include <string>
 
 namespace hive::jobsystem {
 

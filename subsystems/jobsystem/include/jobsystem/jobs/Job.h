@@ -1,18 +1,17 @@
 #pragma once
 
-#include "JobContext.h"
-#include "JobExecutionPhase.h"
-#include "JobExitBehavior.h"
-#include "JobState.h"
+#include "jobsystem/JobContext.h"
+#include "jobsystem/JobExecutionPhase.h"
+#include "jobsystem/JobExitBehavior.h"
+#include "jobsystem/JobState.h"
 #include "jobsystem/synchronization/JobCounter.h"
 #include "jobsystem/synchronization/JobMutex.h"
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <queue>
 #include <string>
 
-namespace hive::jobsystem::job {
+namespace hive::jobsystem {
 
 /**
  * A job is the central data structure of the job system. It contains
@@ -57,7 +56,7 @@ public:
    * @param async if the job is asynchronous, the cycle will not wait for it to
    * finish.
    */
-  Job(std::function<JobContinuation(JobContext *)>, std::string id,
+  Job(std::function<JobContinuation(JobContext *)> workload, std::string id,
       JobExecutionPhase phase = MAIN, bool async = false);
 
   virtual ~Job() { FinishJob(); };
@@ -131,6 +130,6 @@ inline const std::string &Job::GetId() { return m_id; }
 
 inline bool Job::IsAsync() const { return m_async; }
 
-typedef std::shared_ptr<jobsystem::job::Job> SharedJob;
+typedef std::shared_ptr<Job> SharedJob;
 
-} // namespace hive::jobsystem::job
+} // namespace hive::jobsystem

@@ -4,6 +4,7 @@
 #include "services/executor/impl/RemoteServiceExecutor.h"
 
 using namespace hive::services::impl;
+using namespace hive::networking::messaging;
 
 RemoteServiceRegistrationConsumer::RemoteServiceRegistrationConsumer(
     std::function<void(SharedServiceExecutor)> consumer,
@@ -22,6 +23,7 @@ void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
   RemoteServiceRegistrationMessage registration_message(received_message);
   auto service_id = registration_message.GetId();
   auto service_name = registration_message.GetServiceName();
+  auto capacity = registration_message.GetCapacity();
 
   DEBUG_ASSERT(!service_id.empty(), "remote service id should not be empty")
   DEBUG_ASSERT(!service_name.empty(), "remote service name should not be empty")
@@ -32,7 +34,7 @@ void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
 
   SharedServiceExecutor stub = std::make_shared<RemoteServiceExecutor>(
       service_name, m_message_endpoint, connection_info, service_id,
-      m_response_consumer);
+      m_response_consumer, capacity);
 
   m_consumer(stub);
 }

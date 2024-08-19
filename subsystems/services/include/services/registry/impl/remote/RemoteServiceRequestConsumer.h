@@ -1,11 +1,10 @@
 #pragma once
 
+#include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/messaging/IMessageConsumer.h"
 #include "networking/messaging/IMessageEndpoint.h"
 #include "services/caller/IServiceCaller.h"
-
-using namespace hive::networking::messaging;
 
 namespace hive::services::impl {
 
@@ -13,7 +12,8 @@ namespace hive::services::impl {
  * Processes service calls coming from remote remote hosts. It executes the
  * service and sends its response back to the caller.
  */
-class RemoteServiceRequestConsumer : public IMessageConsumer {
+class RemoteServiceRequestConsumer
+    : public networking::messaging::IMessageConsumer {
 private:
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
@@ -25,23 +25,26 @@ private:
   query_func_t m_service_query_func;
 
   /** Used to send responses */
-  common::memory::Reference<IMessageEndpoint> m_endpoint;
+  common::memory::Reference<networking::messaging::IMessageEndpoint> m_endpoint;
 
 public:
   RemoteServiceRequestConsumer(
       const common::memory::Reference<common::subsystems::SubsystemManager>
           &subsystems,
       RemoteServiceRequestConsumer::query_func_t query_func,
-      const common::memory::Reference<IMessageEndpoint> &endpoint);
+      const common::memory::Reference<networking::messaging::IMessageEndpoint>
+          &endpoint);
 
-  std::string GetMessageType() const  override;
+  virtual ~RemoteServiceRequestConsumer() = default;
 
-  void ProcessReceivedMessage(SharedMessage received_message,
-                              ConnectionInfo connection_info)  override;
+  std::string GetMessageType() const override;
+
+  void ProcessReceivedMessage(
+      networking::messaging::SharedMessage received_message,
+      networking::messaging::ConnectionInfo connection_info) override;
 };
 
-inline std::string
-RemoteServiceRequestConsumer::GetMessageType() const  {
+inline std::string RemoteServiceRequestConsumer::GetMessageType() const {
   return "service-request";
 }
 

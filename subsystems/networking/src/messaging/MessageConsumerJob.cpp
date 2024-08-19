@@ -4,7 +4,6 @@
 using namespace hive::networking::messaging;
 using namespace std::placeholders;
 using namespace hive::jobsystem;
-using namespace hive::jobsystem::job;
 
 MessageConsumerJob::MessageConsumerJob(SharedMessageConsumer consumer,
                                        SharedMessage message,
@@ -18,5 +17,5 @@ MessageConsumerJob::MessageConsumerJob(SharedMessageConsumer consumer,
 JobContinuation MessageConsumerJob::ConsumeMessage(
     [[maybe_unused]] jobsystem::JobContext *context) {
   m_consumer->ProcessReceivedMessage(m_message, m_connection_info);
-  return jobsystem::job::JobContinuation::DISPOSE;
+  return jobsystem::JobContinuation::DISPOSE;
 }

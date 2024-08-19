@@ -1,11 +1,15 @@
 #include "networking/messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"
+#include "events/broker/IEventBroker.h"
+#include "logging/LogManager.h"
 #include "networking/messaging/MessageConsumerJob.h"
 #include "networking/messaging/MessageConverter.h"
 #include "networking/messaging/events/ConnectionClosedEvent.h"
 #include "networking/messaging/events/ConnectionEstablishedEvent.h"
 #include "networking/util/UrlParser.h"
+#include "properties/PropertyProvider.h"
 #include <regex>
 
+using namespace hive::jobsystem;
 using namespace hive::networking;
 using namespace hive::networking::messaging;
 using namespace hive::networking::messaging::websockets;
@@ -56,7 +60,7 @@ BoostWebSocketEndpoint::BoostWebSocketEndpoint(
 
 void BoostWebSocketEndpoint::SetupCleanUpJob() {
   std::weak_ptr<BoostWebSocketEndpoint *> weak_endpoint = m_this_pointer;
-  SharedJob clean_up_job = jobsystem::JobSystemFactory::CreateJob<TimerJob>(
+  SharedJob clean_up_job = std::make_shared<TimerJob>(
       [weak_endpoint](jobsystem::JobContext *context) mutable {
         if (auto shared_ptr_to_endpoint = weak_endpoint.lock()) {
           auto endpoint = *shared_ptr_to_endpoint;
@@ -288,7 +292,7 @@ void BoostWebSocketEndpoint::InitAndStartConnectionListener() {
 
   // get id of this node (required for handshake)
   auto property_provider =
-      m_subsystems.Borrow()->RequireSubsystem<data::PropertyProvider>();
+      m_subsystems.Borrow()->RequireSubsystem<hive::data::PropertyProvider>();
   auto node_uuid = property_provider->GetOrElse<std::string>("net.node.id", "");
 
   if (!m_connection_listener) {
@@ -367,7 +371,7 @@ BoostWebSocketEndpoint::IssueBroadcastAsJob(const SharedMessage &message) {
       std::make_shared<std::promise<size_t>>();
   std::future<size_t> future = promise->get_future();
 
-  SharedJob job = jobsystem::JobSystemFactory::CreateJob(
+  SharedJob job = std::make_shared<Job>(
       [_this = BorrowFromThis(), message,
        promise](jobsystem::JobContext *context) {
         std::list<std::future<void>> futures;

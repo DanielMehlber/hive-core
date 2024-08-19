@@ -1,12 +1,10 @@
 #include "jobsystem/manager/JobManager.h"
 #include "boost/core/demangle.hpp"
 #include "common/profiling/Timer.h"
-#include "common/profiling/TimerManager.h"
 #include "logging/LogManager.h"
 #include <sstream>
 
 using namespace hive::jobsystem;
-using namespace hive::jobsystem::job;
 using namespace std::chrono_literals;
 
 JobManager::JobManager(const common::config::SharedConfiguration &config)

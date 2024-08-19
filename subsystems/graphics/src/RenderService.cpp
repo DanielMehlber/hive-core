@@ -9,6 +9,7 @@
 using namespace hive;
 using namespace hive::graphics;
 using namespace std::placeholders;
+using namespace services;
 
 DECLARE_EXCEPTION(MatrixConversionException);
 DECLARE_EXCEPTION(VectorConversionException);

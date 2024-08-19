@@ -20,15 +20,15 @@ protected:
 
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
-  SharedMessageConsumer m_registration_consumer;
-  SharedMessageConsumer m_response_consumer;
-  SharedMessageConsumer m_request_consumer;
+  networking::messaging::SharedMessageConsumer m_registration_consumer;
+  networking::messaging::SharedMessageConsumer m_response_consumer;
+  networking::messaging::SharedMessageConsumer m_request_consumer;
 
   events::SharedEventListener m_new_endpoint_connection_listener;
 
-  static SharedJob CreateRemoteServiceRegistrationJob(
+  static jobsystem::SharedJob CreateRemoteServiceRegistrationJob(
       const std::string &endpoint_id, const std::string &service_name,
-      const std::string &service_id,
+      const std::string &service_id, size_t capactiy,
       common::memory::Reference<networking::messaging::IMessageEndpoint>
           sending_endpoint);
 
@@ -38,7 +38,9 @@ public:
           &subsystems);
 
   void Register(const SharedServiceExecutor &executor) override;
-  void Unregister(const std::string &name) override;
+  void UnregisterAll(const std::string &name) override;
+  void Unregister(const std::string &executor_id) override;
+  void Unregister(const SharedServiceExecutor &executor) override;
 
   void SendServicePortfolioToEndpoint(const std::string &endpoint_id);
 

@@ -5,6 +5,8 @@
 #include <boost/json.hpp>
 
 using namespace hive::plugins;
+using namespace hive::jobsystem;
+
 namespace json = boost::json;
 namespace fs = boost::filesystem;
 
@@ -28,7 +30,7 @@ SharedPluginContext BoostPluginManager::GetContext() { return m_context; }
 
 void BoostPluginManager::InstallPlugin(boost::shared_ptr<IPlugin> plugin) {
   auto plugin_name = plugin->GetName();
-  auto install_job = jobsystem::JobSystemFactory::CreateJob(
+  auto install_job = std::make_shared<Job>(
       [plugin_manager_ref = ReferenceFromThis(),
        plugin = std::move(plugin)](jobsystem::JobContext *context) mutable {
         if (auto maybe_plugin_manager = plugin_manager_ref.TryBorrow()) {
@@ -70,7 +72,7 @@ void BoostPluginManager::InstallPlugin(boost::shared_ptr<IPlugin> plugin) {
 }
 
 void BoostPluginManager::UninstallPlugin(const std::string &name) {
-  auto install_job = jobsystem::JobSystemFactory::CreateJob(
+  auto install_job = std::make_shared<Job>(
       [plugin_manager_ref = ReferenceFromThis(),
        name](jobsystem::JobContext *context) mutable {
         if (auto maybe_plugin_manager = plugin_manager_ref.TryBorrow()) {
@@ -164,7 +166,7 @@ listAllPluginsInDescriptor(const std::string &descriptor) {
 void BoostPluginManager::InstallPlugins(const std::string &input_path_str) {
 
   // spawn job to load plugins in directory
-  auto install_job = jobsystem::JobSystemFactory::CreateJob(
+  auto install_job = std::make_shared<Job>(
       [plugin_manager_ref = ReferenceFromThis(),
        input_path_str](jobsystem::JobContext *context) mutable {
         if (auto maybe_plugin_manager = plugin_manager_ref.TryBorrow()) {

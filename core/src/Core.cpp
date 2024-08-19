@@ -68,12 +68,12 @@ void Core::EnableRenderingJob() {
   auto job_manager = m_subsystems->RequireSubsystem<jobsystem::JobManager>();
 
   // enabling the renderer is a job: this results in a job-in-job creation
-  auto enable_rendering_job_job = std::make_shared<jobsystem::job::Job>(
+  auto enable_rendering_job_job = std::make_shared<jobsystem::Job>(
       [subsystems = m_subsystems.Borrow()](JobContext *context) mutable {
         auto job_manager =
             subsystems->RequireSubsystem<jobsystem::JobManager>();
         job_manager->DetachJob("render-job");
-        auto rendering_job = std::make_shared<jobsystem::job::TimerJob>(
+        auto rendering_job = std::make_shared<jobsystem::TimerJob>(
             [subsystems](jobsystem::JobContext *context) mutable {
               auto maybe_rendering_subsystem =
                   subsystems->GetSubsystem<graphics::IRenderer>();

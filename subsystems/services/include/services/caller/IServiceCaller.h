@@ -62,12 +62,32 @@ public:
    * replaced.
    * @param executor must not be a duplicate of an already added executor.
    */
-  virtual void AddExecutor(SharedServiceExecutor executor) = 0;
+  virtual void AddExecutor(const SharedServiceExecutor &executor) = 0;
+
+  /**
+   * Removes a service executor with a given ID from this caller.
+   * @param executor_id id of the service executor.
+   */
+  virtual void RemoveExecutor(const std::string &executor_id) = 0;
+
+  /**
+   * Removes a service executor from this caller.
+   * @param executor executor to remove from the caller.
+   */
+  virtual void RemoveExecutor(const SharedServiceExecutor &executor) = 0;
 
   /**
    * @return current count of executable/callable services
    */
   virtual size_t GetCallableCount() const = 0;
+
+  /**
+   * Returns the total summed-up capacity (in parallel processable service
+   * requests) of all executors callable by this instance.
+   * @param local_only only consider local services for capacity calculation
+   * @return total capacity of all known and callable executors
+   */
+  virtual capacity_t GetCapacity(bool local_only = false) = 0;
 
   /**
    * @param local_only if only local services should be considered for

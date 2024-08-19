@@ -5,13 +5,14 @@
 
 using namespace hive::services;
 using namespace hive::services::impl;
+using namespace hive::jobsystem;
 
 LocalServiceExecutor::LocalServiceExecutor(std::string service_name,
                                            service_functor_t func, bool async,
-                                           size_t max_concurrent_calls)
+                                           size_t capacity)
     : m_func(std::move(func)), m_service_name(std::move(service_name)),
-      m_id(common::uuid::UuidGenerator::Random()),
-      m_max_concurrent_calls(max_concurrent_calls), m_async(async) {}
+      m_id(common::uuid::UuidGenerator::Random()), m_capacity(capacity),
+      m_async(async) {}
 
 std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
     SharedServiceRequest request,
@@ -26,14 +27,14 @@ std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
   // the service itself determines if it should run async or not
   async = m_async;
 
-  SharedJob job = jobsystem::JobSystemFactory::CreateJob(
+  SharedJob job = std::make_shared<Job>(
       [request, executor = shared_from_this(),
        completion_promise](jobsystem::JobContext *context) mutable {
         // check if further calls are allowed or if concurrecy limit is reached
         std::unique_lock lock(executor->m_concurrent_calls_mutex);
-        bool concurrency_limit_reached = executor->m_max_concurrent_calls > 0 &&
-                                         executor->m_current_concurrent_calls >=
-                                             executor->m_max_concurrent_calls;
+        bool concurrency_limit_reached =
+            executor->m_capacity > 0 &&
+            executor->m_current_concurrent_calls >= executor->m_capacity;
         if (concurrency_limit_reached) {
           SharedServiceResponse response = std::make_shared<ServiceResponse>(
               request->GetTransactionId(), ServiceResponseStatus::BUSY,
@@ -79,5 +80,3 @@ std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
 
   return completion_future;
 }
-
-std::string LocalServiceExecutor::GetServiceName() { return m_service_name; }
