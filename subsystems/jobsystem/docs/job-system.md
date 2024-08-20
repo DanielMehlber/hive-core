@@ -138,4 +138,19 @@ Therefore, jobs can be made asynchronous, but it is not advisable for every job:
 
 ![Job System Architecture](./images/job-system-uml.png)
 
+The job system comprises of the following components:
+
+* [JobManager](\ref hive::jobsystem::JobManager): Manages the job queue and cycle execution phases. It does not execute
+  jobs itself, but merely organizes
+  their execution.
+* [IJobExecution](\ref hive::jobsystem::execution::IJobExecution): Executes jobs as soon as they're passed to it. It
+  controls the
+  worker threads and their context
+  switching. By default, it uses
+  the [BoostFiberImplementation](\ref hive::jobsystem::execution::impl::BoostFiberExecution)
+  implementation, which utilizes the `boost::fibers` library.
+* [Job](\ref hive::jobsystem::Job): Represents a single job. It can be synchronous or asynchronous. It can be assigned
+  to a phase and a priority.
+  It can also be extended to support more complex behaviors, like [TimerJob](\ref hive::jobsystem::TimerJob).
+
 
