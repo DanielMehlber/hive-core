@@ -153,4 +153,15 @@ The job system comprises of the following components:
   to a phase and a priority.
   It can also be extended to support more complex behaviors, like [TimerJob](\ref hive::jobsystem::TimerJob).
 
+## Important Notes when using the Job System
+
+While the job system offers many advantages and features, it **introduces concurrency to the entire core system**
+because jobs are always executed in parallel. Using`jobsystem::mutex` and locks becomes necessary for all higher-level
+components that have shared data. **Remember the _Everything-is-a-job_ Paradigm**.
+
+There are some exceptions to this rule, where job executions cannot interfere due to different phases in the execution
+cycle:
+
+* A plugin's init and shutdown functions
+
 

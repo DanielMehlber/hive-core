@@ -2,6 +2,18 @@
 
 [TOC]
 
+## Hive Glossary
+
+* **Node**: Single process of the core program running on a machine, possibly equipped with plugins.
+* **Hive**: Set of connected nodes, possibly running on different machines, that communicate via network protocols and
+  collaborate to finish a given task.
+* **Core**: Minimal main program that contains the framework and provides infrastructure, basic services, and networking
+  capabilities that are used across multiple use-cases. It can be started as standalone program or included as library,
+  but does not contain any _real_ technical functionality (
+  see [Micro-Kernel Software Architecture](https://en.wikipedia.org/wiki/Microkernel)).
+* **Plugins**: Loaded by the Core at runtime, they mainly encapsulate higher-level functionality for specific use-cases,
+  providing services that can be requested by others in the Hive.
+
 ## Subsystems and Components
 
 Hive consists of multiple modules, also called sub-systems. The following sub-systems are part of the Hive framework:
@@ -34,12 +46,24 @@ The `Core` module simply wraps and initializes these subsystems.
 
 A single node in the hive consists of the core and a set of plugins:
 
-* The core contains all subsystems and is provided by the framework. The core itself does not possess any functionality
-  but acts as container, infrastructure, and platform for the plugins.
-* Plugins are dynamic libraries that are loaded at runtime. They contain implementations of subsystems, services, and
-  properties. They contribute their capabilities to the hive.
+* The core contains all subsystems and is provided by the framework. The core itself does not possess any *real*
+  functionality
+  but acts as container, infrastructure, and platform for plugins and higher-level use cases.
+* Plugins are dynamic libraries that are loaded at runtime. They contain use-case specific services and functionality.
+  They contribute their capabilities to the hive using the Core's infrastructure.
 
 ![Single Node Architecture](./docs/images/single-node.png)
+
+The decision to exclude use-case specific functionality from the core and move it into independent plugins has many
+reasons:
+
+* **Maintainability**: To avoid a [Big Ball of Mud](https://en.wikipedia.org/wiki/Anti-pattern#Big_ball_of_mud)
+  or a giant _Wolpertinger_ monolith, individual functionality is loaded into the core and not hard-coded into it.
+* **Changeability**: Obsolete functionality can be simply removed or replaced by loading a different plugin or none at
+  all. In most giant monoliths it is simply not possible to tear out integrated functionality without breaking
+  the entire system.
+* **Flexibility**: Maintains a slim core that can be adapted for various use cases and software products without
+  starting from scratch or forking it.
 
 An example for this is the Coordinator-Worker-Pattern: A node loads the `Coordinator` plugin, which enables it to
 distribute workloads to nodes equipped with the `Worker` plugin in the same hive. This pattern can be used in various
