@@ -100,36 +100,26 @@ be extended to support third-party service registry technologies and infrastruct
 
 ![Possible service infrastructures, from REST to third-party service registries (not yet implemented).](./images/service-communication.png)
 
-## Remote Services and their Execution
-
-![Remote Services](./images/remote-service.png)
-
-### Service Discovery Mechanism
+## Service Registry Implementations
 
 At first, a node must discover a service to request it from its follow nodes. There are multiple ways how this can be
 implemented using the [IServiceRegistry](\ref hive::services::IServiceRegistry) interface:
 
 * **Broadcasting**: A node sends a message to all other nodes in the hive, asking for a specific service. This is the
-  simplest way to discover services, but also the most cumbersome and therefore not implemented.
+  most straight-forward way to implement, but also the one with the most overhead. This implementation has been omitted.
 * **Service Registration**: A node notifies its fellow nodes once about a service it offers. This is how
-  the [RemoteServiceRegistry](\ref hive::services::impl::RemoteServiceRegistry) implementation works.
+  the [PeerToPeerServiceRegistry](\ref hive::services::impl::PeerToPeerServiceRegistry) implementation works.
 * **Centralized Registry**: A central service registry is used to store all services offered by all nodes in the hive.
   This introduces a single point of failure, but can also be more efficient. This is not yet implemented.
 * **Distributed Registry**: A distributed registry is used to store all services offered by all nodes in the hive. This
   is more fault-tolerant than a centralized registry, but also more complex. This is not yet implemented. It could be
   implemented using a distributed database.
 
-### Service Request and Response
+### Peer-to-Peer Service Registry
 
-After the service has been discovered, the node can request the service from the offering node using
-the [RemoteServiceExecutor](\ref hive::services::impl::RemoteServiceExecutor) . The request is sent
-using the [IMessageEndpoint](\ref hive::networking::messaging::IMessageEndpoint) interface in
-the [RemoteServiceRegistry](\ref hive::services::impl::RemoteServiceRegistry) implementation. The offering node receives
-the
-request message and forwards it to the [LocalServiceExecutor](\ref hive::services::impl::LocalServiceExecutor) that
-executes the service. The response is sent back to the requesting node using the same message endpoint.
-A [IMessageConsumer](\ref hive::networking::messaging::IMessageConsumer)
-implementation ([RemoteServiceResponseConsumer](\ref hive::services::impl::RemoteServiceResponseConsumer)) on the
-requesting node
-receives the response and identifies the corresponding service request using the transaction id. This request is then
-resolved.
+As already explained, a node forwards the registration of
+a [LocalServiceExecutor](\ref hive::services::impl::LocalServiceExecutor) to its directly connected nodes. It also
+transmits a list of offered services, once a connection to a new node has been established. This way, each node knows
+about the currently offered services of its direct peers.
+
+![Remote Services](./images/remote-service.png)

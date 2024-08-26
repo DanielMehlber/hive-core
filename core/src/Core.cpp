@@ -5,7 +5,7 @@
 #include "resources/loader/impl/FileLoader.h"
 #include "resources/manager/impl/ThreadPoolResourceManager.h"
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
-#include "services/registry/impl/remote/RemoteServiceRegistry.h"
+#include "services/registry/impl/p2p/PeerToPeerServiceRegistry.h"
 
 using namespace hive;
 using namespace hive::core;
@@ -52,7 +52,7 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
 
     // setup remote-capable service registry
     SetServiceRegistry(
-        common::memory::Owner<services::impl::RemoteServiceRegistry>(
+        common::memory::Owner<services::impl::PeerToPeerServiceRegistry>(
             m_subsystems.CreateReference()));
   }
 

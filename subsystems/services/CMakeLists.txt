@@ -20,7 +20,7 @@ add_library(services SHARED
         src/remote/RemoteServiceExecutor.cpp
         src/remote/RemoteServiceResponseConsumer.cpp
         src/remote/RemoteServiceMessagesConverter.cpp
-        src/remote/RemoteServiceRegistry.cpp
+        src/p2p/PeerToPeerServiceRegistry.cpp
         src/remote/RemoteServiceRequestConsumer.cpp
 )
 

@@ -7,7 +7,7 @@
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "networking/NetworkingManager.h"
 #include "networking/messaging/IMessageEndpoint.h"
-#include "services/registry/impl/remote/RemoteServiceRegistry.h"
+#include "services/registry/impl/p2p/PeerToPeerServiceRegistry.h"
 
 using namespace hive::services;
 using namespace hive::networking;
@@ -58,7 +58,7 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
 
   // setup service registry
   common::memory::Owner<IServiceRegistry> registry =
-      common::memory::Owner<services::impl::RemoteServiceRegistry>(
+      common::memory::Owner<services::impl::PeerToPeerServiceRegistry>(
           subsystems.CreateReference());
   auto registry_ref = registry.CreateReference();
   subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(
