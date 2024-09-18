@@ -14,6 +14,10 @@
 
 namespace hive::plugins {
 
+/**
+ * Enables access to the core's subsystems and other facilities that are
+ * required when initializing and shutting down plugins.
+ */
 class PluginContext {
 protected:
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
@@ -25,11 +29,11 @@ public:
       : m_subsystems(subsystems){};
 
   common::memory::Reference<common::subsystems::SubsystemManager>
-  GetKernelSubsystems() const;
+  GetSubsystems() const;
 };
 
 inline common::memory::Reference<common::subsystems::SubsystemManager>
-PluginContext::GetKernelSubsystems() const {
+PluginContext::GetSubsystems() const {
   return m_subsystems;
 }
 

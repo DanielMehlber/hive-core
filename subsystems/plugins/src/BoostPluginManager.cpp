@@ -64,7 +64,7 @@ void BoostPluginManager::InstallPluginAsJob(boost::shared_ptr<IPlugin> plugin) {
       "install-plugin-{" + plugin_name + "}", JobExecutionPhase::INIT);
 
   GetContext()
-      ->GetKernelSubsystems()
+      ->GetSubsystems()
       .Borrow()
       ->GetSubsystem<jobsystem::JobManager>()
       .value()
@@ -115,7 +115,7 @@ void BoostPluginManager::UnloadPluginAsJob(const std::string &name) {
       "uninstall-plugin-{" + name + "}", JobExecutionPhase::CLEAN_UP);
 
   GetContext()
-      ->GetKernelSubsystems()
+      ->GetSubsystems()
       .Borrow()
       ->GetSubsystem<jobsystem::JobManager>()
       .value()
@@ -265,7 +265,7 @@ void BoostPluginManager::LoadPluginsAsJob(const std::string &input_path_str) {
       "install-plugins-in-{" + input_path_str + "}", JobExecutionPhase::INIT);
 
   GetContext()
-      ->GetKernelSubsystems()
+      ->GetSubsystems()
       .Borrow()
       ->GetSubsystem<jobsystem::JobManager>()
       .value()
