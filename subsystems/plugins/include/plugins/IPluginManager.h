@@ -13,21 +13,24 @@ public:
   /**
    * Loads plugin from file-system and installs it.
    * @param path to file containing plugin
+   * @note this is not executed directly, but in the next job execution cycle.
    */
-  virtual void InstallPlugin(const std::string &path) = 0;
+  virtual void LoadAndInstallPluginAsJob(const std::string &path) = 0;
 
   /**
    * Installs a loaded plugin object and initialize it.
-   * @note Already installed plugins will be re-installed.
    * @param plugin plugin to install
+   * @note Already installed plugins will be re-installed.
+   * @note this is not executed directly, but in the next job execution cycle.
    */
-  virtual void InstallPlugin(boost::shared_ptr<IPlugin> plugin) = 0;
+  virtual void InstallPluginAsJob(boost::shared_ptr<IPlugin> plugin) = 0;
 
   /**
    * Shutdown and uninstall plugin.
    * @param name identifier name of plugin
+   * @note this is not executed directly, but in the next job execution cycle.
    */
-  virtual void UninstallPlugin(const std::string &name) = 0;
+  virtual void UnloadPluginAsJob(const std::string &name) = 0;
 
   /**
    * GetAsInt the current plugin context
@@ -38,8 +41,9 @@ public:
   /**
    * Installs all plugins located in a directory
    * @param path to the directory
+   * @note this is not executed directly, but in the next job execution cycle.
    */
-  virtual void InstallPlugins(const std::string &path) = 0;
+  virtual void LoadPluginsAsJob(const std::string &path) = 0;
 
   virtual ~IPluginManager() = default;
 };

@@ -25,6 +25,8 @@ public:
    */
   virtual void ProcessReceivedMessage(SharedMessage received_message,
                                       ConnectionInfo connection_info) = 0;
+
+  virtual ~IMessageConsumer() = default;
 };
 
 typedef std::shared_ptr<IMessageConsumer> SharedMessageConsumer;

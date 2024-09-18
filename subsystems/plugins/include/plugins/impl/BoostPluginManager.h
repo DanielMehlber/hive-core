@@ -30,6 +30,12 @@ protected:
 
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
+  /**
+   * Unloads and shuts down a plugin with a given name.
+   * @param name of the plugin that should be unloaded and shut down
+   */
+  void UnloadPlugin(const std::string &name);
+
 public:
   explicit BoostPluginManager(
       SharedPluginContext context,
@@ -37,11 +43,13 @@ public:
           &subsystems)
       : m_context(std::move(context)), m_subsystems(subsystems){};
 
-  void InstallPlugin(const std::string &path) override;
-  void InstallPlugin(boost::shared_ptr<IPlugin> plugin) override;
-  void UninstallPlugin(const std::string &name) override;
+  ~BoostPluginManager() override;
+
+  void LoadAndInstallPluginAsJob(const std::string &path) override;
+  void InstallPluginAsJob(boost::shared_ptr<IPlugin> plugin) override;
+  void LoadPluginsAsJob(const std::string &input_path_str) override;
+  void UnloadPluginAsJob(const std::string &name) override;
   SharedPluginContext GetContext() override;
-  void InstallPlugins(const std::string &input_path_str) override;
 };
 
 } // namespace hive::plugins

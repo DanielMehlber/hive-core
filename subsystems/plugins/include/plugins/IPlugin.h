@@ -15,7 +15,6 @@ DECLARE_EXCEPTION(PluginSetupFailedException);
  */
 class IPlugin {
 public:
-  virtual ~IPlugin() = default;
   /**
    * @return Name of the Plugin Implementation
    */
@@ -32,6 +31,8 @@ public:
    * @param context runtime objects that the plugin might need.
    */
   virtual void ShutDown(SharedPluginContext context) = 0;
+
+  virtual ~IPlugin() = default;
 };
 
 typedef std::shared_ptr<IPlugin> SharedPlugin;

@@ -62,7 +62,12 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
       plugin_context, m_subsystems.CreateReference()));
 }
 
-Core::~Core() = default;
+Core::~Core() {
+  LOG_INFO("shutting down hive core system")
+
+  // plugins must be unloaded before shutting down dependent subsystems
+  m_subsystems->RemoveSubsystem<plugins::IPluginManager>();
+};
 
 void Core::EnableRenderingJob() {
   auto job_manager = m_subsystems->RequireSubsystem<jobsystem::JobManager>();
