@@ -3,7 +3,6 @@ project(graphics)
 
 find_package(Boost REQUIRED COMPONENTS log system iostreams)
 find_package(vsg REQUIRED)
-find_package(ZLIB)
 
 # build sources
 set(GRAPHICS_SOURCES
@@ -14,14 +13,6 @@ set(GRAPHICS_SOURCES
 )
 
 set(GRAPHICS_DEPENDENCIES logging jobsystem common scene vsg::vsg services)
-
-# compile Gzip encoder only if ZLIB library is installed.
-if (ZLIB_FOUND)
-    list(APPEND GRAPHICS_SOURCES src/GzipRenderResultEncoder.cpp)
-    list(APPEND GRAPHICS_DEPENDENCIES ZLIB::ZLIB)
-else ()
-    message(WARNING "Graphics module does not support Gzip encoder because ZLIB is missing")
-endif ()
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(graphics SHARED

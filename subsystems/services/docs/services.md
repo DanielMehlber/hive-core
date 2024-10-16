@@ -53,8 +53,9 @@ Or based on their concurrency level and capacity:
 
 * **Unlimited Services** can execute an unlimited number of requests concurrently. This works well for small, stateless
   services that require little to no resources.
-* **Limited Services** can only execute one or a limited number of requests concurrently. This works well for services
-  that require a lot of resources or are stateful, like entire simulations that require a lot of computing resources.
+* **Limited Services** can only execute one or a limited number of requests concurrently, also called its concurrency.
+  This works well for services that require a lot of resources or are stateful, like entire simulations that require a
+  lot of computing resources.
 
 Or based on their execution mode:
 
@@ -64,6 +65,19 @@ Or based on their execution mode:
 * **Asynchronous Services** are services that are executed in the background and do not block the job execution cycle of
   the [JobManager](\ref hive::jobsystem::JobManager). They are used for long-running services that require a lot of
   resources and time to complete.
+
+## Retry Policies
+
+When a service request fails, the service infrastructure can retry the request using a retry policy. This can happen in
+the following cases:
+
+* The service executor is not available (e.g. the node has gone offline).
+* The service executor is busy and cannot handle the request at the moment.
+* The service request failed due to an internal error.
+
+When calling a service, a [CallRetryPolicy](\ref hive::services::CallRetryPolicy) object can be passed to the service
+caller. This object defines how often and how long the service caller should retry the request and if it should use
+another node.
 
 ## Components
 
