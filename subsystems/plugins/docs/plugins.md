@@ -37,6 +37,8 @@ implements [IPlugin](\ref hive::plugins::IPlugin) and is contained in `distribut
 A plugin attaches itself to the core infrastructure and equips it with useful functionality when loaded. When unloaded,
 it has to undo this action. Therefore, there are two functions that need to be implemented:
 
+> Have a look at the Demo-Plugin coming with this repository for a complete example. You can also use it as a template.
+
 * The `IPlugin::Init` override is responsible for setup tasks: It registers services, jobs, properties, and other API
   objects in the core's infrastructure.
 * The `IPlugin::ShutDown` override is responsible to undo every change the init routine has done. Registered services

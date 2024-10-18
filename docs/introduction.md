@@ -2,6 +2,17 @@
 
 [TOC]
 
+Hive is a Micro-Kernel that provides a framework for building distributed systems in the
+simulation domain. It is designed to be modular, flexible, and scalable. The core of Hive is a minimal program that
+provides infrastructure and networking capabilities. It is extended by plugins that encapsulate higher-level
+functionality. These plugins can be loaded at runtime and offer services to other plugins in the hive.
+
+Applications of Hive include:
+
+* Monte-Carlo simulations: 1 Coordinator node, N Worker nodes executing and evaluating simulation scenarios.
+* Distributed Image-Generation: 1 Coordinator node, N Worker nodes rendering parts of a scene.
+* Distributed Machine Learning: 1 Coordinator node, N Worker nodes training models on different datasets.
+
 ## Hive Glossary
 
 * **Node**: Single process of the core program running on a machine, possibly equipped with plugins.
