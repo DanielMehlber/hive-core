@@ -21,7 +21,6 @@ DECLARE_EXCEPTION(NoSuchEndpointException);
 class BoostWebSocketEndpoint
     : public IMessageEndpoint,
       public common::memory::EnableBorrowFromThis<BoostWebSocketEndpoint> {
-private:
   /**
    * Indicates if the web socket endpoint is currently running
    * @note The endpoint is not automatically initialized, except the
@@ -38,12 +37,6 @@ private:
    * shared_from_this() is not available yet.
    */
   std::shared_ptr<BoostWebSocketEndpoint *> m_this_pointer;
-
-  /**
-   * maps message type names to their consumers
-   */
-  std::map<std::string, std::list<std::weak_ptr<IMessageConsumer>>> m_consumers;
-  mutable jobsystem::mutex m_consumers_mutex;
 
   /**
    * Acts as execution environment for asynchronous operations, such as
@@ -73,14 +66,6 @@ private:
    * process.
    */
   std::shared_ptr<boost::asio::ip::tcp::endpoint> m_local_endpoint;
-
-  /**
-   * Consumers are stored as expireable weak-pointers. When the actual
-   * referenced consumer is destroyed, the list of consumers holds expired
-   * pointers that can be removed.
-   * @param type message type name of consumers to clean up
-   */
-  void CleanUpConsumersOfMessageType(const std::string &type) ;
 
   /**
    * Constructs a new connection object from a stream
@@ -113,23 +98,18 @@ public:
 
   ~BoostWebSocketEndpoint() override;
 
-  void AddMessageConsumer(std::weak_ptr<IMessageConsumer> consumer) override;
-
-  std::list<SharedMessageConsumer>
-  GetConsumersOfMessageType(const std::string &type_name)  override;
-
   std::future<void> Send(const std::string &node_id,
                          SharedMessage message) override;
 
   std::future<ConnectionInfo>
-  EstablishConnectionTo(const std::string &uri)  override;
+  EstablishConnectionTo(const std::string &uri) override;
 
-  void CloseConnectionTo(const std::string &node_id)  override;
+  void CloseConnectionTo(const std::string &node_id) override;
 
   std::future<size_t>
   IssueBroadcastAsJob(const SharedMessage &message) override;
 
-  bool HasConnectionTo(const std::string &node_id) const  override;
+  bool HasConnectionTo(const std::string &node_id) const override;
 
   size_t GetActiveConnectionCount() const override;
 };

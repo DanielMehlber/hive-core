@@ -19,7 +19,7 @@ public:
   virtual std::string GetMessageType() const = 0;
 
   /**
-   * Reacts to received events and processes them
+   * Processes a message that was received by the message endpoint.
    * @param received_message message that must be processed
    * @param connection_info information about the sender of the message
    */

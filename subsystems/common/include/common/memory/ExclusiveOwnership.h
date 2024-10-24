@@ -115,12 +115,12 @@ public:
   }
 
   T *operator->() const {
-    common::sync::ScopedLock lock(_shared_ownership_state->state_lock);
+    sync::ScopedLock lock(_shared_ownership_state->state_lock);
     auto *owner = (Owner<T> *)_shared_ownership_state->owner.load();
     return owner->operator->();
   }
 
-  T &operator*() { return *this->operator->(); }
+  T &operator*() const { return *this->operator->(); }
 
   Reference<T> ToReference();
 };
@@ -369,12 +369,11 @@ template <typename T> Borrower<T> EnableBorrowFromThis<T>::BorrowFromThis() {
   }
 }
 
-template <typename T> inline bool EnableBorrowFromThis<T>::HasOwner() {
+template <typename T> bool EnableBorrowFromThis<T>::HasOwner() {
   if (_this_reference) {
     return _this_reference->CanBorrow();
-  } else {
-    return false;
   }
+  return false;
 }
 
 /**
@@ -410,10 +409,9 @@ public:
 
   template <typename... Params> explicit Owner(Params... params);
 
-  Owner(Owner &&other);
-  explicit Owner(T &&owned);
-
-  template <typename Other> Owner(Owner<Other> &&other);
+  Owner(Owner &&other) noexcept;
+  explicit Owner(T &&owned) noexcept;
+  template <typename Other> Owner(Owner<Other> &&other) noexcept;
 
   Borrower<T> Borrow() { return PerformBorrow(false); }
 
@@ -476,7 +474,7 @@ inline std::shared_ptr<OwnershipState> &Owner<T>::GetState() {
 }
 
 template <typename T>
-Owner<T>::Owner(T &&owned)
+Owner<T>::Owner(T &&owned) noexcept
     : _owned(std::make_unique<T>(owned)),
       _state(std::make_shared<OwnershipState>()) {
   common::sync::ScopedLock lock(_state->state_lock);
@@ -489,9 +487,9 @@ Owner<T>::Owner(T &&owned)
 
 template <typename T>
 template <typename Other>
-Owner<T>::Owner(Owner<Other> &&other) {
+Owner<T>::Owner(Owner<Other> &&other) noexcept {
   static_assert(std::is_base_of<T, Other>());
-  common::sync::ScopedLock lock(other.GetState()->state_lock);
+  sync::ScopedLock lock(other.GetState()->state_lock);
   _state = std::move(other.GetState());
   _owned = std::move(other.GetPointer());
 
@@ -511,7 +509,7 @@ Owner<T>::Owner(Owner<Other> &&other) {
   }
 }
 
-template <typename T> Owner<T>::Owner(Owner<T> &&other) {
+template <typename T> Owner<T>::Owner(Owner<T> &&other) noexcept {
   common::sync::ScopedLock lock(other._state->state_lock);
   _state = std::move(other._state);
   _owned = std::move(other._owned);

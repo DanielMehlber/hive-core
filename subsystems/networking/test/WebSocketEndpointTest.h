@@ -16,12 +16,13 @@ using namespace hive::common::test;
 struct Node {
   std::string uuid;
   common::memory::Reference<IMessageEndpoint> endpoint;
+  common::memory::Reference<NetworkingManager> networking_manager;
   common::memory::Owner<common::subsystems::SubsystemManager> subsystems;
-  common::memory::Reference<jobsystem::JobManager> job_manager;
+  common::memory::Reference<JobManager> job_manager;
   size_t port;
 };
 
-Node SetupWebSocketPeer(size_t port) {
+inline Node SetupWebSocketPeer(size_t port) {
   // configure subsystems
   auto config = std::make_shared<common::config::Configuration>();
   config->Set("net.port", port);
@@ -50,6 +51,8 @@ Node SetupWebSocketPeer(size_t port) {
       common::memory::Owner<networking::NetworkingManager>(
           subsystems.CreateReference(), config);
 
+  auto networking_manager_ref = networking_manager.CreateReference();
+
   std::string id = subsystems->RequireSubsystem<PropertyProvider>()
                        ->Get<std::string>("net.node.id")
                        .value();
@@ -59,8 +62,12 @@ Node SetupWebSocketPeer(size_t port) {
 
   auto endpoint = subsystems->RequireSubsystem<IMessageEndpoint>();
 
-  return Node{id, endpoint.ToReference(), std::move(subsystems),
-              job_manager_ref, port};
+  return Node{id,
+              endpoint.ToReference(),
+              networking_manager_ref,
+              std::move(subsystems),
+              job_manager_ref,
+              port};
 }
 
 class TestConsumer : public IMessageConsumer {
@@ -75,9 +82,10 @@ public:
   }
 };
 
-void SendMessageAndWait(SharedMessage message,
-                        common::memory::Borrower<IMessageEndpoint> peer,
-                        const std::string &uri) {
+inline void
+SendMessageAndWait(const SharedMessage &message,
+                   const common::memory::Borrower<IMessageEndpoint> &peer,
+                   const std::string &uri) {
   std::future<void> sending_result = peer->Send(uri, message);
   sending_result.wait();
   ASSERT_NO_THROW(sending_result.get());
@@ -110,8 +118,8 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
   std::shared_ptr<TestConsumer> test_consumer_2 =
       std::make_shared<TestConsumer>();
 
-  node1.endpoint.Borrow()->AddMessageConsumer(test_consumer_1);
-  node2.endpoint.Borrow()->AddMessageConsumer(test_consumer_2);
+  node1.networking_manager.Borrow()->AddMessageConsumer(test_consumer_1);
+  node2.networking_manager.Borrow()->AddMessageConsumer(test_consumer_2);
 
   // establish connection
   auto result1 =
@@ -161,7 +169,7 @@ TEST(WebSockets, websockets_message_receiving_multiple) {
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
 
-  peer2.endpoint.Borrow()->AddMessageConsumer(test_consumer_1);
+  peer2.networking_manager.Borrow()->AddMessageConsumer(test_consumer_1);
 
   auto result1 =
       peer1.endpoint.Borrow()->EstablishConnectionTo("ws://127.0.0.1:9004");
@@ -194,7 +202,7 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
   std::shared_ptr<TestConsumer> test_consumer_1 =
       std::make_shared<TestConsumer>();
 
-  peer1.endpoint.Borrow()->AddMessageConsumer(test_consumer_1);
+  peer1.networking_manager.Borrow()->AddMessageConsumer(test_consumer_1);
 
   std::vector<Node> peers;
   for (size_t i = 9005; i < 9010; i++) {
@@ -249,13 +257,14 @@ TEST(WebSockets, websockets_message_broadcast) {
     recipient_node.job_manager.Borrow()->InvokeCycleAndWait();
     broadcasting_peer.job_manager.Borrow()->InvokeCycleAndWait();
 
-    recipient_node.endpoint.Borrow()->AddMessageConsumer(test_consumer_1);
+    recipient_node.networking_manager.Borrow()->AddMessageConsumer(
+        test_consumer_1);
     peers.push_back(std::move(recipient_node));
   }
 
   // wait until central peer has recognized connections
   TryAssertUntilTimeout(
-      [&broadcasting_peer, &peers]() {
+      [&broadcasting_peer]() {
         broadcasting_peer.job_manager.Borrow()->InvokeCycleAndWait();
         return broadcasting_peer.endpoint.Borrow()
                    ->GetActiveConnectionCount() == 5;

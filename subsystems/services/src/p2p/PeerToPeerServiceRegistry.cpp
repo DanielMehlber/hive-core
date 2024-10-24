@@ -2,6 +2,7 @@
 #include "common/assert/Assert.h"
 #include "events/broker/IEventBroker.h"
 #include "logging/LogManager.h"
+#include "networking/NetworkingManager.h"
 #include "networking/messaging/events/ConnectionEstablishedEvent.h"
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "services/messages/ServiceRegisteredNotification.h"
@@ -234,23 +235,29 @@ void PeerToPeerServiceRegistry::SetupMessageConsumers() {
                "peer networking subsystem should exist")
 
   auto subsystems = m_subsystems.Borrow();
-  auto web_socket_endpoint = subsystems->RequireSubsystem<IMessageEndpoint>();
+  auto networking_manager =
+      subsystems->RequireSubsystem<networking::NetworkingManager>();
 
   auto response_consumer =
       std::make_shared<RemoteServiceResponseConsumer>(m_subsystems);
 
+  /* TODO: consumers are invalid if endpoint is exchanged during runtime:
+   * Maybe pass networking manager instead? */
+  auto current_messaging_endpoint =
+      subsystems->RequireSubsystem<IMessageEndpoint>();
+
   m_response_consumer = response_consumer;
   m_registration_consumer = std::make_shared<RemoteServiceRegistrationConsumer>(
       std::bind(&PeerToPeerServiceRegistry::Register, this, _1),
-      response_consumer, web_socket_endpoint.ToReference());
+      response_consumer, current_messaging_endpoint.ToReference());
   m_request_consumer = std::make_shared<RemoteServiceRequestConsumer>(
       subsystems.ToReference(),
       std::bind(&PeerToPeerServiceRegistry::Find, this, _1, _2),
-      web_socket_endpoint.ToReference());
+      current_messaging_endpoint.ToReference());
 
-  web_socket_endpoint->AddMessageConsumer(m_registration_consumer);
-  web_socket_endpoint->AddMessageConsumer(m_response_consumer);
-  web_socket_endpoint->AddMessageConsumer(m_request_consumer);
+  networking_manager->AddMessageConsumer(m_registration_consumer);
+  networking_manager->AddMessageConsumer(m_response_consumer);
+  networking_manager->AddMessageConsumer(m_request_consumer);
 }
 
 void PeerToPeerServiceRegistry::Unregister(
