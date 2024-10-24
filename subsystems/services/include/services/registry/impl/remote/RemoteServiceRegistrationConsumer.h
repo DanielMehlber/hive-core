@@ -28,7 +28,7 @@ public:
       common::memory::Reference<networking::messaging::IMessageEndpoint>
           messaging_endpoint);
 
-  virtual ~RemoteServiceRegistrationConsumer() = default;
+  ~RemoteServiceRegistrationConsumer() override = default;
 
   std::string GetMessageType() const override;
 

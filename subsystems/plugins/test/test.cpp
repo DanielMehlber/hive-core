@@ -30,8 +30,8 @@ TEST(PluginsTest, lifecycle_test) {
 
   auto plugin = boost::shared_ptr<TestPlugin>(new TestPlugin());
 
-  plugin_manager->InstallPlugin(plugin);
-  plugin_manager->UninstallPlugin(plugin->GetName());
+  plugin_manager->InstallPluginAsJob(plugin);
+  plugin_manager->UnloadPluginAsJob(plugin->GetName());
 
   job_manager_ref.Borrow()->InvokeCycleAndWait();
 

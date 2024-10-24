@@ -5,7 +5,7 @@
 #include "resources/loader/impl/FileLoader.h"
 #include "resources/manager/impl/ThreadPoolResourceManager.h"
 #include "services/registry/impl/local/LocalOnlyServiceRegistry.h"
-#include "services/registry/impl/remote/RemoteServiceRegistry.h"
+#include "services/registry/impl/p2p/PeerToPeerServiceRegistry.h"
 
 using namespace hive;
 using namespace hive::core;
@@ -52,7 +52,7 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
 
     // setup remote-capable service registry
     SetServiceRegistry(
-        common::memory::Owner<services::impl::RemoteServiceRegistry>(
+        common::memory::Owner<services::impl::PeerToPeerServiceRegistry>(
             m_subsystems.CreateReference()));
   }
 
@@ -62,7 +62,12 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
       plugin_context, m_subsystems.CreateReference()));
 }
 
-Core::~Core() = default;
+Core::~Core() {
+  LOG_INFO("shutting down hive core system")
+
+  // plugins must be unloaded before shutting down dependent subsystems
+  m_subsystems->RemoveSubsystem<plugins::IPluginManager>();
+};
 
 void Core::EnableRenderingJob() {
   auto job_manager = m_subsystems->RequireSubsystem<jobsystem::JobManager>();

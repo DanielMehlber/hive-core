@@ -148,7 +148,7 @@ int main(int argc, const char **argv) {
 
   /* LOAD PLUGINS (IF ANY WERE SPECIFIED) */
   if (!plugin_path.empty()) {
-    core.GetPluginManager()->InstallPlugins(plugin_path);
+    core.GetPluginManager()->LoadPluginsAsJob(plugin_path);
   }
 
   /* CONNECT TO OTHER NODES (IF ANY WERE SPECIFIED AND SUBSYSTEM IS PROVIDED) */

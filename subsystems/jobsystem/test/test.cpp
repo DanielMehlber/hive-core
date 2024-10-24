@@ -9,7 +9,7 @@ using namespace hive;
 
 using namespace std::chrono_literals;
 
-TEST(JobSystem, allPhases) {
+TEST(JobSystem, all_cycle_phases_should_execute) {
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = common::memory::Owner<jobsystem::JobManager>(config);
   manager->StartExecution();
@@ -46,7 +46,7 @@ TEST(JobSystem, allPhases) {
   manager->StopExecution();
 }
 
-TEST(JobSystem, multiple_jobs_per_phase) {
+TEST(JobSystem, kick_multiple_jobs_per_cycle) {
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
@@ -69,7 +69,7 @@ TEST(JobSystem, multiple_jobs_per_phase) {
   manager->StopExecution();
 }
 
-TEST(JobSystem, auto_requeue) {
+TEST(JobSystem, requeue_jobs_after_execution) {
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
@@ -91,7 +91,7 @@ TEST(JobSystem, auto_requeue) {
   manager->StopExecution();
 }
 
-TEST(JobSystem, timer_job) {
+TEST(JobSystem, timed_jobs_should_defer) {
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
@@ -122,7 +122,7 @@ TEST(JobSystem, timer_job) {
   manager->StopExecution();
 }
 
-TEST(JobSystem, jobs_kicking_jobs) {
+TEST(JobSystem, jobs_kick_other_jobs) {
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
@@ -182,7 +182,7 @@ TEST(JobSystem, jobs_kicking_jobs) {
 }
 
 // Checks that no jobs are getting lost (due to data races)
-TEST(JobSystem, job_bulk) {
+TEST(JobSystem, execute_huge_amounts_of_jobs) {
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = common::memory::Owner<JobManager>(config);
   manager->StartExecution();
@@ -247,7 +247,7 @@ TEST(JobSystem, wait_for_job_inside_job) {
   manager->StopExecution();
 }
 
-TEST(JobSystem, detach_jobs) {
+TEST(JobSystem, detach_jobs_after_execution) {
   std::atomic<short> execution_counter = 0;
   auto config = std::make_shared<common::config::Configuration>();
   auto manager = common::memory::Owner<JobManager>(config);

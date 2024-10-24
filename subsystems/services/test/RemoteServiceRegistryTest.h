@@ -8,7 +8,7 @@
 #include "services/DelayServiceExecutor.h"
 #include "services/LimitedLocalService.h"
 #include "services/executor/impl/LocalServiceExecutor.h"
-#include "services/registry/impl/remote/RemoteServiceRegistry.h"
+#include "services/registry/impl/p2p/PeerToPeerServiceRegistry.h"
 #include <gtest/gtest.h>
 
 using namespace hive::jobsystem;
@@ -64,7 +64,7 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
 
   // setup service registry
   auto service_registry =
-      common::memory::Owner<services::impl::RemoteServiceRegistry>(
+      common::memory::Owner<services::impl::PeerToPeerServiceRegistry>(
           subsystems.CreateReference());
   auto service_registry_ref = service_registry.CreateReference();
   subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(

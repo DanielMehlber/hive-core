@@ -1,6 +1,7 @@
 #include "networking/messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"
 #include "events/broker/IEventBroker.h"
 #include "logging/LogManager.h"
+#include "networking/NetworkingManager.h"
 #include "networking/messaging/MessageConsumerJob.h"
 #include "networking/messaging/MessageConverter.h"
 #include "networking/messaging/events/ConnectionClosedEvent.h"
@@ -65,10 +66,6 @@ void BoostWebSocketEndpoint::SetupCleanUpJob() {
         if (auto shared_ptr_to_endpoint = weak_endpoint.lock()) {
           auto endpoint = *shared_ptr_to_endpoint;
 
-          for (auto &consumer : endpoint->m_consumers) {
-            endpoint->CleanUpConsumersOfMessageType(consumer.first);
-          }
-
           // clean up connections that are not usable anymore
           std::unique_lock lock(endpoint->m_connections_mutex);
           size_t size_before = endpoint->m_connections.size();
@@ -131,98 +128,35 @@ BoostWebSocketEndpoint::~BoostWebSocketEndpoint() {
   LOG_DEBUG("local web-socket endpoint has been shut down")
 }
 
-void BoostWebSocketEndpoint::AddMessageConsumer(
-    std::weak_ptr<IMessageConsumer> consumer) {
-  bool is_valid_consumer = !consumer.expired();
-  if (is_valid_consumer) {
-    SharedMessageConsumer shared_consumer = consumer.lock();
-    const auto &consumer_message_type = shared_consumer->GetMessageType();
-    std::unique_lock consumers_lock(m_consumers_mutex);
-    m_consumers[consumer_message_type].push_back(consumer);
-    LOG_DEBUG("added web-socket message consumer for message type '"
-              << consumer_message_type << "'")
-  } else {
-    LOG_WARN("given web-socket message consumer has expired and cannot be "
-             "added to the web-socket endpoint")
-  }
-}
-
-std::list<SharedMessageConsumer>
-BoostWebSocketEndpoint::GetConsumersOfMessageType(
-    const std::string &type_name) {
-  std::list<SharedMessageConsumer> ret_consumer_list;
-
-  std::unique_lock consumers_lock(m_consumers_mutex);
-  if (m_consumers.contains(type_name)) {
-    auto &consumer_list = m_consumers[type_name];
-
-    consumers_lock.unlock();
-    // remove expired references to consumers
-    CleanUpConsumersOfMessageType(type_name);
-    consumers_lock.lock();
-
-    // collect all remaining consumers in the list
-    for (const auto &consumer : consumer_list) {
-      if (!consumer.expired()) {
-        ret_consumer_list.push_back(consumer.lock());
-      }
-    }
-  }
-
-  return ret_consumer_list;
-}
-
-void BoostWebSocketEndpoint::CleanUpConsumersOfMessageType(
-    const std::string &type) {
-  if (m_consumers.contains(type)) {
-    std::unique_lock consumers_lock(m_consumers_mutex);
-    auto &consumer_list = m_consumers[type];
-    consumer_list.remove_if([](const std::weak_ptr<IMessageConsumer> &con) {
-      return con.expired();
-    });
-  }
-}
-
 void BoostWebSocketEndpoint::ProcessReceivedMessage(
     const std::string &data,
     const SharedBoostWebSocketConnection &over_connection) {
 
-  if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
-    auto subsystems = maybe_subsystems.value();
-    auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
+  std::unique_lock running_lock(m_running_mutex);
+  if (!m_running) {
+    return;
+  }
 
-    std::unique_lock running_lock(m_running_mutex);
-    if (!m_running) {
-      return;
-    }
+  // convert payload into message
+  SharedMessage message;
+  try {
+    message = MessageConverter::FromMultipartFormData(data);
+  } catch (const MessagePayloadInvalidException &ex) {
+    LOG_WARN("message received from host "
+             << over_connection->GetRemoteHostAddress()
+             << " contained invalid payload: " << ex.what())
+    return;
+  }
 
-    // convert payload into message
-    SharedMessage message;
-    try {
-      message =
-          networking::messaging::MessageConverter::FromMultipartFormData(data);
-    } catch (const MessagePayloadInvalidException &ex) {
-      LOG_WARN("message received from host "
-               << over_connection->GetRemoteHostAddress()
-               << " contained invalid payload: " << ex.what())
-      return;
-    }
-
-    std::string message_type = message->GetType();
-    auto consumer_list = GetConsumersOfMessageType(message_type);
-
-    LOG_DEBUG("received message of type '" << message_type << "' ("
-                                           << consumer_list.size()
-                                           << " consumers registered)")
-
-    for (const auto &consumer : consumer_list) {
-      auto job = std::make_shared<MessageConsumerJob>(
-          consumer, message, over_connection->GetInfo());
-      job_manager->KickJob(job);
-    }
-  } else /* if subsystems are not available */ {
-    LOG_ERR("cannot process received web-socket message because required "
-            "subsystems are not available or have been shut down.")
+  if (auto maybe_networking_manager =
+          m_subsystems.Borrow()->GetSubsystem<NetworkingManager>()) {
+    auto networking_manager = maybe_networking_manager.value();
+    networking_manager->ProcessMessage(message, over_connection->GetInfo());
+  } else {
+    LOG_ERR("message received from host "
+            << over_connection->GetRemoteHostAddress()
+            << " could not be processed because networking subsystem has "
+               "already shut down")
   }
 }
 
@@ -294,7 +228,13 @@ void BoostWebSocketEndpoint::InitAndStartConnectionListener() {
   auto property_provider =
       m_subsystems.Borrow()->RequireSubsystem<hive::data::PropertyProvider>();
   auto node_uuid = property_provider->GetOrElse<std::string>("net.node.id", "");
-
+  /**
+   * Consumers are stored as expireable weak-pointers. When the actual
+   * referenced consumer is destroyed, the list of consumers holds expired
+   * pointers that can be removed.
+   * @param type message type name of consumers to clean up
+   */
+  void CleanUpConsumersOfMessageType(const std::string &type);
   if (!m_connection_listener) {
     m_connection_listener = std::make_shared<BoostWebSocketConnectionListener>(
         node_uuid, m_execution_context, m_config, m_local_endpoint,

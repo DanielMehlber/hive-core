@@ -19,30 +19,10 @@ DECLARE_EXCEPTION(EndpointSetupException);
 class IMessageEndpoint {
 public:
   /**
-   * Registers a consumer for a certain type of message. Incoming messages of
-   * this type will be redirected to the consumer.
-   * @attention Every type of message can only have a single consumer at a time,
-   * so the type must be unique.
-   * @param consumer consumer of specific type to add to the register
-   * @throws DuplicateConsumerTypeException if there is already a consumer for
-   * that type registered.
-   */
-  virtual void AddMessageConsumer(std::weak_ptr<IMessageConsumer> consumer) = 0;
-
-  /**
-   * Tries to retrieve a valid consumer for the given message type (if
-   * one is registered and has not expired yet)
-   * @param type_name type name of the events that the consumer processes
-   * @return a consumer if one has been found for the given type
-   */
-  virtual std::list<SharedMessageConsumer>
-  GetConsumersOfMessageType(const std::string &type_name)  = 0;
-
-  /**
    * Sends a message to an endpoint associated with the id.
    * @attention If there is no existing connection with the node,
    * this operation will try to establish the connection.
-   * @param node_id unique identifier of a node in the cluster. There must be a
+   * @param node_id unique identifier of a node in the hive. There must be a
    * connection between this endpoint and the node with this id.
    * @param message message that should be sent
    * @return a future indicating the completion of the sending process or
@@ -76,22 +56,22 @@ public:
    * will not be established.
    */
   virtual std::future<ConnectionInfo>
-  EstablishConnectionTo(const std::string &uri)  = 0;
+  EstablishConnectionTo(const std::string &uri) = 0;
 
   /**
    * Closes a connection to an endpoint (if the connection is still open).
-   * @param node_id unique identifier of a node in the cluster.
+   * @param node_id unique identifier of a node in the hive.
    * @note connections that are not established will be ignored.
    */
-  virtual void CloseConnectionTo(const std::string &node_id)  = 0;
+  virtual void CloseConnectionTo(const std::string &node_id) = 0;
 
   /**
    * Checks if this endpoint is currently connected to another one with this
    * id.
-   * @param node_id unique identifier of a node in the cluster.
+   * @param node_id unique identifier of a node in the hive.
    * @return true, if there is an established connection to this host
    */
-  virtual bool HasConnectionTo(const std::string &node_id) const  = 0;
+  virtual bool HasConnectionTo(const std::string &node_id) const = 0;
 
   virtual ~IMessageEndpoint() = default;
 };

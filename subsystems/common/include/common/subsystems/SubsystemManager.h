@@ -25,7 +25,7 @@ DECLARE_EXCEPTION(SubsystemNotFoundException);
 class SubsystemManager {
 private:
   std::unordered_map<std::type_index, std::any> m_subsystems;
-  common::sync::SpinLock m_lock;
+  sync::SpinLock m_lock;
 
 public:
   SubsystemManager() = default;
@@ -40,7 +40,7 @@ public:
    * this is an interface implementation.
    */
   template <typename subsystem_t>
-  void AddOrReplaceSubsystem(common::memory::Owner<subsystem_t> &&subsystem);
+  void AddOrReplaceSubsystem(memory::Owner<subsystem_t> &&subsystem);
 
   /**
    * Tries to find a registered subsystem of the requested type and returns it.
@@ -48,7 +48,7 @@ public:
    * @return subsystem implementation if it has been registered before.
    */
   template <typename subsystem_t>
-  std::optional<common::memory::Borrower<subsystem_t>> GetSubsystem() const;
+  std::optional<memory::Borrower<subsystem_t>> GetSubsystem() const;
 
   /**
    * Tries to find a registered subsystem of the requested type, but throws an
@@ -59,7 +59,7 @@ public:
    * before.
    */
   template <typename subsystem_t>
-  common::memory::Borrower<subsystem_t> RequireSubsystem() const;
+  memory::Borrower<subsystem_t> RequireSubsystem() const;
 
   /**
    * Checks if a subsystem of the requested type is registered.
@@ -75,8 +75,7 @@ public:
    * @return ownership over the removed subsystem.
    * @throws SubsystemNotFoundException if no such subsystem is registered.
    */
-  template <typename subsystem_t>
-  common::memory::Owner<subsystem_t> RemoveSubsystem();
+  template <typename subsystem_t> memory::Owner<subsystem_t> RemoveSubsystem();
 };
 
 inline SubsystemManager::SubsystemManager(SubsystemManager &&other)
@@ -84,7 +83,9 @@ inline SubsystemManager::SubsystemManager(SubsystemManager &&other)
 
 template <typename subsystem_t>
 memory::Owner<subsystem_t> SubsystemManager::RemoveSubsystem() {
-  common::sync::ScopedLock lock(m_lock);
+  sync::ScopedLock lock(m_lock);
+  /* type-id may not work as expected when components have been compiled by
+   * different compilers or compiler versions: it is compiler-specific */
   if (!m_subsystems.contains(typeid(subsystem_t))) {
     const char *name = typeid(subsystem_t).name();
     auto demangled = boost::core::demangle(name);
@@ -105,13 +106,14 @@ memory::Owner<subsystem_t> SubsystemManager::RemoveSubsystem() {
 }
 
 template <typename subsystem_t>
-inline bool SubsystemManager::ProvidesSubsystem() const {
+bool SubsystemManager::ProvidesSubsystem() const {
+  /* type-id may not work as expected when components have been compiled by
+   * different compilers or compiler versions: it is compiler-specific */
   return m_subsystems.contains(typeid(subsystem_t));
 }
 
 template <typename subsystem_t>
-common::memory::Borrower<subsystem_t>
-SubsystemManager::RequireSubsystem() const {
+memory::Borrower<subsystem_t> SubsystemManager::RequireSubsystem() const {
   auto opt_subsystem = GetSubsystem<subsystem_t>();
   if (opt_subsystem.has_value()) {
     return opt_subsystem.value();
@@ -125,9 +127,11 @@ SubsystemManager::RequireSubsystem() const {
 }
 
 template <typename subsystem_t>
-std::optional<common::memory::Borrower<subsystem_t>>
+std::optional<memory::Borrower<subsystem_t>>
 SubsystemManager::GetSubsystem() const {
   if (ProvidesSubsystem<subsystem_t>()) {
+    /* type-id may not work as expected when components have been compiled by
+     * different compilers or compiler versions: it is compiler-specific */
     const auto &any_subsystem = m_subsystems.at(typeid(subsystem_t));
     auto subsystem_owner_ptr =
         std::any_cast<std::shared_ptr<common::memory::Owner<subsystem_t>>>(
@@ -140,8 +144,8 @@ SubsystemManager::GetSubsystem() const {
 
 template <typename subsystem_t>
 void SubsystemManager::AddOrReplaceSubsystem(
-    common::memory::Owner<subsystem_t> &&subsystem) {
-  common::sync::ScopedLock lock(m_lock);
+    memory::Owner<subsystem_t> &&subsystem) {
+  sync::ScopedLock lock(m_lock);
 
   /* std::any can only handle copy-constructible types, but
    * common::memory::Owner is not. It is therefore wrapped in such a type

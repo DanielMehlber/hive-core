@@ -16,15 +16,17 @@ public:
    * Returns the web-socket message type this consumer listens to
    * @return string that contains the unique type name
    */
-  virtual std::string GetMessageType() const  = 0;
+  virtual std::string GetMessageType() const = 0;
 
   /**
-   * Reacts to received events and processes them
-   * @param received_message message
+   * Processes a message that was received by the message endpoint.
+   * @param received_message message that must be processed
+   * @param connection_info information about the sender of the message
    */
-  virtual void
-  ProcessReceivedMessage(SharedMessage received_message,
-                         ConnectionInfo connection_info)  = 0;
+  virtual void ProcessReceivedMessage(SharedMessage received_message,
+                                      ConnectionInfo connection_info) = 0;
+
+  virtual ~IMessageConsumer() = default;
 };
 
 typedef std::shared_ptr<IMessageConsumer> SharedMessageConsumer;

@@ -1,7 +1,8 @@
-#include "services/registry/impl/remote/RemoteServiceRegistry.h"
+#include "services/registry/impl/p2p/PeerToPeerServiceRegistry.h"
 #include "common/assert/Assert.h"
 #include "events/broker/IEventBroker.h"
 #include "logging/LogManager.h"
+#include "networking/NetworkingManager.h"
 #include "networking/messaging/events/ConnectionEstablishedEvent.h"
 #include "services/caller/impl/RoundRobinServiceCaller.h"
 #include "services/messages/ServiceRegisteredNotification.h"
@@ -65,7 +66,8 @@ void broadcastServiceRegistration(
   job_manager->KickJob(job);
 }
 
-void RemoteServiceRegistry::Register(const SharedServiceExecutor &executor) {
+void PeerToPeerServiceRegistry::Register(
+    const SharedServiceExecutor &executor) {
 
   DEBUG_ASSERT(!executor->GetId().empty(), "executor id should not be empty")
   DEBUG_ASSERT(!executor->GetServiceName().empty(),
@@ -115,7 +117,7 @@ void RemoteServiceRegistry::Register(const SharedServiceExecutor &executor) {
   }
 }
 
-void RemoteServiceRegistry::UnregisterAll(const std::string &name) {
+void PeerToPeerServiceRegistry::UnregisterAll(const std::string &name) {
   DEBUG_ASSERT(!name.empty(), "name should not be empty")
 
   std::unique_lock lock(m_registered_callers_mutex);
@@ -150,7 +152,7 @@ void RemoteServiceRegistry::UnregisterAll(const std::string &name) {
   }
 }
 
-void RemoteServiceRegistry::Unregister(const std::string &executor_id) {
+void PeerToPeerServiceRegistry::Unregister(const std::string &executor_id) {
   DEBUG_ASSERT(!executor_id.empty(), "executor id should not be empty")
 
   std::unique_lock lock(m_registered_callers_mutex);
@@ -160,7 +162,8 @@ void RemoteServiceRegistry::Unregister(const std::string &executor_id) {
 }
 
 std::future<std::optional<SharedServiceCaller>>
-RemoteServiceRegistry::Find(const std::string &service_name, bool only_local) {
+PeerToPeerServiceRegistry::Find(const std::string &service_name,
+                                bool only_local) {
   DEBUG_ASSERT(!service_name.empty(), "name should not be empty")
 
   std::promise<std::optional<SharedServiceCaller>> promise;
@@ -197,7 +200,7 @@ RemoteServiceRegistry::Find(const std::string &service_name, bool only_local) {
   return future;
 }
 
-RemoteServiceRegistry::RemoteServiceRegistry(
+PeerToPeerServiceRegistry::PeerToPeerServiceRegistry(
     const common::memory::Reference<common::subsystems::SubsystemManager>
         &subsystems)
     : m_subsystems(subsystems) {
@@ -206,7 +209,7 @@ RemoteServiceRegistry::RemoteServiceRegistry(
   SetupEventSubscribers();
 }
 
-void RemoteServiceRegistry::SetupEventSubscribers() {
+void PeerToPeerServiceRegistry::SetupEventSubscribers() {
   DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
   auto subsystems = m_subsystems.Borrow();
   DEBUG_ASSERT(subsystems->ProvidesSubsystem<events::IEventBroker>(),
@@ -226,37 +229,44 @@ void RemoteServiceRegistry::SetupEventSubscribers() {
                                  "connection-established");
 }
 
-void RemoteServiceRegistry::SetupMessageConsumers() {
+void PeerToPeerServiceRegistry::SetupMessageConsumers() {
   DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
   DEBUG_ASSERT(m_subsystems.Borrow()->ProvidesSubsystem<IMessageEndpoint>(),
                "peer networking subsystem should exist")
 
   auto subsystems = m_subsystems.Borrow();
-  auto web_socket_endpoint = subsystems->RequireSubsystem<IMessageEndpoint>();
+  auto networking_manager =
+      subsystems->RequireSubsystem<networking::NetworkingManager>();
 
   auto response_consumer =
       std::make_shared<RemoteServiceResponseConsumer>(m_subsystems);
 
+  /* TODO: consumers are invalid if endpoint is exchanged during runtime:
+   * Maybe pass networking manager instead? */
+  auto current_messaging_endpoint =
+      subsystems->RequireSubsystem<IMessageEndpoint>();
+
   m_response_consumer = response_consumer;
   m_registration_consumer = std::make_shared<RemoteServiceRegistrationConsumer>(
-      std::bind(&RemoteServiceRegistry::Register, this, _1), response_consumer,
-      web_socket_endpoint.ToReference());
+      std::bind(&PeerToPeerServiceRegistry::Register, this, _1),
+      response_consumer, current_messaging_endpoint.ToReference());
   m_request_consumer = std::make_shared<RemoteServiceRequestConsumer>(
       subsystems.ToReference(),
-      std::bind(&RemoteServiceRegistry::Find, this, _1, _2),
-      web_socket_endpoint.ToReference());
+      std::bind(&PeerToPeerServiceRegistry::Find, this, _1, _2),
+      current_messaging_endpoint.ToReference());
 
-  web_socket_endpoint->AddMessageConsumer(m_registration_consumer);
-  web_socket_endpoint->AddMessageConsumer(m_response_consumer);
-  web_socket_endpoint->AddMessageConsumer(m_request_consumer);
+  networking_manager->AddMessageConsumer(m_registration_consumer);
+  networking_manager->AddMessageConsumer(m_response_consumer);
+  networking_manager->AddMessageConsumer(m_request_consumer);
 }
 
-void RemoteServiceRegistry::Unregister(const SharedServiceExecutor &executor) {
+void PeerToPeerServiceRegistry::Unregister(
+    const SharedServiceExecutor &executor) {
   DEBUG_ASSERT(executor != nullptr, "executor should not be null")
   Unregister(executor->GetId());
 }
 
-void RemoteServiceRegistry::SendServicePortfolioToEndpoint(
+void PeerToPeerServiceRegistry::SendServicePortfolioToEndpoint(
     const std::string &endpoint_id) {
 
   DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
@@ -297,7 +307,7 @@ void RemoteServiceRegistry::SendServicePortfolioToEndpoint(
   }
 }
 
-SharedJob RemoteServiceRegistry::CreateRemoteServiceRegistrationJob(
+SharedJob PeerToPeerServiceRegistry::CreateRemoteServiceRegistrationJob(
     const std::string &endpoint_id, const std::string &service_name,
     const std::string &service_id, size_t capacity,
     common::memory::Reference<networking::messaging::IMessageEndpoint>

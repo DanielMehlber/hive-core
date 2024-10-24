@@ -10,7 +10,7 @@ using namespace hive;
 using namespace std::chrono_literals;
 
 void TiledCompositeRendererPlugin::Init(plugins::SharedPluginContext context) {
-  if (auto maybe_subsystems = context->GetKernelSubsystems().TryBorrow()) {
+  if (auto maybe_subsystems = context->GetSubsystems().TryBorrow()) {
     auto subsystems = maybe_subsystems.value();
 
     /* Take the old renderer and replace it with the new tiled-based renderer.
