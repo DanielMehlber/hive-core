@@ -7,8 +7,9 @@
 namespace hive::networking::messaging {
 
 /**
- * Generic interface for receiving events that are sent over the
- * network
+ * Generic interface for receiving and processing messages that are sent over
+ * the network. This works like a listener-pattern, where the consumer is
+ * registered to the networking manager and waits for messages of certain types.
  */
 class IMessageConsumer : public std::enable_shared_from_this<IMessageConsumer> {
 public:

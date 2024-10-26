@@ -23,7 +23,7 @@ struct Node {
   common::memory::Owner<common::subsystems::SubsystemManager> subsystems;
   common::memory::Reference<JobManager> job_manager;
   common::memory::Reference<IServiceRegistry> service_registry;
-  common::memory::Reference<IMessageEndpoint> network_endpoint;
+  common::memory::Reference<NetworkingManager> networking_mgr;
   int port;
 };
 
@@ -52,12 +52,14 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
 
   // setup networking node
   config->Set("net.port", port);
-  auto networking_node = common::memory::Owner<networking::NetworkingManager>(
-      subsystems.CreateReference(), config);
-  auto networking_endpoint_ref =
-      subsystems->RequireSubsystem<IMessageEndpoint>().ToReference();
+  auto networking_manager =
+      common::memory::Owner<networking::NetworkingManager>(
+          subsystems.CreateReference(), config);
+
+  auto networking_manager_ref = networking_manager.CreateReference();
+
   subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
-      std::move(networking_node));
+      std::move(networking_manager));
 
   std::string node_id =
       property_provider_ref.Borrow()->Get<std::string>("net.node.id").value();
@@ -74,7 +76,7 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
               std::move(subsystems),
               job_manager_ref,
               service_registry_ref,
-              networking_endpoint_ref,
+              networking_manager_ref,
               port};
 }
 
@@ -85,8 +87,10 @@ TEST(RemoteServiceTests, run_single_remote_service) {
   auto node_2 = setupNode(config, 9006);
 
   // first establish connection in order to broadcast the connection
-  auto connection_progress =
-      node_1.network_endpoint.Borrow()->EstablishConnectionTo("127.0.0.1:9006");
+  auto connection_progress = node_1.networking_mgr.Borrow()
+                                 ->GetDefaultMessageEndpoint()
+                                 .value()
+                                 ->EstablishConnectionTo("127.0.0.1:9006");
 
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
@@ -144,9 +148,10 @@ TEST(RemoteServiceTests, remote_service_load_balancing) {
     auto ith_node = setupNode(config, i);
 
     // first establish connection in order to broadcast the connection
-    auto connection_progress =
-        ith_node.network_endpoint.Borrow()->EstablishConnectionTo(
-            "127.0.0.1:9004");
+    auto connection_progress = ith_node.networking_mgr.Borrow()
+                                   ->GetDefaultMessageEndpoint()
+                                   .value()
+                                   ->EstablishConnectionTo("127.0.0.1:9004");
 
     connection_progress.wait();
     ASSERT_NO_THROW(connection_progress.get());
@@ -240,8 +245,10 @@ TEST(RemoteServiceTests, web_socket_node_destroyed) {
   {
     auto node_2 = setupNode(config, 9006);
 
-    auto progress = node_2.network_endpoint.Borrow()->EstablishConnectionTo(
-        "127.0.0.1:9005");
+    auto progress = node_2.networking_mgr.Borrow()
+                        ->GetDefaultMessageEndpoint()
+                        .value()
+                        ->EstablishConnectionTo("127.0.0.1:9005");
 
     ASSERT_NO_THROW(progress.get());
 
@@ -270,8 +277,10 @@ TEST(RemoteServiceTests, web_socket_node_destroyed) {
   TryAssertUntilTimeout(
       [&node_1] {
         node_1.job_manager.Borrow()->InvokeCycleAndWait();
-        return node_1.network_endpoint.Borrow()->GetActiveConnectionCount() ==
-               0;
+        return node_1.networking_mgr.Borrow()
+                   ->GetDefaultMessageEndpoint()
+                   .value()
+                   ->GetActiveConnectionCount() == 0;
       },
       10s);
 
@@ -285,8 +294,10 @@ TEST(RemoteServiceTests, async_service_call) {
   auto node_1 = setupNode(config, 9005);
   auto node_2 = setupNode(config, 9006);
 
-  auto connection_progress =
-      node_1.network_endpoint.Borrow()->EstablishConnectionTo("127.0.0.1:9006");
+  auto connection_progress = node_1.networking_mgr.Borrow()
+                                 ->GetDefaultMessageEndpoint()
+                                 .value()
+                                 ->EstablishConnectionTo("127.0.0.1:9006");
 
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
@@ -350,9 +361,10 @@ TEST(RemoteServiceTests, service_endpoint_disconnected) {
   {
     auto node_2 = setupNode(config, 9006);
 
-    auto connection_progress =
-        node_1.network_endpoint.Borrow()->EstablishConnectionTo(
-            "127.0.0.1:9006");
+    auto connection_progress = node_1.networking_mgr.Borrow()
+                                   ->GetDefaultMessageEndpoint()
+                                   .value()
+                                   ->EstablishConnectionTo("127.0.0.1:9006");
 
     connection_progress.wait();
     ASSERT_NO_THROW(connection_progress.get());
@@ -395,9 +407,10 @@ TEST(RemoteServiceTests, service_executor_busy) {
   auto servicing_node = setupNode(config, 9005);
   auto calling_node = setupNode(config, 9006);
 
-  auto connection_progress =
-      servicing_node.network_endpoint.Borrow()->EstablishConnectionTo(
-          "127.0.0.1:9006");
+  auto connection_progress = servicing_node.networking_mgr.Borrow()
+                                 ->GetDefaultMessageEndpoint()
+                                 .value()
+                                 ->EstablishConnectionTo("127.0.0.1:9006");
 
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());
@@ -495,9 +508,10 @@ TEST(RemoteServiceTests, busy_retry_policy) {
   auto servicing_node = setupNode(config, 9005);
   auto calling_node = setupNode(config, 9006);
 
-  auto connection_progress =
-      servicing_node.network_endpoint.Borrow()->EstablishConnectionTo(
-          "127.0.0.1:9006");
+  auto connection_progress = servicing_node.networking_mgr.Borrow()
+                                 ->GetDefaultMessageEndpoint()
+                                 .value()
+                                 ->EstablishConnectionTo("127.0.0.1:9006");
 
   connection_progress.wait();
   ASSERT_NO_THROW(connection_progress.get());

@@ -12,6 +12,7 @@ using namespace hive;
 using namespace hive::services;
 using namespace hive::services::impl;
 using namespace std::placeholders;
+using namespace hive::networking;
 using namespace hive::networking::messaging;
 using namespace hive::jobsystem;
 
@@ -83,7 +84,10 @@ void PeerToPeerServiceRegistry::Register(
   if (auto maybe_subsystems = m_subsystems.TryBorrow()) {
     auto subsystems = maybe_subsystems.value();
     auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
-    auto message_endpoint = subsystems->RequireSubsystem<IMessageEndpoint>();
+    auto networking_manager =
+        subsystems->RequireSubsystem<networking::NetworkingManager>();
+    auto message_endpoint =
+        networking_manager->GetDefaultMessageEndpoint().value();
 
     std::string name = executor->GetServiceName();
 
@@ -231,29 +235,30 @@ void PeerToPeerServiceRegistry::SetupEventSubscribers() {
 
 void PeerToPeerServiceRegistry::SetupMessageConsumers() {
   DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
-  DEBUG_ASSERT(m_subsystems.Borrow()->ProvidesSubsystem<IMessageEndpoint>(),
+  DEBUG_ASSERT(m_subsystems.Borrow()->ProvidesSubsystem<NetworkingManager>(),
                "peer networking subsystem should exist")
 
   auto subsystems = m_subsystems.Borrow();
   auto networking_manager =
       subsystems->RequireSubsystem<networking::NetworkingManager>();
 
+  if (!networking_manager->HasInstalledMessageEndpoints()) {
+    LOG_WARN("no message endpoints installed in networking manager; calling "
+             "remote services is possible until at least one endpoint "
+             "is installed")
+  }
+
   auto response_consumer =
       std::make_shared<RemoteServiceResponseConsumer>(m_subsystems);
-
-  /* TODO: consumers are invalid if endpoint is exchanged during runtime:
-   * Maybe pass networking manager instead? */
-  auto current_messaging_endpoint =
-      subsystems->RequireSubsystem<IMessageEndpoint>();
 
   m_response_consumer = response_consumer;
   m_registration_consumer = std::make_shared<RemoteServiceRegistrationConsumer>(
       std::bind(&PeerToPeerServiceRegistry::Register, this, _1),
-      response_consumer, current_messaging_endpoint.ToReference());
+      response_consumer, networking_manager.ToReference());
   m_request_consumer = std::make_shared<RemoteServiceRequestConsumer>(
       subsystems.ToReference(),
       std::bind(&PeerToPeerServiceRegistry::Find, this, _1, _2),
-      current_messaging_endpoint.ToReference());
+      networking_manager.ToReference());
 
   networking_manager->AddMessageConsumer(m_registration_consumer);
   networking_manager->AddMessageConsumer(m_response_consumer);
@@ -272,22 +277,15 @@ void PeerToPeerServiceRegistry::SendServicePortfolioToEndpoint(
   DEBUG_ASSERT(m_subsystems.CanBorrow(), "subsystems should still exist")
 
   auto subsystems = m_subsystems.Borrow();
-  DEBUG_ASSERT(subsystems->ProvidesSubsystem<IMessageEndpoint>(),
+  DEBUG_ASSERT(subsystems->ProvidesSubsystem<NetworkingManager>(),
                "networking subsystem should exist")
   DEBUG_ASSERT(subsystems->ProvidesSubsystem<jobsystem::JobManager>(),
                "job system should exist")
 
-  if (!subsystems
-           ->ProvidesSubsystem<networking::messaging::IMessageEndpoint>()) {
-    LOG_ERR("Cannot transmit service portfolio to remote endpoint "
-            << endpoint_id << ": this peer cannot be found as subsystem")
-    return;
-  }
+  auto networking_manager = subsystems->RequireSubsystem<NetworkingManager>();
+  auto endpoint = networking_manager->RequireDefaultMessageEndpoint();
 
-  auto this_message_endpoint =
-      subsystems->RequireSubsystem<networking::messaging::IMessageEndpoint>();
-
-  auto job_manager = subsystems->RequireSubsystem<jobsystem::JobManager>();
+  auto job_manager = subsystems->RequireSubsystem<JobManager>();
 
   // create a registration message job for each registered service name
   std::unique_lock callers_lock(m_registered_callers_mutex);
@@ -301,7 +299,7 @@ void PeerToPeerServiceRegistry::SendServicePortfolioToEndpoint(
       std::string service_id = executor->GetId();
       auto job = CreateRemoteServiceRegistrationJob(
           endpoint_id, service_name, service_id, executor->GetCapacity(),
-          this_message_endpoint.ToReference());
+          endpoint.ToReference());
       job_manager->KickJob(job);
     }
   }
@@ -310,8 +308,7 @@ void PeerToPeerServiceRegistry::SendServicePortfolioToEndpoint(
 SharedJob PeerToPeerServiceRegistry::CreateRemoteServiceRegistrationJob(
     const std::string &endpoint_id, const std::string &service_name,
     const std::string &service_id, size_t capacity,
-    common::memory::Reference<networking::messaging::IMessageEndpoint>
-        weak_endpoint) {
+    common::memory::Reference<IMessageEndpoint> weak_endpoint) {
 
   DEBUG_ASSERT(weak_endpoint.CanBorrow(), "sending endpoint should exist")
   DEBUG_ASSERT(!endpoint_id.empty(), "endpoint id should not be empty")

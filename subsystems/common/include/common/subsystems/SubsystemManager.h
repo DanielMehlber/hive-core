@@ -23,7 +23,6 @@ DECLARE_EXCEPTION(SubsystemNotFoundException);
  * guaranteed and must be queried before use.
  */
 class SubsystemManager {
-private:
   std::unordered_map<std::type_index, std::any> m_subsystems;
   sync::SpinLock m_lock;
 
@@ -154,8 +153,7 @@ void SubsystemManager::AddOrReplaceSubsystem(
    * way to get templates, std::any, and non-copy-constructible types to play
    * along... */
   auto subsystem_owner_ptr =
-      std::make_shared<common::memory::Owner<subsystem_t>>(
-          std::move(subsystem));
+      std::make_shared<memory::Owner<subsystem_t>>(std::move(subsystem));
 
   std::any subsystem_any = subsystem_owner_ptr;
   m_subsystems[typeid(subsystem_t)] = subsystem_any;
