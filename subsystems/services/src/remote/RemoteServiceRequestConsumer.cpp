@@ -9,10 +9,10 @@ using namespace hive::jobsystem;
 RemoteServiceRequestConsumer::RemoteServiceRequestConsumer(
     const common::memory::Reference<common::subsystems::SubsystemManager>
         &subsystems,
-    RemoteServiceRequestConsumer::query_func_t query_func,
-    const common::memory::Reference<IMessageEndpoint> &endpoint)
+    query_func_t query_func,
+    const common::memory::Reference<networking::NetworkingManager> &endpoint)
     : m_subsystems(subsystems), m_service_query_func(std::move(query_func)),
-      m_endpoint(endpoint) {}
+      m_networking_manager(endpoint) {}
 
 void RemoteServiceRequestConsumer::ProcessReceivedMessage(
     SharedMessage received_message, ConnectionInfo connection_info) {
@@ -94,7 +94,11 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
               RemoteServiceMessagesConverter::FromServiceResponse(
                   std::move(*response));
 
-          if (auto maybe_endpoint = _this->m_endpoint.TryBorrow()) {
+          auto networking_manager = _this->m_networking_manager.Borrow();
+
+          if (auto maybe_endpoint =
+                  networking_manager->GetSomeMessageEndpointConnectedTo(
+                      connection_info.endpoint_id)) {
             auto endpoint = maybe_endpoint.value();
             auto sending_progress =
                 endpoint->Send(connection_info.endpoint_id, response_message);
@@ -114,7 +118,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
           } else {
             LOG_ERR("cannot send service response for remote service request "
                     << request->GetTransactionId()
-                    << " because web-socket peer has shut down")
+                    << " because no endpoint is connected to remote host")
           }
 
           return JobContinuation::DISPOSE;

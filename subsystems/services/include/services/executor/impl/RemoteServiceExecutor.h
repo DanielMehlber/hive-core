@@ -1,6 +1,6 @@
 #pragma once
 
-#include "networking/messaging/IMessageEndpoint.h"
+#include "networking/NetworkingManager.h"
 #include "services/executor/IServiceExecutor.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
 #include <memory>
@@ -13,9 +13,8 @@ namespace hive::services::impl {
 class RemoteServiceExecutor
     : public IServiceExecutor,
       public std::enable_shared_from_this<RemoteServiceExecutor> {
-private:
   /** Endpoint that will be used to send calls to remote services */
-  common::memory::Reference<networking::messaging::IMessageEndpoint> m_endpoint;
+  common::memory::Reference<networking::NetworkingManager> m_networking_manager;
 
   /** Hostname of remote endpoint (recipient of call message) */
   networking::messaging::ConnectionInfo m_remote_host_info;
@@ -44,8 +43,7 @@ public:
   RemoteServiceExecutor() = delete;
   explicit RemoteServiceExecutor(
       std::string service_name,
-      common::memory::Reference<networking::messaging::IMessageEndpoint>
-          endpoint,
+      common::memory::Reference<networking::NetworkingManager> networking_mgr,
       networking::messaging::ConnectionInfo remote_host_info, std::string id,
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
       size_t capacity = -1);

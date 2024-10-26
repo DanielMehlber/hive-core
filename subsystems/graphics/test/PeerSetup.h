@@ -19,7 +19,7 @@ struct Node {
   std::string uuid;
   common::memory::Owner<common::subsystems::SubsystemManager> subsystems;
   common::memory::Reference<jobsystem::JobManager> job_manager;
-  common::memory::Reference<IMessageEndpoint> endpoint;
+  common::memory::Reference<NetworkingManager> networking_mgr;
   common::memory::Reference<IServiceRegistry> registry;
   int port;
 };
@@ -51,10 +51,10 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   auto networking_manager =
       common::memory::Owner<networking::NetworkingManager>(
           subsystems.CreateReference(), config);
-  subsystems->AddOrReplaceSubsystem(std::move(networking_manager));
 
-  auto endpoint_ref =
-      subsystems->RequireSubsystem<IMessageEndpoint>().ToReference();
+  auto networking_manager_ref = networking_manager.CreateReference();
+
+  subsystems->AddOrReplaceSubsystem(std::move(networking_manager));
 
   // setup service registry
   common::memory::Owner<IServiceRegistry> registry =
@@ -67,6 +67,10 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   std::string uuid =
       property_providder_ref.Borrow()->Get<std::string>("net.node.id").value();
 
-  return Node{uuid,         std::move(subsystems), job_manager_ref,
-              endpoint_ref, registry_ref,          port};
+  return Node{uuid,
+              std::move(subsystems),
+              job_manager_ref,
+              networking_manager_ref,
+              registry_ref,
+              port};
 }

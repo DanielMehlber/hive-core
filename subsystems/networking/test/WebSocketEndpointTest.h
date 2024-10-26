@@ -15,7 +15,6 @@ using namespace hive::common::test;
 
 struct Node {
   std::string uuid;
-  common::memory::Reference<IMessageEndpoint> endpoint;
   common::memory::Reference<NetworkingManager> networking_manager;
   common::memory::Owner<common::subsystems::SubsystemManager> subsystems;
   common::memory::Reference<JobManager> job_manager;
@@ -47,9 +46,8 @@ inline Node SetupWebSocketPeer(size_t port) {
   subsystems->AddOrReplaceSubsystem<PropertyProvider>(
       std::move(property_provider));
 
-  auto networking_manager =
-      common::memory::Owner<networking::NetworkingManager>(
-          subsystems.CreateReference(), config);
+  auto networking_manager = common::memory::Owner<NetworkingManager>(
+      subsystems.CreateReference(), config);
 
   auto networking_manager_ref = networking_manager.CreateReference();
 
@@ -57,17 +55,11 @@ inline Node SetupWebSocketPeer(size_t port) {
                        ->Get<std::string>("net.node.id")
                        .value();
 
-  subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
+  subsystems->AddOrReplaceSubsystem<NetworkingManager>(
       std::move(networking_manager));
 
-  auto endpoint = subsystems->RequireSubsystem<IMessageEndpoint>();
-
-  return Node{id,
-              endpoint.ToReference(),
-              networking_manager_ref,
-              std::move(subsystems),
-              job_manager_ref,
-              port};
+  return Node{id, networking_manager_ref, std::move(subsystems),
+              job_manager_ref, port};
 }
 
 class TestConsumer : public IMessageConsumer {
@@ -97,8 +89,10 @@ TEST(WebSockets, websockets_connection_establishment) {
   Node peer1 = SetupWebSocketPeer(9003);
   Node peer2 = SetupWebSocketPeer(9004);
 
-  auto result =
-      peer1.endpoint.Borrow()->EstablishConnectionTo("ws://127.0.0.1:9004");
+  auto result = peer1.networking_manager.Borrow()
+                    ->GetDefaultMessageEndpoint()
+                    .value()
+                    ->EstablishConnectionTo("ws://127.0.0.1:9004");
   result.wait();
 
   ConnectionInfo connection_info;
@@ -122,8 +116,10 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
   node2.networking_manager.Borrow()->AddMessageConsumer(test_consumer_2);
 
   // establish connection
-  auto result1 =
-      node1.endpoint.Borrow()->EstablishConnectionTo("ws://127.0.0.1:9004");
+  auto result1 = node1.networking_manager.Borrow()
+                     ->GetDefaultMessageEndpoint()
+                     .value()
+                     ->EstablishConnectionTo("ws://127.0.0.1:9004");
   result1.wait();
 
   ASSERT_NO_THROW(result1.get());
@@ -134,14 +130,22 @@ TEST(WebSockets, websockets_message_sending_1_to_1) {
 
   SharedMessage message = std::make_shared<Message>("test-type");
 
-  SendMessageAndWait(message, node1.endpoint.Borrow(), node2.uuid);
+  SendMessageAndWait(
+      message,
+      node1.networking_manager.Borrow()->GetDefaultMessageEndpoint().value(),
+      node2.uuid);
 
-  auto result2 =
-      node2.endpoint.Borrow()->EstablishConnectionTo("ws://127.0.0.1:9003");
+  auto result2 = node2.networking_manager.Borrow()
+                     ->GetDefaultMessageEndpoint()
+                     .value()
+                     ->EstablishConnectionTo("ws://127.0.0.1:9003");
   result2.wait();
   ASSERT_NO_THROW(result2.get());
 
-  SendMessageAndWait(message, node2.endpoint.Borrow(), node1.uuid);
+  SendMessageAndWait(
+      message,
+      node2.networking_manager.Borrow()->GetDefaultMessageEndpoint().value(),
+      node1.uuid);
 
   TryAssertUntilTimeout(
       [&node1, &node2, &test_consumer_1] {
@@ -171,8 +175,10 @@ TEST(WebSockets, websockets_message_receiving_multiple) {
 
   peer2.networking_manager.Borrow()->AddMessageConsumer(test_consumer_1);
 
-  auto result1 =
-      peer1.endpoint.Borrow()->EstablishConnectionTo("ws://127.0.0.1:9004");
+  auto result1 = peer1.networking_manager.Borrow()
+                     ->GetDefaultMessageEndpoint()
+                     .value()
+                     ->EstablishConnectionTo("ws://127.0.0.1:9004");
   result1.wait();
   ASSERT_NO_THROW(result1.get());
 
@@ -182,7 +188,10 @@ TEST(WebSockets, websockets_message_receiving_multiple) {
 
   for (int i = 0; i < 5; i++) {
     SharedMessage message = std::make_shared<Message>("test-type");
-    SendMessageAndWait(message, peer1.endpoint.Borrow(), peer2.uuid);
+    SendMessageAndWait(
+        message,
+        peer1.networking_manager.Borrow()->GetDefaultMessageEndpoint().value(),
+        peer2.uuid);
   }
 
   TryAssertUntilTimeout(
@@ -208,8 +217,10 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
   for (size_t i = 9005; i < 9010; i++) {
     Node peer = SetupWebSocketPeer(i);
 
-    auto result =
-        peer.endpoint.Borrow()->EstablishConnectionTo("ws://127.0.0.1:9003");
+    auto result = peer.networking_manager.Borrow()
+                      ->GetDefaultMessageEndpoint()
+                      .value()
+                      ->EstablishConnectionTo("ws://127.0.0.1:9003");
     result.wait();
     ASSERT_NO_THROW(result.get());
 
@@ -219,7 +230,10 @@ TEST(WebSockets, websockets_message_sending_1_to_n) {
 
     SharedMessage message = std::make_shared<Message>("test-type");
 
-    SendMessageAndWait(message, peer.endpoint.Borrow(), peer1.uuid);
+    SendMessageAndWait(
+        message,
+        peer.networking_manager.Borrow()->GetDefaultMessageEndpoint().value(),
+        peer1.uuid);
 
     peers.push_back(std::move(peer));
   }
@@ -248,8 +262,10 @@ TEST(WebSockets, websockets_message_broadcast) {
   for (size_t i = 9005; i < 9010; i++) {
     Node recipient_node = SetupWebSocketPeer(i);
 
-    auto result = recipient_node.endpoint.Borrow()->EstablishConnectionTo(
-        "127.0.0.1:9003");
+    auto result = recipient_node.networking_manager.Borrow()
+                      ->GetDefaultMessageEndpoint()
+                      .value()
+                      ->EstablishConnectionTo("127.0.0.1:9003");
     result.wait();
     ASSERT_NO_THROW(result.get());
 
@@ -266,15 +282,19 @@ TEST(WebSockets, websockets_message_broadcast) {
   TryAssertUntilTimeout(
       [&broadcasting_peer]() {
         broadcasting_peer.job_manager.Borrow()->InvokeCycleAndWait();
-        return broadcasting_peer.endpoint.Borrow()
+        return broadcasting_peer.networking_manager.Borrow()
+                   ->GetDefaultMessageEndpoint()
+                   .value()
                    ->GetActiveConnectionCount() == 5;
       },
       10s);
 
   SharedMessage message = std::make_shared<Message>("test-type");
 
-  auto future =
-      broadcasting_peer.endpoint.Borrow()->IssueBroadcastAsJob(message);
+  auto future = broadcasting_peer.networking_manager.Borrow()
+                    ->GetDefaultMessageEndpoint()
+                    .value()
+                    ->IssueBroadcastAsJob(message);
   broadcasting_peer.job_manager.Borrow()->InvokeCycleAndWait();
   future.wait();
   ASSERT_EQ(future.get(), 5);

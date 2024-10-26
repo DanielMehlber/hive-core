@@ -94,9 +94,13 @@ public:
   BoostWebSocketEndpoint(
       const common::memory::Reference<common::subsystems::SubsystemManager>
           &subsystems,
-      const common::config::SharedConfiguration &config);
+      common::config::SharedConfiguration config);
 
   ~BoostWebSocketEndpoint() override;
+
+  void Startup() override;
+  void Shutdown() override;
+  std::string GetProtocol() const override;
 
   std::future<void> Send(const std::string &node_id,
                          SharedMessage message) override;

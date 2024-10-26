@@ -9,6 +9,7 @@
 #include "networking/util/UrlParser.h"
 #include "properties/PropertyProvider.h"
 #include <regex>
+#include <utility>
 
 using namespace hive::jobsystem;
 using namespace hive::networking;
@@ -18,20 +19,22 @@ namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
 namespace asio = boost::asio;           // from <boost/asio.hpp>
-using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+using tcp = asio::ip::tcp;              // from <boost/asio/ip/tcp.hpp>
 using namespace std::chrono_literals;
 
 BoostWebSocketEndpoint::BoostWebSocketEndpoint(
     const common::memory::Reference<common::subsystems::SubsystemManager>
         &subsystems,
-    const common::config::SharedConfiguration &config)
-    : m_subsystems(subsystems), m_config(config) {
+    common::config::SharedConfiguration config)
+    : m_subsystems(subsystems), m_config(std::move(config)) {}
 
+void BoostWebSocketEndpoint::Startup() {
   // read configuration
-  bool init_server_at_startup = config->GetBool("net.server.auto-init", true);
-  int thread_count = config->GetAsInt("net.threads", 1);
-  int local_endpoint_port = config->GetAsInt("net.port", 9000);
-  std::string local_endpoint_address = config->Get("net.address", "127.0.0.1");
+  bool init_server_at_startup = m_config->GetBool("net.server.auto-init", true);
+  int thread_count = m_config->GetAsInt("net.threads", 1);
+  int local_endpoint_port = m_config->GetAsInt("net.port", 9000);
+  std::string local_endpoint_address =
+      m_config->Get("net.address", "127.0.0.1");
 
   m_local_endpoint = std::make_shared<boost::asio::ip::tcp::endpoint>(
       asio::ip::make_address(local_endpoint_address), local_endpoint_port);
@@ -58,6 +61,31 @@ BoostWebSocketEndpoint::BoostWebSocketEndpoint(
   m_this_pointer = std::make_shared<BoostWebSocketEndpoint *>(this);
   SetupCleanUpJob();
 }
+
+void BoostWebSocketEndpoint::Shutdown() {
+  std::unique_lock running_lock(m_running_mutex);
+  m_running = false;
+  running_lock.unlock();
+
+  // close all endpoints
+  std::unique_lock conn_lock(m_connections_mutex);
+  m_connection_listener->ShutDown();
+  for (const auto &connection : m_connections) {
+    connection.second->Close();
+  }
+  conn_lock.unlock();
+
+  // wait until all worker threads have returned
+  for (auto &execution : m_execution_threads) {
+    DEBUG_ASSERT(execution.get_id() != std::this_thread::get_id(),
+                 "Execution thread should not join itself")
+    execution.join();
+  }
+
+  LOG_DEBUG("local web-socket endpoint has been shut down")
+}
+
+std::string BoostWebSocketEndpoint::GetProtocol() const { return "ws"; }
 
 void BoostWebSocketEndpoint::SetupCleanUpJob() {
   std::weak_ptr<BoostWebSocketEndpoint *> weak_endpoint = m_this_pointer;
@@ -107,25 +135,9 @@ void BoostWebSocketEndpoint::SetupCleanUpJob() {
 
 BoostWebSocketEndpoint::~BoostWebSocketEndpoint() {
   std::unique_lock running_lock(m_running_mutex);
-  m_running = false;
-  running_lock.unlock();
-
-  // close all endpoints
-  std::unique_lock conn_lock(m_connections_mutex);
-  m_connection_listener->ShutDown();
-  for (const auto &connection : m_connections) {
-    connection.second->Close();
+  if (m_running) {
+    BoostWebSocketEndpoint::Shutdown();
   }
-  conn_lock.unlock();
-
-  // wait until all worker threads have returned
-  for (auto &execution : m_execution_threads) {
-    DEBUG_ASSERT(execution.get_id() != std::this_thread::get_id(),
-                 "Execution thread should not join itself")
-    execution.join();
-  }
-
-  LOG_DEBUG("local web-socket endpoint has been shut down")
 }
 
 void BoostWebSocketEndpoint::ProcessReceivedMessage(

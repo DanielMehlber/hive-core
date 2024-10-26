@@ -7,26 +7,28 @@ using namespace hive::services::impl;
 using namespace hive::services;
 using namespace hive::jobsystem;
 using namespace hive::networking::messaging;
+using namespace hive::networking;
 
 RemoteServiceExecutor::RemoteServiceExecutor(
     std::string service_name,
-    common::memory::Reference<IMessageEndpoint> endpoint,
+    common::memory::Reference<NetworkingManager> networking_mgr,
     ConnectionInfo remote_host_info, std::string id,
     std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
     size_t capacity)
-    : m_endpoint(std::move(endpoint)),
+    : m_networking_manager(std::move(networking_mgr)),
       m_remote_host_info(std::move(remote_host_info)),
       m_service_name(std::move(service_name)),
       m_response_consumer(std::move(response_consumer)), m_id(std::move(id)),
       m_capacity(capacity) {}
 
 bool RemoteServiceExecutor::IsCallable() {
-  if (auto maybe_endpoint = m_endpoint.TryBorrow()) {
-    return maybe_endpoint.value()->HasConnectionTo(
-        m_remote_host_info.endpoint_id);
-  } else {
-    return false;
+  if (auto maybe_networking_manager = m_networking_manager.TryBorrow()) {
+    auto maybe_connection =
+        maybe_networking_manager.value()->GetSomeMessageEndpointConnectedTo(
+            m_remote_host_info.endpoint_id);
+    return maybe_connection.has_value();
   }
+  return false;
 }
 
 std::string get_exception_string(const std::exception_ptr &ptr) {
@@ -41,7 +43,7 @@ std::string get_exception_string(const std::exception_ptr &ptr) {
 
 std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
     SharedServiceRequest request,
-    common::memory::Borrower<jobsystem::JobManager> job_manager, bool async) {
+    common::memory::Borrower<JobManager> job_manager, bool async) {
 
   DEBUG_ASSERT(request != nullptr, "request should not be null")
   DEBUG_ASSERT(!request->GetServiceName().empty(),
@@ -93,9 +95,35 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
           SharedMessage message =
               RemoteServiceMessagesConverter::FromServiceRequest(*request);
 
-          std::future<void> sending_progress =
-              executor->m_endpoint.Borrow()->Send(
-                  executor->m_remote_host_info.endpoint_id, message);
+          auto maybe_connected_endpoint =
+              executor->m_networking_manager.Borrow()
+                  ->GetSomeMessageEndpointConnectedTo(
+                      executor->m_remote_host_info.endpoint_id);
+
+          if (!maybe_connected_endpoint.has_value()) {
+            LOG_ERR("cannot call remote web-socket service "
+                    << request->GetServiceName() << " of node "
+                    << executor->m_remote_host_info.endpoint_id << " at "
+                    << executor->m_remote_host_info.hostname
+                    << " because no endpoint is connected to remote host")
+
+            auto exception = BUILD_EXCEPTION(
+                CallFailedException,
+                "cannot call remote web-socket service "
+                    << request->GetServiceName() << " of node "
+                    << executor->m_remote_host_info.endpoint_id << " at "
+                    << executor->m_remote_host_info.hostname
+                    << " because no endpoint is connected to remote host");
+
+            request->MarkAsCurrentlyProcessed(false);
+            promise->set_exception(std::make_exception_ptr(exception));
+            return JobContinuation::DISPOSE;
+          }
+
+          auto connected_endpoint = maybe_connected_endpoint.value();
+
+          std::future<void> sending_progress = connected_endpoint->Send(
+              executor->m_remote_host_info.endpoint_id, message);
 
           // wait until request has been sent and register promise for
           // resolution

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "networking/NetworkingManager.h"
 #include "networking/messaging/IMessageConsumer.h"
-#include "networking/messaging/IMessageEndpoint.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistrationMessage.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"
@@ -14,18 +14,16 @@ namespace hive::services::impl {
  */
 class RemoteServiceRegistrationConsumer
     : public networking::messaging::IMessageConsumer {
-private:
   std::function<void(SharedServiceExecutor)> m_consumer;
   std::weak_ptr<RemoteServiceResponseConsumer> m_response_consumer;
-  common::memory::Reference<networking::messaging::IMessageEndpoint>
-      m_message_endpoint;
+  common::memory::Reference<networking::NetworkingManager> m_networking_manager;
 
 public:
   RemoteServiceRegistrationConsumer() = delete;
   explicit RemoteServiceRegistrationConsumer(
       std::function<void(SharedServiceExecutor)> consumer,
       std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
-      common::memory::Reference<networking::messaging::IMessageEndpoint>
+      common::memory::Reference<networking::NetworkingManager>
           messaging_endpoint);
 
   ~RemoteServiceRegistrationConsumer() override = default;

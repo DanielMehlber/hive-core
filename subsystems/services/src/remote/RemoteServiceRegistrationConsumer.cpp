@@ -4,15 +4,16 @@
 #include "services/executor/impl/RemoteServiceExecutor.h"
 
 using namespace hive::services::impl;
+using namespace hive::networking;
 using namespace hive::networking::messaging;
 
 RemoteServiceRegistrationConsumer::RemoteServiceRegistrationConsumer(
     std::function<void(SharedServiceExecutor)> consumer,
     std::weak_ptr<RemoteServiceResponseConsumer> response_consumer,
-    common::memory::Reference<IMessageEndpoint> messaging_endpoint)
+    common::memory::Reference<NetworkingManager> networking_manager)
     : m_consumer(std::move(consumer)),
       m_response_consumer(std::move(response_consumer)),
-      m_message_endpoint(std::move(messaging_endpoint)) {}
+      m_networking_manager(std::move(networking_manager)) {}
 
 void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
     SharedMessage received_message, ConnectionInfo connection_info) {
@@ -33,7 +34,7 @@ void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
            << connection_info.endpoint_id)
 
   SharedServiceExecutor stub = std::make_shared<RemoteServiceExecutor>(
-      service_name, m_message_endpoint, connection_info, service_id,
+      service_name, m_networking_manager, connection_info, service_id,
       m_response_consumer, capacity);
 
   m_consumer(stub);

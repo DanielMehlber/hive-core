@@ -14,10 +14,27 @@ DECLARE_EXCEPTION(EndpointSetupException);
 
 /**
  * A local endpoint that establishes connections to endpoints of other nodes and
- * allows message-oriented communication to them.
+ * allows message-oriented communication to them. Received messages are passed
+ * to the NetworkingManager for processing.
  */
 class IMessageEndpoint {
 public:
+  /**
+   * Starts up the endpoint and prepares it for operation.
+   */
+  virtual void Startup() = 0;
+
+  /**
+   * Shuts down the endpoint and releases all resources associated with it.
+   */
+  virtual void Shutdown() = 0;
+
+  /**
+   * Retrieves the protocol name of this endpoint.
+   * @return protocol name
+   */
+  virtual std::string GetProtocol() const = 0;
+
   /**
    * Sends a message to an endpoint associated with the id.
    * @attention If there is no existing connection with the node,
