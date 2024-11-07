@@ -71,7 +71,7 @@ public:
    * @param path unique identifier of the data in a path-like format
    * @param data new value of the data
    */
-  void Set(const std::string &path, const std::string &data) const;
+  void Set(const std::string &path, const std::string &data);
 
   /**
    * Retrieves the data at the given path. If the data does not exist, the
@@ -81,7 +81,7 @@ public:
    */
   std::future<std::optional<std::string>> Get(const std::string &path) const;
 
-  void NotifyChange(const std::string &path, const std::string &data) const;
+  void NotifyChange(const std::string &path, const std::string &data);
 };
 
 } // namespace hive::data

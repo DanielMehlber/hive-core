@@ -6,6 +6,7 @@
 
 using namespace hive::data;
 using namespace std::chrono_literals;
+using namespace hive::jobsystem;
 
 typedef std::vector<std::string> data_path_t;
 
@@ -14,7 +15,9 @@ DataLayer::DataLayer(
     const std::shared_ptr<IDataProvider> &provider)
     : m_provider(provider), m_subsystems(subsystems.ToReference()) {
 
-  std::weak_ptr<bool> is_alive = m_alive;
+  DEBUG_ASSERT(provider != nullptr, "provider implementation must not be null")
+
+  std::weak_ptr<bool> is_alive = m_alive; // to track liveliness of data layer
   auto clean_up_job = std::make_shared<jobsystem::TimerJob>(
       [this, is_alive](jobsystem::JobContext *ctx) mutable {
         if (!is_alive.expired()) {
@@ -49,6 +52,8 @@ DataLayer::~DataLayer() = default;
 void DataLayer::RegisterListener(
     const std::string &path,
     const std::weak_ptr<IDataChangeListener> &listener) {
+  DEBUG_ASSERT(!path.empty(), "data path must not be empty")
+  DEBUG_ASSERT(listener.lock() != nullptr, "listener must not be null")
   std::unique_lock lock(m_listeners_mutex);
   if (m_listeners.contains(path)) {
     m_listeners[path].push_back(listener);
@@ -61,12 +66,13 @@ void DataLayer::RegisterListener(
 }
 
 void DataLayer::SetProvider(const std::shared_ptr<IDataProvider> &&provider) {
-  std::unique_lock lock(m_provider_mutex);
   DEBUG_ASSERT(provider, "cannot set a null provider for data layer");
+  std::unique_lock lock(m_provider_mutex);
   m_provider = provider;
 }
 
-void DataLayer::Set(const std::string &path, const std::string &data) const {
+void DataLayer::Set(const std::string &path, const std::string &data) {
+  DEBUG_ASSERT(!path.empty(), "data path must not be empty")
   std::unique_lock lock(m_provider_mutex);
   DEBUG_ASSERT(m_provider, "no data provider specified for data layer");
   m_provider->Set(path, data);
@@ -111,16 +117,36 @@ bool checkMatch(const data_path_t &path, const data_path_t &pattern) {
   return true;
 }
 
-void DataLayer::NotifyChange(const std::string &path,
-                             const std::string &data) const {
+std::shared_ptr<Job>
+createNotificationJob(const std::shared_ptr<IDataChangeListener> &listener,
+                      const std::string &path, const std::string &data) {
+  return std::make_shared<Job>(
+      [listener, path, data](JobContext *) {
+        listener->Notify(path, data);
+        return DISPOSE;
+      },
+      "data-change-notification-{" + path + "}", MAIN);
+}
+
+void DataLayer::NotifyChange(const std::string &path, const std::string &data) {
   std::unique_lock lock(m_listeners_mutex);
+
+  auto job_manager = m_subsystems.Borrow()->RequireSubsystem<JobManager>();
+
   const data_path_t path_parts = splitPath(path);
   for (const auto &[pattern, listeners] : m_listeners) {
-    if (const data_path_t pattern_path_parts = splitPath(pattern);
-        checkMatch(path_parts, pattern_path_parts)) {
+
+    // quick and dirty optimization
+    if (pattern[0] != path[0]) {
+      continue;
+    }
+
+    const data_path_t pattern_path_parts = splitPath(pattern);
+    if (checkMatch(path_parts, pattern_path_parts)) {
       for (const auto &listener : listeners) {
         if (const auto shared_listener = listener.lock()) {
-          shared_listener->Notify(path, data);
+          job_manager->KickJob(
+              createNotificationJob(shared_listener, path, data));
         }
       }
     }
