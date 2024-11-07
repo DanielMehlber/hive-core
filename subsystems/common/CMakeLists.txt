@@ -15,6 +15,10 @@ add_library(common SHARED
 
 add_library(Hive::common ALIAS common)
 
+set_target_properties(common PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(common PUBLIC
         ${Boost_INCLUDE_DIRS}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

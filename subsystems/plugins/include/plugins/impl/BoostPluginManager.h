@@ -2,6 +2,7 @@
 
 #include "boost/dll/shared_library.hpp"
 #include "common/subsystems/SubsystemManager.h"
+#include "jobsystem/synchronization/JobMutex.h"
 #include "plugins/IPluginManager.h"
 #include "resources/manager/IResourceManager.h"
 #include <map>

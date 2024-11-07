@@ -12,6 +12,10 @@ add_library(scene SHARED
 
 add_library(Hive::scene ALIAS scene)
 
+set_target_properties(scene PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(scene PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"

@@ -11,6 +11,10 @@ add_library(plugins SHARED
 
 add_library(Hive::plugins ALIAS plugins)
 
+set_target_properties(plugins PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(plugins PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"

@@ -20,6 +20,10 @@ add_library(networking SHARED
 
 add_library(Hive::networking ALIAS networking)
 
+set_target_properties(networking PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(networking PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
@@ -32,7 +36,7 @@ target_link_libraries(networking PUBLIC
         jobsystem
         events
         common
-        properties
+        data
 )
 
 # install

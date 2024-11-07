@@ -1,5 +1,6 @@
 #include <utility>
 
+#include "logging/LogManager.h"
 #include "networking/messaging/impl/websockets/boost/BoostWebSocketConnectionListener.h"
 
 using namespace hive::networking;

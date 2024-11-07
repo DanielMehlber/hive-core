@@ -39,8 +39,8 @@ add_compile_definitions(_USE_MATH_DEFINES)
 
 add_subdirectory(subsystems)
 add_subdirectory(core)
-add_subdirectory(plugins)
 add_subdirectory(standalone)
+# add_subdirectory(plugins)
 
 # export steps
 include(CMakePackageConfigHelpers)

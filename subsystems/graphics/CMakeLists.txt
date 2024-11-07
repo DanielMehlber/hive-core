@@ -21,6 +21,10 @@ add_library(graphics SHARED
 
 add_library(Hive::graphics ALIAS graphics)
 
+set_target_properties(graphics PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(graphics PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"

@@ -1,5 +1,7 @@
 #include "TestPlugin.h"
+#include "common/config/Configuration.h"
 #include "common/memory/ExclusiveOwnership.h"
+#include "jobsystem/manager/JobManager.h"
 #include "plugins/impl/BoostPluginManager.h"
 #include "resources/manager/IResourceManager.h"
 #include "resources/manager/impl/ThreadPoolResourceManager.h"

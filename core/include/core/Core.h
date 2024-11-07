@@ -3,12 +3,12 @@
 #include "common/config/Configuration.h"
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
+#include "data/DataLayer.h"
 #include "events/broker/IEventBroker.h"
 #include "graphics/renderer/IRenderer.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/NetworkingManager.h"
 #include "plugins/IPluginManager.h"
-#include "properties/PropertyProvider.h"
 #include "resources/manager/IResourceManager.h"
 #include "scene/SceneManager.h"
 #include "services/registry/IServiceRegistry.h"
@@ -76,9 +76,8 @@ public:
   void SetEventBroker(common::memory::Owner<events::IEventBroker> &&broker);
   common::memory::Borrower<events::IEventBroker> GetEventBroker();
 
-  void SetPropertyProvider(
-      common::memory::Owner<data::PropertyProvider> &&provider);
-  common::memory::Borrower<data::PropertyProvider> GetPropertyProvider();
+  void SetDataLayer(common::memory::Owner<data::DataLayer> &&provider);
+  common::memory::Borrower<data::DataLayer> GetDataLayer();
 
   void SetResourceManager(
       common::memory::Owner<resources::IResourceManager> &&manager);
