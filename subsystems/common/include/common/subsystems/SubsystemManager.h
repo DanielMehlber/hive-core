@@ -6,7 +6,6 @@
 #include <any>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <typeindex>
 
@@ -29,7 +28,7 @@ class SubsystemManager {
 public:
   SubsystemManager() = default;
   SubsystemManager(SubsystemManager &other) = delete;
-  SubsystemManager(SubsystemManager &&other);
+  SubsystemManager(SubsystemManager &&other) noexcept;
 
   /**
    * Registers subsystem or replaces its implementation if already registered.
