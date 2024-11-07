@@ -13,6 +13,15 @@ TEST(SubsystemTest, subsystems) {
   subsystems.AddOrReplaceSubsystem<std::string>(std::move(system));
 
   ASSERT_EQ("Hallo", *subsystems.GetSubsystem<std::string>().value());
+  ASSERT_THROW(subsystems.RequireSubsystem<SubsystemManager>(),
+               SubsystemNotFoundException);
+  ASSERT_THROW(subsystems.RemoveSubsystem<SubsystemManager>(),
+               SubsystemNotFoundException);
+
+  subsystems.RemoveSubsystem<std::string>();
+  ASSERT_FALSE(subsystems.ProvidesSubsystem<std::string>());
+  ASSERT_THROW(subsystems.RequireSubsystem<std::string>(),
+               SubsystemNotFoundException);
 }
 
 int main(int argc, char **argv) {

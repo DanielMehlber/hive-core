@@ -7,7 +7,7 @@ find_dependency(Boost REQUIRED COMPONENTS log log_setup system iostreams fiber c
 find_dependency(vsg REQUIRED)
 
 set(_Hive_supported_components
-    common logging jobsystem resources events properties networking scene services graphics plugins core)
+    common logging jobsystem resources events data networking scene services graphics plugins core)
 
 foreach(_comp ${_Hive_supported_components})
     include("${CMAKE_CURRENT_LIST_DIR}/hive-${_comp}-targets.cmake")

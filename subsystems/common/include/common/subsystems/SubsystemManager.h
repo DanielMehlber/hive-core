@@ -22,7 +22,7 @@ DECLARE_EXCEPTION(SubsystemNotFoundException);
  * guaranteed and must be queried before use.
  */
 class SubsystemManager {
-  std::unordered_map<std::type_index, std::any> m_subsystems;
+  std::map<std::string, std::any> m_subsystems;
   sync::SpinLock m_lock;
 
 public:
@@ -76,38 +76,39 @@ public:
   template <typename subsystem_t> memory::Owner<subsystem_t> RemoveSubsystem();
 };
 
-inline SubsystemManager::SubsystemManager(SubsystemManager &&other)
+inline SubsystemManager::SubsystemManager(SubsystemManager &&other) noexcept
     : m_subsystems(std::move(other.m_subsystems)) {}
+
+template <typename type_t> std::string GetTypeName() {
+  const char *name = typeid(type_t).name();
+  return boost::core::demangle(name);
+}
 
 template <typename subsystem_t>
 memory::Owner<subsystem_t> SubsystemManager::RemoveSubsystem() {
   sync::ScopedLock lock(m_lock);
-  /* type-id may not work as expected when components have been compiled by
-   * different compilers or compiler versions: it is compiler-specific */
-  if (!m_subsystems.contains(typeid(subsystem_t))) {
-    const char *name = typeid(subsystem_t).name();
-    auto demangled = boost::core::demangle(name);
+
+  std::string subsystem_t_name = GetTypeName<subsystem_t>();
+  if (!m_subsystems.contains(subsystem_t_name)) {
     THROW_EXCEPTION(SubsystemNotFoundException,
                     "cannot remove subsystem of type "
-                        << demangled << " because none was registered");
+                        << subsystem_t_name << " because none was registered");
   }
 
-  const auto &any_subsystem = m_subsystems.at(typeid(subsystem_t));
+  const auto &any_subsystem = m_subsystems.at(subsystem_t_name);
   auto subsystem_owner_ptr =
       std::any_cast<std::shared_ptr<common::memory::Owner<subsystem_t>>>(
           any_subsystem);
 
   auto subsystem_owner = std::move(*subsystem_owner_ptr);
-  m_subsystems.erase(typeid(subsystem_t));
+  m_subsystems.erase(subsystem_t_name);
 
   return subsystem_owner;
 }
 
 template <typename subsystem_t>
 bool SubsystemManager::ProvidesSubsystem() const {
-  /* type-id may not work as expected when components have been compiled by
-   * different compilers or compiler versions: it is compiler-specific */
-  return m_subsystems.contains(typeid(subsystem_t));
+  return m_subsystems.contains(GetTypeName<subsystem_t>());
 }
 
 template <typename subsystem_t>
@@ -115,22 +116,18 @@ memory::Borrower<subsystem_t> SubsystemManager::RequireSubsystem() const {
   auto opt_subsystem = GetSubsystem<subsystem_t>();
   if (opt_subsystem.has_value()) {
     return opt_subsystem.value();
-  } else {
-    const char *name = typeid(subsystem_t).name();
-
-    auto demangled = boost::core::demangle(name);
-    THROW_EXCEPTION(SubsystemNotFoundException,
-                    "subsystem " << demangled << " is not provided")
   }
+
+  THROW_EXCEPTION(SubsystemNotFoundException,
+                  "subsystem "
+                      << GetTypeName<subsystem_t> << " is not provided")
 }
 
 template <typename subsystem_t>
 std::optional<memory::Borrower<subsystem_t>>
 SubsystemManager::GetSubsystem() const {
   if (ProvidesSubsystem<subsystem_t>()) {
-    /* type-id may not work as expected when components have been compiled by
-     * different compilers or compiler versions: it is compiler-specific */
-    const auto &any_subsystem = m_subsystems.at(typeid(subsystem_t));
+    const auto &any_subsystem = m_subsystems.at(GetTypeName<subsystem_t>());
     auto subsystem_owner_ptr =
         std::any_cast<std::shared_ptr<common::memory::Owner<subsystem_t>>>(
             any_subsystem);
@@ -155,7 +152,7 @@ void SubsystemManager::AddOrReplaceSubsystem(
       std::make_shared<memory::Owner<subsystem_t>>(std::move(subsystem));
 
   std::any subsystem_any = subsystem_owner_ptr;
-  m_subsystems[typeid(subsystem_t)] = subsystem_any;
+  m_subsystems[GetTypeName<subsystem_t>()] = subsystem_any;
 }
 
 } // namespace hive::common::subsystems
