@@ -49,13 +49,14 @@ public:
   /**
    * Adds a new listener that is interested in changes in paths matching the
    * given pattern or sub-path in the data hierarchy.
-   * @data_pattern regex pattern of paths that the listener is interested in
+   * @path path in which the listener is interested in changes. This
+   * also includes changes in the subsequent paths.
    * @listener listener that will be notified about changes in paths matching
    * the pattern. These listeners are weakly referenced and are not managed by
    * the data layer. When they expire, they will be removed from the list of
    * listeners.
    */
-  void RegisterListener(const std::string &data_pattern,
+  void RegisterListener(const std::string &path,
                         const std::weak_ptr<IDataChangeListener> &listener);
 
   /**

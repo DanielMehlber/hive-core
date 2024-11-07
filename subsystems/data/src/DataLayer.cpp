@@ -47,16 +47,16 @@ DataLayer::DataLayer(
 DataLayer::~DataLayer() = default;
 
 void DataLayer::RegisterListener(
-    const std::string &data_pattern,
+    const std::string &path,
     const std::weak_ptr<IDataChangeListener> &listener) {
   std::unique_lock lock(m_listeners_mutex);
-  if (m_listeners.contains(data_pattern)) {
-    m_listeners[data_pattern].push_back(listener);
+  if (m_listeners.contains(path)) {
+    m_listeners[path].push_back(listener);
   } else {
-    m_listeners[data_pattern] = {listener};
+    m_listeners[path] = {listener};
   }
 
-  LOG_DEBUG("registered listener for data pattern '" << data_pattern
+  LOG_DEBUG("registered listener for data pattern '" << path
                                                      << "' in data layer")
 }
 
