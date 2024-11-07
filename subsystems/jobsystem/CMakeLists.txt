@@ -32,6 +32,10 @@ add_library(jobsystem SHARED
 
 add_library(Hive::jobsystem ALIAS jobsystem)
 
+set_target_properties(jobsystem PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(jobsystem PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"

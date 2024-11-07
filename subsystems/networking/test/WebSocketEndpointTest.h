@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/test/TryAssertUntilTimeout.h"
+#include "data/DataLayer.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "networking/NetworkingManager.h"
 #include "networking/messaging/ConnectionInfo.h"
@@ -41,18 +42,18 @@ inline Node SetupWebSocketPeer(size_t port) {
           subsystems.CreateReference());
   subsystems->AddOrReplaceSubsystem<IEventBroker>(std::move(event_broker));
 
-  auto property_provider = common::memory::Owner<data::PropertyProvider>(
-      subsystems.CreateReference());
-  subsystems->AddOrReplaceSubsystem<PropertyProvider>(
-      std::move(property_provider));
+  auto property_provider =
+      common::memory::Owner<DataLayer>(subsystems.Borrow());
+  subsystems->AddOrReplaceSubsystem<DataLayer>(std::move(property_provider));
 
   auto networking_manager = common::memory::Owner<NetworkingManager>(
       subsystems.CreateReference(), config);
 
   auto networking_manager_ref = networking_manager.CreateReference();
 
-  std::string id = subsystems->RequireSubsystem<PropertyProvider>()
-                       ->Get<std::string>("net.node.id")
+  std::string id = subsystems->RequireSubsystem<DataLayer>()
+                       ->Get("net.node.id")
+                       .get()
                        .value();
 
   subsystems->AddOrReplaceSubsystem<NetworkingManager>(

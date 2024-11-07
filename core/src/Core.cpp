@@ -32,8 +32,8 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
       m_subsystems.CreateReference()));
 
   // setup property provider
-  SetPropertyProvider(
-      common::memory::Owner<PropertyProvider>(m_subsystems.CreateReference()));
+  SetDataLayer(
+      common::memory::Owner<DataLayer>(m_subsystems.Borrow()));
 
   // setup resource manager
   auto resource_manager = common::memory::Owner<ThreadPoolResourceManager>();
@@ -139,12 +139,11 @@ common::memory::Borrower<events::IEventBroker> Core::GetEventBroker() {
   return m_subsystems->RequireSubsystem<IEventBroker>();
 }
 
-void Core::SetPropertyProvider(
-    common::memory::Owner<data::PropertyProvider> &&broker) {
-  m_subsystems->AddOrReplaceSubsystem<PropertyProvider>(std::move(broker));
+void Core::SetDataLayer(common::memory::Owner<DataLayer> &&broker) {
+  m_subsystems->AddOrReplaceSubsystem<DataLayer>(std::move(broker));
 }
-common::memory::Borrower<data::PropertyProvider> Core::GetPropertyProvider() {
-  return m_subsystems->RequireSubsystem<PropertyProvider>();
+common::memory::Borrower<DataLayer> Core::GetDataLayer() {
+  return m_subsystems->RequireSubsystem<DataLayer>();
 }
 
 void Core::SetResourceManager(

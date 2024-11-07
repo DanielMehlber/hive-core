@@ -12,6 +12,10 @@ add_library(resources SHARED
 
 add_library(Hive::resources ALIAS resources)
 
+set_target_properties(resources PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(resources PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"

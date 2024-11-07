@@ -8,6 +8,10 @@ add_executable(standalone
         src/main.cpp
 )
 
+set_target_properties(standalone PROPERTIES
+        PREFIX "hive-"
+)
+
 install(TARGETS standalone
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib

@@ -6,6 +6,7 @@
 #include "common/synchronization/SpinLock.h"
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <thread>
 #include <type_traits>
@@ -435,15 +436,17 @@ public:
    */
   ~Owner();
 
+  void Destroy() const;
+
   T *operator->() const;
   T &operator*() const { return *this->operator->(); }
-  Owner<T> &operator=(Owner<T> &&) = delete;
+  Owner<T> &operator=(Owner<T> &&) noexcept;
 
   std::shared_ptr<OwnershipState> &GetState();
   std::unique_ptr<T> &GetPointer();
 };
 
-template <typename T> inline T *Owner<T>::operator->() const {
+template <typename T> T *Owner<T>::operator->() const {
   DEBUG_ASSERT(_state, "cannot access data because owner is invalid")
   DEBUG_ASSERT(_state->alive,
                "cannot access data because owner is already dead")
@@ -452,10 +455,10 @@ template <typename T> inline T *Owner<T>::operator->() const {
 
 template <typename T> Borrower<T> Owner<T>::PerformBorrow(bool already_locked) {
   // if there is no lock, lock it.
-  std::unique_ptr<common::sync::ScopedLock<common::sync::SpinLock>> lock;
+  std::unique_ptr<std::unique_lock<sync::SpinLock>> lock;
   if (!already_locked) {
-    lock = std::make_unique<common::sync::ScopedLock<common::sync::SpinLock>>(
-        _state->state_lock);
+    lock =
+        std::make_unique<std::unique_lock<sync::SpinLock>>(_state->state_lock);
   }
 
   DEBUG_ASSERT(_state, "shared state is broken")
@@ -468,8 +471,7 @@ template <typename T> std::unique_ptr<T> &Owner<T>::GetPointer() {
   return _owned;
 }
 
-template <typename T>
-inline std::shared_ptr<OwnershipState> &Owner<T>::GetState() {
+template <typename T> std::shared_ptr<OwnershipState> &Owner<T>::GetState() {
   return _state;
 }
 
@@ -477,7 +479,7 @@ template <typename T>
 Owner<T>::Owner(T &&owned) noexcept
     : _owned(std::make_unique<T>(owned)),
       _state(std::make_shared<OwnershipState>()) {
-  common::sync::ScopedLock lock(_state->state_lock);
+  sync::ScopedLock lock(_state->state_lock);
   _state->owner.store(this);
 
   if constexpr (std::is_base_of<EnableBorrowFromThis<T>, T>()) {
@@ -510,7 +512,7 @@ Owner<T>::Owner(Owner<Other> &&other) noexcept {
 }
 
 template <typename T> Owner<T>::Owner(Owner<T> &&other) noexcept {
-  common::sync::ScopedLock lock(other._state->state_lock);
+  sync::ScopedLock lock(other._state->state_lock);
   _state = std::move(other._state);
   _owned = std::move(other._owned);
 
@@ -540,7 +542,7 @@ Owner<T>::Owner(Params... params)
   }
 }
 
-template <typename T> Owner<T>::~Owner() {
+template <typename T> void Owner<T>::Destroy() const {
   if (_state) {
     DEBUG_ASSERT(_state->alive, "owner should not be dead at this point")
     DEBUG_ASSERT(_state->owner != nullptr, "owner cannot be nullptr")
@@ -552,5 +554,30 @@ template <typename T> Owner<T>::~Owner() {
     _state->alive.store(false);
   }
 }
+
+template <typename T> Owner<T> &Owner<T>::operator=(Owner<T> &&other) noexcept {
+  Destroy(); // waits until all borrows are gone of this instance
+  std::unique_lock other_lock(other._state->state_lock);
+
+  _state = std::move(other._state);
+  _owned = std::move(other._owned);
+
+  DEBUG_ASSERT(_state, "shared state is broken")
+  DEBUG_ASSERT(_owned, "owned object should not be null")
+  DEBUG_ASSERT(_state->alive, "cannot move dead owner")
+
+  DEBUG_ASSERT(!other._state, "other owner should be without state after move")
+  DEBUG_ASSERT(!other._owned, "other owner should be without owned after move")
+
+  _state->owner.store(this);
+
+  if constexpr (std::is_base_of<EnableBorrowFromThis<T>, T>()) {
+    _owned->SetOwnerOfThis(this);
+  }
+
+  return *this;
+}
+
+template <typename T> Owner<T>::~Owner() { Destroy(); }
 
 } // namespace hive::common::memory

@@ -1,48 +1,53 @@
 cmake_minimum_required(VERSION 3.10)
-project(properties)
+project(data)
 
 find_package(Boost REQUIRED COMPONENTS)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(properties SHARED
-        src/PropertyChangeListener.cpp
-        src/PropertyProvider.cpp
+
+add_library(data SHARED
+        src/FunctionalChangeListener.cpp
+        src/DataLayer.cpp
+        src/LocalDataProvider.cpp
 )
 
-add_library(Hive::properties ALIAS properties)
+add_library(Hive::data ALIAS data)
 
-target_include_directories(properties PUBLIC
+set_target_properties(data PROPERTIES
+        PREFIX "hive-"
+)
+
+target_include_directories(data PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(properties PUBLIC
+target_link_libraries(data PUBLIC
         ${Boost_LIBRARIES}
         logging
         jobsystem
-        events
         common
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(properties PUBLIC FILE_SET HEADERS
+target_sources(data PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS properties
-        EXPORT propertiesTargets
+install(TARGETS data
+        EXPORT dataTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT propertiesTargets
-        FILE hive-properties-targets.cmake
+install(EXPORT dataTargets
+        FILE hive-data-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
 )
@@ -54,7 +59,7 @@ add_subdirectory(test)
 find_package(Doxygen QUIET)
 if (GENERATE_DOCS)
     if (DOXYGEN_FOUND)
-        doxygen_add_docs(propertiesdocs "include" "src" ALL)
+        doxygen_add_docs(datadocs "include" "src" ALL)
     else (DOXYGEN_FOUND)
         message(WARNING "Doxygen need to be installed to generate the doxygen documentation of ${PROJECT_NAME}.")
     endif (DOXYGEN_FOUND)

@@ -1,12 +1,9 @@
 #pragma once
 
+#include "data/DataLayer.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
-#include "graphics/renderer/impl/OffscreenRenderer.h"
-#include "graphics/service/RenderService.h"
-#include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/encoders/IRenderResultEncoder.h"
 #include "networking/NetworkingManager.h"
-#include "networking/messaging/IMessageEndpoint.h"
 #include "services/registry/impl/p2p/PeerToPeerServiceRegistry.h"
 
 using namespace hive::services;
@@ -14,6 +11,7 @@ using namespace hive::networking;
 using namespace hive::graphics;
 using namespace hive;
 using namespace hive::networking::messaging;
+using namespace hive::data;
 
 struct Node {
   std::string uuid;
@@ -40,17 +38,14 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<events::IEventBroker>(
       std::move(event_broker));
 
-  auto property_provider = common::memory::Owner<data::PropertyProvider>(
-      subsystems.CreateReference());
-  auto property_providder_ref = property_provider.CreateReference();
-  subsystems->AddOrReplaceSubsystem<data::PropertyProvider>(
-      std::move(property_provider));
+  auto data_layer = common::memory::Owner<DataLayer>(subsystems.Borrow());
+  auto data_layer_ref = data_layer.CreateReference();
+  subsystems->AddOrReplaceSubsystem<DataLayer>(std::move(data_layer));
 
   // setup networking manager
   config->Set("net.port", port);
-  auto networking_manager =
-      common::memory::Owner<networking::NetworkingManager>(
-          subsystems.CreateReference(), config);
+  auto networking_manager = common::memory::Owner<NetworkingManager>(
+      subsystems.CreateReference(), config);
 
   auto networking_manager_ref = networking_manager.CreateReference();
 
@@ -58,14 +53,12 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
 
   // setup service registry
   common::memory::Owner<IServiceRegistry> registry =
-      common::memory::Owner<services::impl::PeerToPeerServiceRegistry>(
+      common::memory::Owner<impl::PeerToPeerServiceRegistry>(
           subsystems.CreateReference());
   auto registry_ref = registry.CreateReference();
-  subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(
-      std::move(registry));
+  subsystems->AddOrReplaceSubsystem<IServiceRegistry>(std::move(registry));
 
-  std::string uuid =
-      property_providder_ref.Borrow()->Get<std::string>("net.node.id").value();
+  std::string uuid = data_layer_ref.Borrow()->Get("net.node.id").get().value();
 
   return Node{uuid,
               std::move(subsystems),

@@ -2,7 +2,6 @@
 
 #include "IMessageConsumer.h"
 #include "common/exceptions/ExceptionsBase.h"
-#include "properties/PropertyProvider.h"
 #include <future>
 #include <list>
 #include <memory>

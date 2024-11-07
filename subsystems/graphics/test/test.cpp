@@ -1,7 +1,12 @@
 #include "PeerSetup.h"
 #include "common/test/TryAssertUntilTimeout.h"
+#include "graphics/renderer/IRenderer.h"
+#include "graphics/renderer/impl/OffscreenRenderer.h"
+#include "graphics/service/RenderService.h"
 #include "graphics/service/RenderServiceRequest.h"
 #include "graphics/service/encoders/impl/PlainRenderResultEncoder.h"
+#include "logging/LogManager.h"
+#include "services/executor/impl/LocalServiceExecutor.h"
 #include <gtest/gtest.h>
 #include <numeric>
 
@@ -11,6 +16,7 @@
 
 using namespace hive::common::test;
 using namespace hive::jobsystem;
+using namespace hive::graphics;
 
 SharedServiceRequest GenerateRenderingRequest(int width, int height) {
   auto request = std::make_shared<ServiceRequest>("render");
@@ -25,11 +31,11 @@ TEST(GraphicsTests, remote_render_service) {
   auto node_1 = setupNode(config, 9005);
   auto node_2 = setupNode(config, 9006);
 
-  auto encoder = common::memory::Owner<graphics::PlainRenderResultEncoder>();
-  node_1.subsystems->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(
-      common::memory::Owner<graphics::PlainRenderResultEncoder>());
-  node_2.subsystems->AddOrReplaceSubsystem<graphics::IRenderResultEncoder>(
-      common::memory::Owner<graphics::PlainRenderResultEncoder>());
+  auto encoder = common::memory::Owner<PlainRenderResultEncoder>();
+  node_1.subsystems->AddOrReplaceSubsystem<IRenderResultEncoder>(
+      common::memory::Owner<PlainRenderResultEncoder>());
+  node_2.subsystems->AddOrReplaceSubsystem<IRenderResultEncoder>(
+      common::memory::Owner<PlainRenderResultEncoder>());
 
   common::memory::Owner<IRenderer> renderer =
       common::memory::Owner<OffscreenRenderer>();
@@ -119,9 +125,9 @@ TEST(GraphicsTest, offscreen_rendering_sphere) {
   auto scene = std::make_shared<scene::SceneManager>();
   scene->GetRoot()->addChild(builder.createSphere());
 
-  graphics::RendererSetup info;
+  RendererSetup info;
   auto renderer = common::memory::Owner<OffscreenRenderer>(info, scene);
-  subsystems->AddOrReplaceSubsystem<graphics::IRenderer>(std::move(renderer));
+  subsystems->AddOrReplaceSubsystem<IRenderer>(std::move(renderer));
 
   SharedServiceExecutor render_service =
       std::static_pointer_cast<services::impl::LocalServiceExecutor>(
@@ -135,7 +141,7 @@ TEST(GraphicsTest, offscreen_rendering_sphere) {
   job_manager_ref.Borrow()->InvokeCycleAndWait();
   job_manager_ref.Borrow()->WaitForCompletion(response);
 
-  auto decoder = subsystems->RequireSubsystem<graphics::IRenderResultEncoder>();
+  auto decoder = subsystems->RequireSubsystem<IRenderResultEncoder>();
   auto encoded_color_buffer = response.get()->GetResult("color").value();
   auto color_buffer = decoder->Decode(encoded_color_buffer);
 

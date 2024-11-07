@@ -11,6 +11,10 @@ add_library(events SHARED
 
 add_library(Hive::events ALIAS events)
 
+set_target_properties(events PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(events PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"

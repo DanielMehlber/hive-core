@@ -1,4 +1,6 @@
 #include "networking/messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"
+
+#include "data/DataLayer.h"
 #include "events/broker/IEventBroker.h"
 #include "logging/LogManager.h"
 #include "networking/NetworkingManager.h"
@@ -7,7 +9,6 @@
 #include "networking/messaging/events/ConnectionClosedEvent.h"
 #include "networking/messaging/events/ConnectionEstablishedEvent.h"
 #include "networking/util/UrlParser.h"
-#include "properties/PropertyProvider.h"
 #include <regex>
 #include <utility>
 
@@ -238,8 +239,8 @@ void BoostWebSocketEndpoint::InitAndStartConnectionListener() {
 
   // get id of this node (required for handshake)
   auto property_provider =
-      m_subsystems.Borrow()->RequireSubsystem<hive::data::PropertyProvider>();
-  auto node_uuid = property_provider->GetOrElse<std::string>("net.node.id", "");
+      m_subsystems.Borrow()->RequireSubsystem<data::DataLayer>();
+  auto node_uuid = property_provider->Get("net.node.id").get().value_or("");
   /**
    * Consumers are stored as expireable weak-pointers. When the actual
    * referenced consumer is destroyed, the list of consumers holds expired
@@ -261,8 +262,8 @@ void BoostWebSocketEndpoint::InitConnectionEstablisher() {
 
   // get id of this node (required for handshake)
   auto property_provider =
-      m_subsystems.Borrow()->RequireSubsystem<data::PropertyProvider>();
-  auto node_uuid = property_provider->GetOrElse<std::string>("net.node.id", "");
+      m_subsystems.Borrow()->RequireSubsystem<data::DataLayer>();
+  auto node_uuid = property_provider->Get("net.node.id").get().value_or("");
 
   if (!m_connection_establisher) {
     m_connection_establisher =

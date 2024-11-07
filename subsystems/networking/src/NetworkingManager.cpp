@@ -1,5 +1,7 @@
 #include "networking/NetworkingManager.h"
 #include "common/uuid/UuidGenerator.h"
+#include "data/DataLayer.h"
+#include "logging/LogManager.h"
 #include "networking/messaging/MessageConsumerJob.h"
 #include <chrono>
 
@@ -37,7 +39,7 @@ void NetworkingManager::ConfigureNode(
       config->Get("net.node.id", common::uuid::UuidGenerator::Random());
 
   const auto property_provider =
-      m_subsystems.Borrow()->RequireSubsystem<data::PropertyProvider>();
+      m_subsystems.Borrow()->RequireSubsystem<data::DataLayer>();
 
   property_provider->Set("net.node.id", node_id);
 

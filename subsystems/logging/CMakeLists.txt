@@ -12,6 +12,10 @@ add_library(logging SHARED
 
 add_library(Hive::logging ALIAS logging)
 
+set_target_properties(logging PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(logging PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"

@@ -1,8 +1,10 @@
 #include "plugins/impl/BoostPluginManager.h"
+#include "jobsystem/manager/JobManager.h"
 #include <boost/dll/import.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
 #include <boost/json.hpp>
+#include <list>
 
 using namespace hive::plugins;
 using namespace hive::jobsystem;

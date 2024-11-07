@@ -11,6 +11,10 @@ add_library(core SHARED
 
 add_library(Hive::core ALIAS core)
 
+set_target_properties(core PROPERTIES
+        PREFIX "hive-"
+)
+
 target_include_directories(core PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
@@ -29,7 +33,7 @@ target_link_libraries(core PUBLIC
         graphics
         services
         resources
-        properties
+        data
         plugins
 )
 

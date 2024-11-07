@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/test/TryAssertUntilTimeout.h"
+#include "data/DataLayer.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/NetworkingManager.h"
@@ -17,6 +18,7 @@ using namespace hive::services::impl;
 using namespace hive::networking;
 using namespace hive::common::test;
 using namespace hive::networking::messaging;
+using namespace hive::data;
 
 struct Node {
   std::string uuid;
@@ -44,32 +46,28 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<events::IEventBroker>(
       std::move(event_broker));
 
-  auto property_provider = common::memory::Owner<data::PropertyProvider>(
-      subsystems.CreateReference());
-  auto property_provider_ref = property_provider.CreateReference();
-  subsystems->AddOrReplaceSubsystem<data::PropertyProvider>(
-      std::move(property_provider));
+  auto data_layer = common::memory::Owner<DataLayer>(subsystems.Borrow());
+  auto data_layer_ref = data_layer.CreateReference();
+  subsystems->AddOrReplaceSubsystem<DataLayer>(std::move(data_layer));
 
   // setup networking node
   config->Set("net.port", port);
-  auto networking_manager =
-      common::memory::Owner<networking::NetworkingManager>(
-          subsystems.CreateReference(), config);
+  auto networking_manager = common::memory::Owner<NetworkingManager>(
+      subsystems.CreateReference(), config);
 
   auto networking_manager_ref = networking_manager.CreateReference();
 
-  subsystems->AddOrReplaceSubsystem<networking::NetworkingManager>(
+  subsystems->AddOrReplaceSubsystem<NetworkingManager>(
       std::move(networking_manager));
 
   std::string node_id =
-      property_provider_ref.Borrow()->Get<std::string>("net.node.id").value();
+      data_layer_ref.Borrow()->Get("net.node.id").get().value();
 
   // setup service registry
-  auto service_registry =
-      common::memory::Owner<services::impl::PeerToPeerServiceRegistry>(
-          subsystems.CreateReference());
+  auto service_registry = common::memory::Owner<PeerToPeerServiceRegistry>(
+      subsystems.CreateReference());
   auto service_registry_ref = service_registry.CreateReference();
-  subsystems->AddOrReplaceSubsystem<services::IServiceRegistry>(
+  subsystems->AddOrReplaceSubsystem<IServiceRegistry>(
       std::move(service_registry));
 
   return Node{node_id,
