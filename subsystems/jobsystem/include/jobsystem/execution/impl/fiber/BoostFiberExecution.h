@@ -23,7 +23,6 @@ namespace hive::jobsystem::execution::impl {
  * executed on a different thread after it has been revoked as last time.
  */
 class BoostFiberExecution : IJobExecution<BoostFiberExecution> {
-private:
   common::config::SharedConfiguration m_config;
   JobExecutionState m_current_state{STOPPED};
 

@@ -1,6 +1,4 @@
 #include "common/profiling/TimerManager.h"
-#include <algorithm>
-#include <numeric>
 
 using namespace hive::common::profiling;
 
@@ -13,7 +11,7 @@ std::shared_ptr<TimerManager> TimerManager::GetGlobal() {
   return m_global_instance;
 }
 
-void TimerManager::Reset() { m_measurements.clear(); };
+void TimerManager::Reset() { m_measurements.clear(); }
 
 float ns_to_ms(long ns) { return (float)ns / 1000000; }
 
@@ -29,14 +27,15 @@ std::string TimerManager::Print() {
     ss << "> Timer " << name << ": TOTAL-MIN " << ns_to_ms(data.total_min_ns)
        << "ms | TOTAL-MAX " << ns_to_ms(data.total_max_ns) << "ms | AVG "
        << ns_to_ms(average_ns) << "ms | MIN " << ns_to_ms(min_ns) << "ms | MAX "
-       << ns_to_ms(max_ns) << "ms" << "\n";
+       << ns_to_ms(max_ns) << "ms"
+       << "\n";
   }
 
   return ss.str();
 #else
   return "";
 #endif
-};
+}
 
 void TimerManager::Commit(const std::string &name, long ns) {
 #ifdef ENABLE_PROFILING

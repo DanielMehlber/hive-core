@@ -13,10 +13,10 @@ private:
   std::chrono::duration<long double> m_delay;
 
 public:
-  explicit DummyLoader(std::chrono::duration<long double> delay = 0.5s)
+  explicit DummyLoader(std::chrono::duration<long double> delay = 0.05s)
       : m_delay{delay} {};
 
-  const std::string &GetId() const  override {
+  const std::string &GetId() const override {
     const static std::string id = "dummy";
     return id;
   };
@@ -29,7 +29,7 @@ public:
 
 class AnotherDummyLoader : public IResourceLoader {
 public:
-  const std::string &GetId() const  override {
+  const std::string &GetId() const override {
     const static std::string id = "dummy";
     return id;
   };

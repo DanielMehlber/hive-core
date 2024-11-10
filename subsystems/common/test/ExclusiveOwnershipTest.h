@@ -6,6 +6,8 @@
 
 using namespace std::chrono_literals;
 
+#define DELTA 0.01s
+
 TEST(ExclusiveOwnershipTests, owner_borrow) {
   hive::common::memory::Owner<std::string> owner("hallo");
 
@@ -16,7 +18,7 @@ TEST(ExclusiveOwnershipTests, owner_borrow) {
     ASSERT_EQ(value, "hallo");
     borrow->clear();
     ASSERT_TRUE(borrow->empty());
-    std::this_thread::sleep_for(0.2s);
+    std::this_thread::sleep_for(DELTA);
   });
 
   std::thread owner_thread([_owner = std::move(owner)]() mutable {
@@ -29,7 +31,7 @@ TEST(ExclusiveOwnershipTests, owner_borrow) {
 
   borrow_thread.join();
 
-  ASSERT_GE(duration, 0.2s);
+  ASSERT_GE(duration, DELTA);
 }
 
 TEST(ExclusiveOwnershipTests, weak_borrow) {
@@ -67,7 +69,7 @@ TEST(ExclusiveOwnershipTests, destroy_after_expiration) {
 
     ASSERT_FALSE(weak_string.expired());
     ASSERT_EQ(std::string("hallo"), *weak_string.lock());
-    ASSERT_EQ(std::string("hallo"), *(*string_owner));
+    ASSERT_EQ(std::string("hallo"), **string_owner);
   }
 
   ASSERT_TRUE(weak_string.expired());
@@ -79,7 +81,7 @@ public:
   int _i;
 
   Borrowable() = delete;
-  explicit Borrowable(int i) : _i(i){};
+  explicit Borrowable(int i) : _i(i) {}
   bool CanBorrow() { return HasOwner(); }
 
   int TestBorrow() {

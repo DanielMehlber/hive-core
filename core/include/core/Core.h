@@ -38,9 +38,9 @@ protected:
   bool m_should_shutdown{false};
 
 public:
-  Core(common::config::SharedConfiguration config =
-           std::make_shared<common::config::Configuration>(),
-       bool only_local = true);
+  explicit Core(common::config::SharedConfiguration config =
+                    std::make_shared<common::config::Configuration>(),
+                bool only_local = true);
 
   ~Core();
 

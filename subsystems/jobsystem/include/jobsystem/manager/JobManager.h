@@ -14,13 +14,8 @@
 #include <set>
 #include <utility>
 
-#ifdef JOB_SYSTEM_SINGLE_THREAD
-#include "jobsystem/execution/impl/singleThreaded/SingleThreadedExecutionImpl.h"
-typedef impl::SingleThreadedExecutionImpl JobExecutionImpl;
-#else
 #include "jobsystem/execution/impl/fiber/BoostFiberExecution.h"
 typedef hive::jobsystem::execution::impl::BoostFiberExecution JobExecutionImpl;
-#endif
 
 namespace hive::jobsystem {
 

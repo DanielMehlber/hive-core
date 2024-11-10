@@ -32,8 +32,7 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
       m_subsystems.CreateReference()));
 
   // setup property provider
-  SetDataLayer(
-      common::memory::Owner<DataLayer>(m_subsystems.Borrow()));
+  SetDataLayer(common::memory::Owner<DataLayer>(m_subsystems.Borrow()));
 
   // setup resource manager
   auto resource_manager = common::memory::Owner<ThreadPoolResourceManager>();
@@ -57,7 +56,7 @@ Core::Core(common::config::SharedConfiguration config, bool only_local)
   }
 
   auto plugin_context =
-      std::make_shared<PluginContext>(m_subsystems.CreateReference());
+      std::make_shared<PluginContext>(m_subsystems.CreateReference(), config);
   SetPluginManager(common::memory::Owner<plugins::BoostPluginManager>(
       plugin_context, m_subsystems.CreateReference()));
 }

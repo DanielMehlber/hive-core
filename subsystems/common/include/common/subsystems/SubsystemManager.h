@@ -86,7 +86,7 @@ template <typename type_t> std::string GetTypeName() {
 
 template <typename subsystem_t>
 memory::Owner<subsystem_t> SubsystemManager::RemoveSubsystem() {
-  sync::ScopedLock lock(m_lock);
+  std::unique_lock lock(m_lock);
 
   std::string subsystem_t_name = GetTypeName<subsystem_t>();
   if (!m_subsystems.contains(subsystem_t_name)) {
@@ -97,8 +97,7 @@ memory::Owner<subsystem_t> SubsystemManager::RemoveSubsystem() {
 
   const auto &any_subsystem = m_subsystems.at(subsystem_t_name);
   auto subsystem_owner_ptr =
-      std::any_cast<std::shared_ptr<common::memory::Owner<subsystem_t>>>(
-          any_subsystem);
+      std::any_cast<std::shared_ptr<memory::Owner<subsystem_t>>>(any_subsystem);
 
   auto subsystem_owner = std::move(*subsystem_owner_ptr);
   m_subsystems.erase(subsystem_t_name);
@@ -129,7 +128,7 @@ SubsystemManager::GetSubsystem() const {
   if (ProvidesSubsystem<subsystem_t>()) {
     const auto &any_subsystem = m_subsystems.at(GetTypeName<subsystem_t>());
     auto subsystem_owner_ptr =
-        std::any_cast<std::shared_ptr<common::memory::Owner<subsystem_t>>>(
+        std::any_cast<std::shared_ptr<memory::Owner<subsystem_t>>>(
             any_subsystem);
     return subsystem_owner_ptr->Borrow();
   }
@@ -140,7 +139,7 @@ SubsystemManager::GetSubsystem() const {
 template <typename subsystem_t>
 void SubsystemManager::AddOrReplaceSubsystem(
     memory::Owner<subsystem_t> &&subsystem) {
-  sync::ScopedLock lock(m_lock);
+  std::unique_lock lock(m_lock);
 
   /* std::any can only handle copy-constructible types, but
    * common::memory::Owner is not. It is therefore wrapped in such a type

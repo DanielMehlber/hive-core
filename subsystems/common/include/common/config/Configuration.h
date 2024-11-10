@@ -123,7 +123,7 @@ inline bool Configuration::GetBool(const std::string &name, bool alternative) {
 }
 
 template <typename T>
-inline void Configuration::Set(const std::string &name, T value) {
+void Configuration::Set(const std::string &name, T value) {
   m_values[name] = std::to_string(value);
 }
 

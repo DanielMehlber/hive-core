@@ -2,7 +2,6 @@
 
 #include "common/assert/Assert.h"
 #include "common/exceptions/ExceptionsBase.h"
-#include "common/synchronization/ScopedLock.h"
 #include "common/synchronization/SpinLock.h"
 #include <atomic>
 #include <memory>
@@ -31,7 +30,7 @@ struct OwnershipState {
   std::atomic<void *> owner;
 
   /** can be used to lock the ownership state */
-  common::sync::SpinLock state_lock;
+  sync::SpinLock state_lock;
 };
 
 template <typename T> class Reference;
@@ -77,9 +76,9 @@ protected:
    * recursive locks.
    */
   explicit Borrower(Owner<T> *owner, bool already_locked = false) {
-    std::unique_ptr<common::sync::ScopedLock<common::sync::SpinLock>> lock;
+    std::unique_ptr<std::unique_lock<sync::SpinLock>> lock;
     if (!already_locked) {
-      lock = std::make_unique<common::sync::ScopedLock<common::sync::SpinLock>>(
+      lock = std::make_unique<std::unique_lock<sync::SpinLock>>(
           owner->_state->state_lock);
     }
     _shared_ownership_state = owner->_state;
@@ -116,7 +115,7 @@ public:
   }
 
   T *operator->() const {
-    sync::ScopedLock lock(_shared_ownership_state->state_lock);
+    std::unique_lock lock(_shared_ownership_state->state_lock);
     auto *owner = (Owner<T> *)_shared_ownership_state->owner.load();
     return owner->operator->();
   }
@@ -211,12 +210,12 @@ public:
   std::shared_ptr<OwnershipState> GetState() const;
 };
 
-template <typename T> inline Borrower<T> Reference<T>::Borrow() {
+template <typename T> Borrower<T> Reference<T>::Borrow() {
   return PerformBorrow(false);
 }
 
 template <typename T>
-inline std::shared_ptr<OwnershipState> Reference<T>::GetState() const {
+std::shared_ptr<OwnershipState> Reference<T>::GetState() const {
   return _shared_ownership_state;
 }
 
@@ -237,7 +236,7 @@ Reference<T>::Reference(Reference<Other> &&other)
 template <typename T>
 Reference<T>::Reference() : _shared_ownership_state(nullptr) {}
 
-template <typename T> inline Reference<T>::operator bool() const {
+template <typename T> Reference<T>::operator bool() const {
   return CanBorrow();
 }
 
@@ -265,7 +264,7 @@ Reference<T>::Reference(Borrower<T> *borrow)
 
 template <typename T> std::optional<Borrower<T>> Reference<T>::TryBorrow() {
   if (_shared_ownership_state) {
-    common::sync::ScopedLock lock(_shared_ownership_state->state_lock);
+    std::unique_lock lock(_shared_ownership_state->state_lock);
     DEBUG_ASSERT(_shared_ownership_state->owner != nullptr,
                  "owner cannot be nullptr")
     if (_shared_ownership_state->alive.load()) {
@@ -279,9 +278,9 @@ template <typename T> std::optional<Borrower<T>> Reference<T>::TryBorrow() {
 template <typename T>
 Borrower<T> Reference<T>::PerformBorrow(bool already_locked) {
   if (_shared_ownership_state) {
-    std::unique_ptr<common::sync::ScopedLock<common::sync::SpinLock>> lock;
+    std::unique_ptr<std::unique_lock<sync::SpinLock>> lock;
     if (!already_locked) {
-      lock = std::make_unique<common::sync::ScopedLock<common::sync::SpinLock>>(
+      lock = std::make_unique<std::unique_lock<sync::SpinLock>>(
           _shared_ownership_state->state_lock);
     }
     if (CanBorrow()) {
@@ -304,7 +303,7 @@ template <typename T> bool Reference<T>::CanBorrow() const {
     return _shared_ownership_state->alive.load();
   } else {
     return false;
-  };
+  }
 }
 
 /**
@@ -315,7 +314,6 @@ template <typename T> bool Reference<T>::CanBorrow() const {
  * @tparam T type of the owned data
  */
 template <typename T> class EnableBorrowFromThis {
-private:
   std::unique_ptr<Reference<T>> _this_reference{nullptr};
 
 protected:
@@ -419,9 +417,9 @@ public:
   Reference<T> CreateReference(bool already_locked = false) {
 
     // if there is no lock, lock it.
-    std::unique_ptr<common::sync::ScopedLock<common::sync::SpinLock>> lock;
+    std::unique_ptr<std::unique_lock<sync::SpinLock>> lock;
     if (!already_locked) {
-      lock = std::make_unique<common::sync::ScopedLock<common::sync::SpinLock>>(
+      lock = std::make_unique<std::unique_lock<sync::SpinLock>>(
           _state->state_lock);
     }
 
@@ -479,7 +477,7 @@ template <typename T>
 Owner<T>::Owner(T &&owned) noexcept
     : _owned(std::make_unique<T>(owned)),
       _state(std::make_shared<OwnershipState>()) {
-  sync::ScopedLock lock(_state->state_lock);
+  std::unique_lock lock(_state->state_lock);
   _state->owner.store(this);
 
   if constexpr (std::is_base_of<EnableBorrowFromThis<T>, T>()) {
@@ -491,7 +489,7 @@ template <typename T>
 template <typename Other>
 Owner<T>::Owner(Owner<Other> &&other) noexcept {
   static_assert(std::is_base_of<T, Other>());
-  sync::ScopedLock lock(other.GetState()->state_lock);
+  std::unique_lock lock(other.GetState()->state_lock);
   _state = std::move(other.GetState());
   _owned = std::move(other.GetPointer());
 
@@ -512,7 +510,7 @@ Owner<T>::Owner(Owner<Other> &&other) noexcept {
 }
 
 template <typename T> Owner<T>::Owner(Owner<T> &&other) noexcept {
-  sync::ScopedLock lock(other._state->state_lock);
+  std::unique_lock lock(other._state->state_lock);
   _state = std::move(other._state);
   _owned = std::move(other._owned);
 

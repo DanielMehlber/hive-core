@@ -1,6 +1,5 @@
 #include "jobsystem/execution/impl/fiber/BoostFiberRecursiveSpinLock.h"
 #include "common/assert/Assert.h"
-#include "common/synchronization/ScopedLock.h"
 
 using namespace hive::jobsystem;
 
@@ -85,7 +84,7 @@ bool BoostFiberRecursiveSpinLock::try_lock() {
 
   // if lock has been aquired, store current owner info
   if (!alreadyLocked) {
-    common::sync::ScopedLock lock(m_owner_info_mutex);
+    std::unique_lock lock(m_owner_info_mutex);
     m_owner_info = GetCurrentOwnerInfo();
     m_owner_lock_count.store(1);
   }

@@ -17,7 +17,6 @@ struct Measurement {
  * Collects measurements of all timers and analyzes them.
  */
 class TimerManager {
-private:
   std::map<std::string, Measurement> m_measurements;
   static std::shared_ptr<TimerManager> m_global_instance;
 

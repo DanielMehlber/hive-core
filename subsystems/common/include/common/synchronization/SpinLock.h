@@ -15,7 +15,7 @@ protected:
   std::atomic_flag m_lock;
 
 public:
-  SpinLock() : m_lock() { m_lock.clear(); }
+  SpinLock() { m_lock.clear(); }
   void lock();
   void unlock();
   bool try_lock();

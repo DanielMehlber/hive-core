@@ -24,8 +24,8 @@ TEST(PluginsTest, lifecycle_test) {
   subsystems->AddOrReplaceSubsystem<resources::IResourceManager>(
       std::move(resource_manager));
 
-  auto plugin_context =
-      std::make_shared<plugins::PluginContext>(subsystems.CreateReference());
+  auto plugin_context = std::make_shared<plugins::PluginContext>(
+      subsystems.CreateReference(), config);
   common::memory::Owner<plugins::IPluginManager> plugin_manager =
       common::memory::Owner<plugins::BoostPluginManager>(
           plugin_context, subsystems.CreateReference());

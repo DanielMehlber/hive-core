@@ -1,6 +1,7 @@
 #include "common/test/TryAssertUntilTimeout.h"
 #include "jobsystem/manager/JobManager.h"
 #include "jobsystem/synchronization/JobMutex.h"
+#include <boost/atomic/atomic.hpp>
 #include <future>
 #include <gtest/gtest.h>
 
@@ -343,19 +344,26 @@ TEST(JobSynchronization, wait_for_future) {
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
 
+  std::atomic_bool barrier;
+  barrier.store(false);
+
   SharedJob promise_job = std::make_shared<Job>(
-      [promise](JobContext *context) {
-        std::this_thread::sleep_for(0.1s);
+      [promise, &barrier](JobContext *context) {
+        // yield until the future job has been started
+        while (!barrier) {
+          context->GetJobManager()->WaitForDuration(10ms);
+        }
 
         promise->set_value();
-        return JobContinuation::DISPOSE;
+        return DISPOSE;
       },
       "promise-job");
 
   SharedJob future_job = std::make_shared<Job>(
-      [&future](JobContext *context) {
+      [&future, &barrier](JobContext *context) mutable {
+        barrier = true;
         context->GetJobManager()->WaitForCompletion(future);
-        return JobContinuation::DISPOSE;
+        return DISPOSE;
       },
       "future-job");
 
@@ -383,7 +391,7 @@ TEST(JobSynchronization, recursive_mutex_threads) {
   th.join();
 }
 
-TEST(JobSynchronization, recursive_mutex_fibers) {
+TEST(JobSynchronization, jobs_lock_recursive_mutex) {
   auto config = std::make_shared<common::config::Configuration>();
   auto job_manager = common::memory::Owner<JobManager>(config);
   job_manager->StartExecution();
@@ -414,7 +422,7 @@ TEST(JobSynchronization, recursive_mutex_fibers) {
           // if the recursive mutex does not lock correctly or falsely releases
           // after recursive locking, this delay introduces time for other
           // fibers to enter the critical section and cause assertion errors.
-          std::this_thread::sleep_for(0.01s);
+          std::this_thread::sleep_for(0.001s);
           should_be_currently_locked = false;
 
           return JobContinuation::DISPOSE;
