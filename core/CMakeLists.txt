@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.23)
 project(core)
 
 find_package(Boost COMPONENTS log system fiber context REQUIRED)

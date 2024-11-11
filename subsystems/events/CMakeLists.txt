@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.23)
 project(events)
 
 find_package(Boost REQUIRED COMPONENTS fiber context)
