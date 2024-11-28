@@ -1,31 +1,27 @@
 cmake_minimum_required(VERSION 3.23)
-project(standalone)
+project(hive-standalone)
 
-find_package(Boost REQUIRED COMPONENTS program_options log)
+find_package(Boost REQUIRED CONFIG COMPONENTS program_options log)
 
 # build sources
-add_executable(standalone
+add_executable(hive-standalone
         src/main.cpp
 )
 
-set_target_properties(standalone PROPERTIES
-        PREFIX "hive-"
-)
-
-install(TARGETS standalone
+install(TARGETS hive-standalone
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
 )
 
-target_include_directories(standalone PUBLIC
+target_include_directories(hive-standalone PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(standalone PUBLIC
+target_link_libraries(hive-standalone PUBLIC
         ${Boost_LIBRARIES}
-        core
+        hive-core
 )
 
 # create documentation using doxygen (if doxygen is installed and documentation is requested)

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.23)
-project(networking)
+project(hive-networking)
 
-find_package(Boost REQUIRED COMPONENTS json log)
+find_package(Boost REQUIRED CONFIG COMPONENTS json log)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(networking SHARED
+add_library(hive-networking SHARED
         src/util/UrlParser.cpp
         src/messaging/Message.cpp
         src/messaging/MessageConsumerJob.cpp
@@ -18,43 +18,39 @@ add_library(networking SHARED
         src/messaging/MultipartFormdata.cpp
 )
 
-add_library(Hive::networking ALIAS networking)
+add_library(Hive::networking ALIAS hive-networking)
 
-set_target_properties(networking PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(networking PUBLIC
+target_include_directories(hive-networking PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(networking PUBLIC
+target_link_libraries(hive-networking PUBLIC
         ${Boost_LIBRARIES}
-        logging
-        jobsystem
-        events
-        common
-        data
+        hive-logging
+        hive-jobsystem
+        hive-events
+        hive-common
+        hive-data
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(networking PUBLIC FILE_SET HEADERS
+target_sources(hive-networking PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS networking
-        EXPORT networkingTargets
+install(TARGETS hive-networking
+        EXPORT hiveNetworkingTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT networkingTargets
+install(EXPORT hiveNetworkingTargets
         FILE hive-networking-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive

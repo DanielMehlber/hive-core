@@ -1,49 +1,45 @@
 cmake_minimum_required(VERSION 3.23)
-project(scene)
+project(hive-scene)
 
-find_package(Boost REQUIRED COMPONENTS log)
+find_package(Boost REQUIRED CONFIG COMPONENTS log)
 find_package(vsg REQUIRED)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(scene SHARED
+add_library(hive-scene SHARED
         src/SceneManager.cpp
 )
 
-add_library(Hive::scene ALIAS scene)
+add_library(Hive::scene ALIAS hive-scene)
 
-set_target_properties(scene PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(scene PUBLIC
+target_include_directories(hive-scene PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(scene PUBLIC
+target_link_libraries(hive-scene PUBLIC
         ${Boost_LIBRARIES}
-        logging
+        hive-logging
         vsg::vsg
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(scene PUBLIC FILE_SET HEADERS
+target_sources(hive-scene PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS scene
-        EXPORT sceneTargets
+install(TARGETS hive-scene
+        EXPORT hiveSceneTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT sceneTargets
+install(EXPORT hiveSceneTargets
         FILE hive-scene-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive

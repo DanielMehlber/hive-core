@@ -1,55 +1,51 @@
 cmake_minimum_required(VERSION 3.23)
-project(plugins)
+project(hive-plugins)
 
-find_package(Boost REQUIRED COMPONENTS log)
+find_package(Boost REQUIRED CONFIG COMPONENTS log)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(plugins SHARED
+add_library(hive-plugins SHARED
         src/BoostPluginManager.cpp
 )
 
-add_library(Hive::plugins ALIAS plugins)
+add_library(Hive::plugins ALIAS hive-plugins)
 
-set_target_properties(plugins PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(plugins PUBLIC
+target_include_directories(hive-plugins PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(plugins PUBLIC
+target_link_libraries(hive-plugins PUBLIC
         ${Boost_LIBRARIES}
-        logging
-        jobsystem
-        events
-        common
-        networking
-        services
-        resources
-        scene
-        graphics
+        hive-logging
+        hive-jobsystem
+        hive-events
+        hive-common
+        hive-networking
+        hive-services
+        hive-resources
+        hive-scene
+        hive-graphics
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(plugins PUBLIC FILE_SET HEADERS
+target_sources(hive-plugins PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS plugins
-        EXPORT pluginsTargets
+install(TARGETS hive-plugins
+        EXPORT hivePluginsTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT pluginsTargets
+install(EXPORT hivePluginsTargets
         FILE hive-plugins-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive

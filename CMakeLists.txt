@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(hive-core)
+project(hive-framework)
 set(version 1.0.1)
 
 enable_testing()
@@ -29,6 +29,16 @@ endif ()
 # MSVC would define a marco called 'max' in windows.h otherwise,
 # clashing with some boost variable & function names.
 add_compile_definitions(NOMINMAX)
+
+# *** required for Windows ***
+# The object size in MSVC is limited by default. The network subsystem
+# uses big headers from boost, so we need to increase the object size.
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/bigobj>)
+
+# *** do not accept static libs in this modular project ***
+set(Boost_USE_STATIC_LIBS OFF)  # Use dynamic linking
+set(Boost_USE_STATIC_RUNTIME OFF)  # Use the DLL runtime
+
 
 # *** required for Windows ***
 # else the error "WinSock has already been included" occurs when using boost asio.

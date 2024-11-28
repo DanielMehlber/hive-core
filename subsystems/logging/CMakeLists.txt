@@ -1,47 +1,43 @@
 cmake_minimum_required(VERSION 3.23)
-project(logging)
+project(hive-logging)
 
-find_package(Boost REQUIRED COMPONENTS log log_setup system)
+find_package(Boost REQUIRED CONFIG COMPONENTS log log_setup system)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(logging SHARED
+add_library(hive-logging SHARED
         src/logging/logger/impl/BoostLogger.cpp
         src/logging/LogManager.cpp
 )
 
-add_library(Hive::logging ALIAS logging)
+add_library(Hive::logging ALIAS hive-logging)
 
-set_target_properties(logging PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(logging PUBLIC
+target_include_directories(hive-logging PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(logging PUBLIC
+target_link_libraries(hive-logging PUBLIC
         ${Boost_LIBRARIES}
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(logging PUBLIC FILE_SET HEADERS
+target_sources(hive-logging PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS logging
-        EXPORT loggingTargets
+install(TARGETS hive-logging
+        EXPORT hiveLoggingTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT loggingTargets
+install(EXPORT hiveLoggingTargets
         FILE hive-logging-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive

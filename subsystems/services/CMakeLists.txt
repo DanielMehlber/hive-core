@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
-project(services)
+project(hive-services)
 
-find_package(Boost REQUIRED COMPONENTS log)
+find_package(Boost REQUIRED CONFIG COMPONENTS log)
 
 # *** required for Windows ***
 # MSVC would define a marco called 'max' in windows.h otherwise,
@@ -10,7 +10,7 @@ add_compile_definitions(NOMINMAX)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(services SHARED
+add_library(hive-services SHARED
         src/ServiceRequest.cpp
         src/ServiceResponse.cpp
         src/LocalServiceExecutor.cpp
@@ -24,45 +24,41 @@ add_library(services SHARED
         src/remote/RemoteServiceRequestConsumer.cpp
 )
 
-add_library(Hive::services ALIAS services)
+add_library(Hive::services ALIAS hive-services)
 
-set_target_properties(services PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(services PUBLIC
+target_include_directories(hive-services PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(services PUBLIC
+target_link_libraries(hive-services PUBLIC
         ${Boost_LIBRARIES}
-        logging
-        jobsystem
-        events
-        common
-        networking
-        resources
-        data
+        hive-logging
+        hive-jobsystem
+        hive-events
+        hive-common
+        hive-networking
+        hive-resources
+        hive-data
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(services PUBLIC FILE_SET HEADERS
+target_sources(hive-services PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS services
-        EXPORT servicesTargets
+install(TARGETS hive-services
+        EXPORT hiveServicesTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT servicesTargets
+install(EXPORT hiveServicesTargets
         FILE hive-services-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive

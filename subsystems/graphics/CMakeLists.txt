@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
-project(graphics)
+project(hive-graphics)
 
-find_package(Boost REQUIRED COMPONENTS log system iostreams)
+find_package(Boost REQUIRED CONFIG COMPONENTS log system iostreams)
 find_package(vsg REQUIRED)
 
 # build sources
@@ -12,26 +12,28 @@ set(GRAPHICS_SOURCES
         src/RenderServiceRequest.cpp
 )
 
-set(GRAPHICS_DEPENDENCIES logging jobsystem common scene vsg::vsg services)
+set(GRAPHICS_DEPENDENCIES
+        hive-logging
+        hive-jobsystem
+        hive-common
+        hive-scene
+        hive-services
+        vsg::vsg)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(graphics SHARED
+add_library(hive-graphics SHARED
         ${GRAPHICS_SOURCES}
 )
 
-add_library(Hive::graphics ALIAS graphics)
+add_library(Hive::graphics ALIAS hive-graphics)
 
-set_target_properties(graphics PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(graphics PUBLIC
+target_include_directories(hive-graphics PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(graphics PUBLIC
+target_link_libraries(hive-graphics PUBLIC
         ${Boost_LIBRARIES}
         ${GRAPHICS_DEPENDENCIES}
 )
@@ -39,19 +41,19 @@ target_link_libraries(graphics PUBLIC
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(graphics PUBLIC FILE_SET HEADERS
+target_sources(hive-graphics PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS graphics
-        EXPORT graphicsTargets
+install(TARGETS hive-graphics
+        EXPORT hiveGraphicsTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT graphicsTargets
+install(EXPORT hiveGraphicsTargets
         FILE hive-graphics-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive

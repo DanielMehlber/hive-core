@@ -1,52 +1,48 @@
 cmake_minimum_required(VERSION 3.23)
-project(data)
+project(hive-data)
 
-find_package(Boost REQUIRED COMPONENTS)
+find_package(Boost REQUIRED CONFIG COMPONENTS)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-add_library(data SHARED
+add_library(hive-data SHARED
         src/FunctionalChangeListener.cpp
         src/DataLayer.cpp
         src/LocalDataProvider.cpp
 )
 
-add_library(Hive::data ALIAS data)
+add_library(Hive::data ALIAS hive-data)
 
-set_target_properties(data PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(data PUBLIC
+target_include_directories(hive-data PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(data PUBLIC
+target_link_libraries(hive-data PUBLIC
         ${Boost_LIBRARIES}
-        logging
-        jobsystem
-        common
+        hive-logging
+        hive-jobsystem
+        hive-common
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(data PUBLIC FILE_SET HEADERS
+target_sources(hive-data PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS data
-        EXPORT dataTargets
+install(TARGETS hive-data
+        EXPORT hiveDataTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT dataTargets
+install(EXPORT hiveDataTargets
         FILE hive-data-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive

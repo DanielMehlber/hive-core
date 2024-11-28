@@ -1,48 +1,44 @@
 cmake_minimum_required(VERSION 3.23)
-project(events)
+project(hive-events)
 
-find_package(Boost REQUIRED COMPONENTS fiber context)
+find_package(Boost REQUIRED CONFIG COMPONENTS fiber context)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(events SHARED
+add_library(hive-events SHARED
         src/JobBasedEventBroker.cpp
 )
 
-add_library(Hive::events ALIAS events)
+add_library(Hive::events ALIAS hive-events)
 
-set_target_properties(events PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(events PUBLIC
+target_include_directories(hive-events PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(events PUBLIC
+target_link_libraries(hive-events PUBLIC
         ${Boost_LIBRARIES}
-        logging
-        jobsystem
+        hive-logging
+        hive-jobsystem
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(events PUBLIC FILE_SET HEADERS
+target_sources(hive-events PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS events
-        EXPORT eventsTargets
+install(TARGETS hive-events
+        EXPORT hiveEventsTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT eventsTargets
+install(EXPORT hiveEventsTargets
         FILE hive-events-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive

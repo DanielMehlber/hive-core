@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.23)
-project(common)
+project(hive-common)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED CONFIG)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(common SHARED
+add_library(hive-common SHARED
         src/common.cpp
         src/BoostUuidGenerator.cpp
         src/Timer.cpp
@@ -13,36 +13,32 @@ add_library(common SHARED
         src/SpinLock.cpp
 )
 
-add_library(Hive::common ALIAS common)
+add_library(Hive::common ALIAS hive-common)
 
-set_target_properties(common PROPERTIES
-        PREFIX "hive-"
-)
-
-target_include_directories(common PUBLIC
+target_include_directories(hive-common PUBLIC
         ${Boost_INCLUDE_DIRS}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
 )
 
-target_link_libraries(common PUBLIC ${Boost_LIBRARIES})
+target_link_libraries(hive-common PUBLIC ${Boost_LIBRARIES})
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(common PUBLIC FILE_SET HEADERS
+target_sources(hive-common PUBLIC FILE_SET HEADERS
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
         FILES ${HEADER_FILES})
 
-install(TARGETS common
-        EXPORT commonTargets
+install(TARGETS hive-common
+        EXPORT hiveCommonTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FILE_SET HEADERS DESTINATION include/hive
 )
 
-install(EXPORT commonTargets
+install(EXPORT hiveCommonTargets
         FILE hive-common-targets.cmake
         NAMESPACE Hive::
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/Hive
