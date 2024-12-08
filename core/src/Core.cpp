@@ -1,6 +1,7 @@
 #include "core/Core.h"
 #include "events/broker/impl/JobBasedEventBroker.h"
 #include "graphics/service/RenderService.h"
+#include "jobsystem/jobs/TimerJob.h"
 #include "plugins/impl/BoostPluginManager.h"
 #include "resources/loader/impl/FileLoader.h"
 #include "resources/manager/impl/ThreadPoolResourceManager.h"

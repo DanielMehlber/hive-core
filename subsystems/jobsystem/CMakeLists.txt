@@ -2,12 +2,34 @@ cmake_minimum_required(VERSION 3.23)
 
 project(hive-jobsystem)
 
-find_package(Boost REQUIRED CONFIG COMPONENTS
-        system
-        context
-        fiber
-        filesystem
+# Set a configuration option for selecting the implementation
+set(JOB_EXECUTION_IMPL "Boost.Fiber" CACHE STRING "Select the Job Execution implementation")
+
+# Provide the user with possible values for the variable
+set_property(CACHE JOB_EXECUTION_IMPL PROPERTY STRINGS "Boost.Fiber")
+
+set(SOURCES
+        src/Job.cpp
+        src/JobManager.cpp
+        src/TimerJob.cpp
 )
+
+IF (JOB_EXECUTION_IMPL STREQUAL "Boost.Fiber")
+    message(STATUS "Using Boost.Fiber implementation for Job System")
+
+    find_package(Boost REQUIRED CONFIG COMPONENTS
+            system
+            context
+            fiber
+            filesystem
+    )
+
+    set(SOURCES ${SOURCES}
+            src/Boost/BoostFiberExecution.cpp
+            src/Boost/BoostFiberRecursiveJobMutex.cpp
+            src/Boost/BoostFiberJobMutex.cpp
+    )
+ENDIF ()
 
 # disable some optimizations because they cause known bugs on MSVC (Windows)
 # see https://www.boost.org/doc/libs/1_77_0/libs/context/doc/html/context/overview.html
@@ -21,14 +43,7 @@ ENDIF ()
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-jobsystem SHARED
-        src/Job.cpp
-        src/JobManager.cpp
-        src/TimerJob.cpp
-        src/BoostFiberExecution.cpp
-        include/jobsystem/execution/impl/fiber/BoostFiberRecursiveSpinLock.h
-        src/BoostFiberRecursiveSpinLock.cpp
-        src/BoostFiberSpinLock.cpp)
+add_library(hive-jobsystem SHARED ${SOURCES})
 
 add_library(Hive::jobsystem ALIAS hive-jobsystem)
 

@@ -1,6 +1,7 @@
 #include "jobsystem/manager/JobManager.h"
 #include "boost/core/demangle.hpp"
 #include "common/profiling/Timer.h"
+#include "jobsystem/jobs/TimerJob.h"
 #include "logging/LogManager.h"
 #include <sstream>
 
@@ -13,7 +14,7 @@ JobManager::JobManager(const common::config::SharedConfiguration &config)
   auto stats_job = std::make_shared<TimerJob>(
       [&](JobContext *) {
         PrintStatusLog();
-        return JobContinuation::REQUEUE;
+        return REQUEUE;
       },
       "print-job-system-stats", 1s);
   KickJob(stats_job);
@@ -117,7 +118,7 @@ void JobManager::KickJob(const SharedJob &job) {
   } break;
   }
 
-  job->SetState(JobState::QUEUED);
+  job->SetState(QUEUED);
 }
 
 void JobManager::ScheduleAllJobsInQueue(std::queue<SharedJob> &queue,

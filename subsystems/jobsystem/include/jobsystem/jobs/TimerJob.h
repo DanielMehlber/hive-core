@@ -13,7 +13,6 @@ namespace hive::jobsystem {
  * instead of every cycle.
  */
 class TimerJob : public Job {
-private:
   /**
    * Point in time where the timer was started. This is not the creation
    * of the job (constructor), but the first attempt of scheduling it.

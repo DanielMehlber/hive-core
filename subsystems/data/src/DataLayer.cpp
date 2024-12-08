@@ -1,5 +1,6 @@
 #include "data/DataLayer.h"
 
+#include "jobsystem/jobs/TimerJob.h"
 #include "jobsystem/manager/JobManager.h"
 #include "logging/LogManager.h"
 #include <regex>

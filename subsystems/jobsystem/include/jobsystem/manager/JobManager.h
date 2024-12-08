@@ -7,15 +7,12 @@
 
 #include "JobManagerState.h"
 #include "common/config/Configuration.h"
-#include "jobsystem/execution/IJobExecution.h"
+#include "jobsystem/execution/JobExecution.h"
 #include "jobsystem/jobs/Job.h"
-#include "jobsystem/jobs/TimerJob.h"
-#include "jobsystem/synchronization/JobMutex.h"
+#include "jobsystem/synchronization/IJobBarrier.h"
+#include "jobsystem/synchronization/JobRecursiveMutex.h"
 #include <set>
 #include <utility>
-
-#include "jobsystem/execution/impl/fiber/BoostFiberExecution.h"
-typedef hive::jobsystem::execution::impl::BoostFiberExecution JobExecutionImpl;
 
 namespace hive::jobsystem {
 
@@ -25,7 +22,6 @@ namespace hive::jobsystem {
  * execution cycles.
  */
 class JobManager : public common::memory::EnableBorrowFromThis<JobManager> {
-private:
   common::config::SharedConfiguration m_config;
 
   /**
@@ -71,7 +67,7 @@ private:
   JobManagerState m_current_state{READY};
   mutable mutex m_current_state_mutex;
 
-  JobExecutionImpl m_execution;
+  execution::JobExecution m_execution;
 
   size_t m_total_cycle_count{0};
 
@@ -169,13 +165,13 @@ public:
 
   /**
    * Execution will wait (or will be deferred, depending on the execution
-   * environment) until the waitable object has been finished.
-   * @param waitable process that needs finish for the current calling party to
+   * environment) until the barrier object has been finished.
+   * @param barrier process that needs finish for the current calling party to
    * continue.
    * @note On single-threaded implementations, this cannot be called from inside
    * a job because it would deadlock the worker thread.
    */
-  void WaitForCompletion(std::shared_ptr<IJobWaitable> waitable);
+  void WaitForCompletion(std::shared_ptr<IJobBarrier> barrier);
 
   /**
    * Execution of the calling party will wait (or will be deferred,
@@ -214,24 +210,35 @@ public:
 };
 
 inline void
-JobManager::WaitForCompletion(std::shared_ptr<IJobWaitable> waitable) {
-  m_execution.WaitForCompletion(std::move(waitable));
+JobManager::WaitForCompletion(std::shared_ptr<IJobBarrier> barrier) {
+  while (!barrier->IsFinished()) {
+    m_execution.Yield();
+  }
 }
 
 template <typename FutureType>
 void JobManager::WaitForCompletion(const std::future<FutureType> &future) {
-  m_execution.WaitForCompletion(future);
+  while (future.wait_for(std::chrono::milliseconds(0)) !=
+         std::future_status::ready) {
+    m_execution.Yield();
+  }
 }
 
 template <typename FutureType>
 void JobManager::WaitForCompletion(
     const std::shared_future<FutureType> &future) {
-  m_execution.WaitForCompletion(future);
+  while (future.wait_for(std::chrono::milliseconds(0)) !=
+         std::future_status::ready) {
+    m_execution.Yield();
+  }
 }
 
 template <typename Rep, typename Period>
 void JobManager::WaitForDuration(std::chrono::duration<Rep, Period> duration) {
-  m_execution.WaitForDuration(duration);
+  const auto start = std::chrono::high_resolution_clock::now();
+  while (std::chrono::high_resolution_clock::now() - start < duration) {
+    m_execution.Yield();
+  }
 }
 
 } // namespace hive::jobsystem

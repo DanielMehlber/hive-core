@@ -5,7 +5,7 @@ namespace hive::logging::logger::impl {
 /**
  * Logger implementation that uses Boost.Log
  */
-class BoostLogger : public logger::ILogger {
+class BoostLogger : public ILogger {
 public:
   BoostLogger();
   virtual ~BoostLogger();

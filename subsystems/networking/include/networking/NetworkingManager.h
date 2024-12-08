@@ -3,6 +3,7 @@
 #include "common/config/Configuration.h"
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
+#include "jobsystem/synchronization/JobMutex.h"
 #include "networking/messaging/IMessageConsumer.h"
 #include "networking/messaging/IMessageEndpoint.h"
 #include "networking/messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"

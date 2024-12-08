@@ -1,11 +1,10 @@
 #pragma once
 
 #include "jobsystem/JobContext.h"
-#include "jobsystem/JobExecutionPhase.h"
-#include "jobsystem/JobExitBehavior.h"
-#include "jobsystem/JobState.h"
+#include "jobsystem/execution/JobExecutionPhase.h"
+#include "jobsystem/jobs/JobExitBehavior.h"
+#include "jobsystem/jobs/JobState.h"
 #include "jobsystem/synchronization/JobCounter.h"
-#include "jobsystem/synchronization/JobMutex.h"
 #include <functional>
 #include <memory>
 #include <queue>

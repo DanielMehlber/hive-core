@@ -1,19 +1,34 @@
 #pragma once
 
-#include <condition_variable>
-#include <mutex>
+#include <atomic>
 
-#ifdef JOB_SYSTEM_SINGLE_THREAD
 namespace hive::jobsystem {
-typedef std::mutex mutex;
-typedef std::recursive_mutex recursive_mutex;
+
+/**
+ * A user-space mutex alternative which is built to integrate seamlessly with
+ * fibers provided by the boost library. Instead of blocking or busy waiting,
+ * the current fiber (or thread) yields.
+ *
+ * @note Normal std::mutex implementations only work on the thread-level and do
+ * not recognize fibers, causing various errors on different platforms.
+ *
+ * @note The Boost.Fiber library also provides their own mutex implementation
+ * for the same purpose. However, for some reason, it only works with fibers and
+ * cannot handle normal threads (blindly high-jacks their contexts, resulting in
+ * deadlocks and undefined behavior).
+ */
+class JobMutex {
+protected:
+  std::atomic_flag m_lock;
+  void yield() const;
+
+public:
+  JobMutex() : m_lock() { m_lock.clear(); }
+  void lock();
+  void unlock();
+  bool try_lock();
+};
+
+typedef JobMutex mutex;
+
 } // namespace hive::jobsystem
-#else
-// define synchronization types for fibers
-#include "jobsystem/execution/impl/fiber/BoostFiberRecursiveSpinLock.h"
-#include "jobsystem/execution/impl/fiber/BoostFiberSpinLock.h"
-namespace hive::jobsystem {
-typedef BoostFiberSpinLock mutex;
-typedef BoostFiberRecursiveSpinLock recursive_mutex;
-} // namespace hive::jobsystem
-#endif

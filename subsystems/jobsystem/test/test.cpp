@@ -1,6 +1,6 @@
 #include "common/test/TryAssertUntilTimeout.h"
+#include "jobsystem/jobs/TimerJob.h"
 #include "jobsystem/manager/JobManager.h"
-#include "jobsystem/synchronization/JobMutex.h"
 #include <boost/atomic/atomic.hpp>
 #include <future>
 #include <gtest/gtest.h>

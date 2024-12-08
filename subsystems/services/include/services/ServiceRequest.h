@@ -1,6 +1,6 @@
 #pragma once
 
-#include "jobsystem/execution/IJobExecution.h"
+#include "jobsystem/execution/JobExecution.h"
 
 #include <map>
 #include <memory>

@@ -6,10 +6,13 @@ find_package(Boost REQUIRED CONFIG COMPONENTS)
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
+
 add_library(hive-data SHARED
         src/FunctionalChangeListener.cpp
         src/DataLayer.cpp
-        src/LocalDataProvider.cpp
+
+        # Boost implementation
+        src/Boost/BoostLocalDataProvider.cpp
 )
 
 add_library(Hive::data ALIAS hive-data)

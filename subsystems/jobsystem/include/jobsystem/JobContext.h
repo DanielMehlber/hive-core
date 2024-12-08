@@ -1,8 +1,6 @@
 #pragma once
 
 #include "common/memory/ExclusiveOwnership.h"
-#include <chrono>
-#include <memory>
 
 namespace hive::jobsystem {
 
@@ -19,7 +17,8 @@ protected:
   common::memory::Reference<JobManager> m_job_manager;
 
 public:
-  JobContext(size_t frame_number, common::memory::Borrower<JobManager> manager)
+  JobContext(const size_t frame_number,
+             common::memory::Borrower<JobManager> manager)
       : m_cycle_number{frame_number}, m_job_manager{manager.ToReference()} {}
 
   /**
@@ -35,9 +34,7 @@ public:
   common::memory::Borrower<JobManager> GetJobManager();
 };
 
-inline size_t jobsystem::JobContext::GetCycleNumber() const {
-  return m_cycle_number;
-}
+inline size_t JobContext::GetCycleNumber() const { return m_cycle_number; }
 
 inline common::memory::Borrower<JobManager> JobContext::GetJobManager() {
   return m_job_manager.Borrow();

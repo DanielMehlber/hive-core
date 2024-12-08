@@ -1,14 +1,9 @@
 #pragma once
 
-#include "BoostWebSocketConnection.h"
-#include "BoostWebSocketConnectionEstablisher.h"
-#include "BoostWebSocketConnectionListener.h"
+#include "common/config/Configuration.h"
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
-#include "jobsystem/manager/JobManager.h"
 #include "networking/messaging/IMessageEndpoint.h"
-#include <list>
-#include <map>
 
 namespace hive::networking::messaging::websockets {
 
@@ -21,80 +16,26 @@ DECLARE_EXCEPTION(NoSuchEndpointException);
 class BoostWebSocketEndpoint
     : public IMessageEndpoint,
       public common::memory::EnableBorrowFromThis<BoostWebSocketEndpoint> {
-  /**
-   * Indicates if the web socket endpoint is currently running
-   * @note The endpoint is not automatically initialized, except the
-   * configuration says so.
-   */
-  bool m_running{false};
-  mutable jobsystem::recursive_mutex m_running_mutex;
-
-  common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
-  common::config::SharedConfiguration m_config;
 
   /**
-   * Used for clean-up jobs because they are kicked in the constructor, where
-   * shared_from_this() is not available yet.
+   * Pointer to implementation (Pimpl) in source file. This is necessary to
+   * constrain Boost's implementation details in the source file and not expose
+   * them to the rest of the application.
+   * @note Indispensable for ABI stability and to use static-linked Boost.
    */
-  std::shared_ptr<BoostWebSocketEndpoint *> m_this_pointer;
-
-  /**
-   * Acts as execution environment for asynchronous operations, such as
-   * receiving events
-   */
-  std::shared_ptr<boost::asio::io_context> m_execution_context;
-
-  /**
-   * Maps host addresses to the connection established with the host.
-   */
-  std::map<std::string, SharedBoostWebSocketConnection> m_connections;
-  mutable jobsystem::recursive_mutex m_connections_mutex;
-
-  std::shared_ptr<BoostWebSocketConnectionEstablisher> m_connection_establisher;
-  std::shared_ptr<BoostWebSocketConnectionListener> m_connection_listener;
-
-  /**
-   * Thread pool that executes asynchronous callbacks certain websocket
-   * events
-   */
-  std::vector<std::thread> m_execution_threads;
-
-  /**
-   * This is the local endpoint over which the peer should communicate
-   * with others (receive & send events).
-   * @note This is important for the connection establishing and listening
-   * process.
-   */
-  std::shared_ptr<boost::asio::ip::tcp::endpoint> m_local_endpoint;
-
-  /**
-   * Constructs a new connection object from a stream
-   * @param connection_info connection specification
-   * @param stream web-socket stream
-   * registered and ready to use.
-   */
-  void AddConnection(const ConnectionInfo &connection_info,
-                     stream_type &&stream);
-
-  std::optional<SharedBoostWebSocketConnection>
-  GetConnection(const std::string &connection_id);
-
-  void
-  ProcessReceivedMessage(const std::string &data,
-                         const SharedBoostWebSocketConnection &over_connection);
+  struct Impl;
+  std::unique_ptr<Impl> m_impl;
 
   void InitAndStartConnectionListener();
   void InitConnectionEstablisher();
 
   void SetupCleanUpJob();
 
-  void OnConnectionClose(const std::string &id);
-
 public:
   BoostWebSocketEndpoint(
       const common::memory::Reference<common::subsystems::SubsystemManager>
           &subsystems,
-      common::config::SharedConfiguration config);
+      const common::config::SharedConfiguration &config);
 
   ~BoostWebSocketEndpoint() override;
 

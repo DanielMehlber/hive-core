@@ -1,11 +1,8 @@
 #pragma once
 
-#include "boost/dll/shared_library.hpp"
 #include "common/subsystems/SubsystemManager.h"
-#include "jobsystem/synchronization/JobMutex.h"
 #include "plugins/IPluginManager.h"
 #include "resources/manager/IResourceManager.h"
-#include <map>
 
 #ifndef _WIN32
 #define SHARED_LIB_EXTENSION ".so"
@@ -22,12 +19,17 @@ class BoostPluginManager
     : public IPluginManager,
       public common::memory::EnableBorrowFromThis<BoostPluginManager> {
 protected:
+  /**
+   * Pointer to implementation (Pimpl) in source file. This is necessary to
+   * constrain Boost's implementation details in the source file and not expose
+   * them to the rest of the application.
+   * @note Indispensable for ABI stability and to use static-linked Boost.
+   */
+  struct Impl;
+  std::unique_ptr<Impl> m_impl;
+
   /** Context for plugins of this plugin manager */
   SharedPluginContext m_context;
-
-  /** List of all currently installed plugins */
-  std::map<std::string, boost::shared_ptr<IPlugin>> m_plugins;
-  mutable jobsystem::mutex m_plugins_mutex;
 
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
@@ -41,10 +43,15 @@ public:
   explicit BoostPluginManager(
       SharedPluginContext context,
       const common::memory::Reference<common::subsystems::SubsystemManager>
-          &subsystems)
-      : m_context(std::move(context)), m_subsystems(subsystems){};
+          &subsystems);
 
   ~BoostPluginManager() override;
+
+  BoostPluginManager(const BoostPluginManager &other) = delete;
+  BoostPluginManager &operator=(const BoostPluginManager &other) = delete;
+
+  BoostPluginManager(BoostPluginManager &&other) noexcept;
+  BoostPluginManager &operator=(BoostPluginManager &&other) noexcept;
 
   void LoadAndInstallPluginAsJob(const std::string &path) override;
   void InstallPluginAsJob(boost::shared_ptr<IPlugin> plugin) override;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/assert/Assert.h"
-#include "jobsystem/synchronization/IJobWaitable.h"
+#include "jobsystem/synchronization/IJobBarrier.h"
 #include "jobsystem/synchronization/JobMutex.h"
 #include <memory>
 #include <mutex>
@@ -16,11 +16,10 @@ namespace hive::jobsystem {
  * finished, while a counter of value 3 means that 3 jobs are still running.
  * @note This is the main synchronization primitive used in the job system
  */
-class JobCounter : public IJobWaitable {
-private:
+class JobCounter : public IJobBarrier {
   /** Current count of unfinished jobs attached to this counter. */
   size_t m_count{0};
-  mutable jobsystem::mutex m_count_mutex;
+  mutable mutex m_count_mutex;
 
 public:
   /**
@@ -37,11 +36,11 @@ public:
   /**
    * Checks if any jobs that contribute to the counter are still running,
    * i.e. if the counter is zero.
-   * @return true, if all of the counters jobs have finished.
+   * @return true, if all the counters jobs have finished.
    */
   bool IsFinished() override;
 
-  virtual ~JobCounter() = default;
+  ~JobCounter() override = default;
 };
 
 inline void JobCounter::Increase() {

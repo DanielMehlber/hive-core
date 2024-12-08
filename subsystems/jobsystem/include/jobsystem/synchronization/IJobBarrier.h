@@ -6,7 +6,7 @@ namespace hive::jobsystem {
  * Generic interface for objects and processes that can be waited for
  * during job execution.
  */
-class IJobWaitable {
+class IJobBarrier {
 public:
   /**
    * Checks if the object has finished and the control flow may continue.
@@ -14,5 +14,6 @@ public:
    * can be continued.
    */
   virtual bool IsFinished() = 0;
+  virtual ~IJobBarrier() = default;
 };
 } // namespace hive::jobsystem

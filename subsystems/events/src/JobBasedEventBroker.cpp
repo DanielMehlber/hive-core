@@ -1,4 +1,5 @@
 #include "events/broker/impl/JobBasedEventBroker.h"
+#include "jobsystem/jobs/TimerJob.h"
 #include "logging/LogManager.h"
 
 using namespace hive::events;
@@ -12,18 +13,18 @@ JobBasedEventBroker::JobBasedEventBroker(
     : m_subsystems(subsystems), m_this_alive_checker{std::make_shared<bool>()} {
 
   // when this shared pointer expired, this has been destroyed
-  std::weak_ptr<bool> alive_checker = m_this_alive_checker;
+  std::weak_ptr alive_checker = m_this_alive_checker;
 
   SharedJob clean_up_job = std::make_shared<TimerJob>(
       [&, alive_checker](JobContext *) {
         if (!alive_checker.expired()) {
           this->CleanUpSubscribers();
-          return JobContinuation::REQUEUE;
-        } else {
-          return JobContinuation::DISPOSE;
+          return REQUEUE;
         }
+
+        return DISPOSE;
       },
-      "events-listener-clean-up", 5s, JobExecutionPhase::INIT);
+      "events-listener-clean-up", 5s, INIT);
 
   auto job_manager = m_subsystems.Borrow()->RequireSubsystem<JobManager>();
   job_manager->KickJob(clean_up_job);

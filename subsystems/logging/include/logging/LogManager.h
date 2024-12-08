@@ -11,7 +11,6 @@ namespace hive::logging {
  * Provides a logger implementations
  */
 class LogManager {
-private:
   static std::shared_ptr<logger::ILogger> m_logger;
 
 public:

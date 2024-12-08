@@ -1,10 +1,13 @@
 #include "plugins/impl/BoostPluginManager.h"
 #include "jobsystem/manager/JobManager.h"
+#include "jobsystem/synchronization/JobMutex.h"
 #include <boost/dll/import.hpp>
+#include <boost/dll/shared_library.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
 #include <boost/json.hpp>
 #include <list>
+#include <map>
 
 using namespace hive::plugins;
 using namespace hive::jobsystem;
@@ -12,8 +15,20 @@ using namespace hive::jobsystem;
 namespace json = boost::json;
 namespace fs = boost::filesystem;
 
-void BoostPluginManager::LoadAndInstallPluginAsJob(const std::string &path) {
+struct BoostPluginManager::Impl {
+  /** List of all currently installed plugins */
+  std::map<std::string, boost::shared_ptr<IPlugin>> plugins;
+  mutable mutex plugins_mutex;
+};
 
+BoostPluginManager::BoostPluginManager(
+    SharedPluginContext context,
+    const common::memory::Reference<common::subsystems::SubsystemManager>
+        &subsystems)
+    : m_impl(std::make_unique<Impl>()), m_context(std::move(context)),
+      m_subsystems(subsystems) {}
+
+void BoostPluginManager::LoadAndInstallPluginAsJob(const std::string &path) {
   auto absolute_path = fs::canonical(path).generic_string();
 
   boost::shared_ptr<IPlugin> plugin;
@@ -50,8 +65,8 @@ void BoostPluginManager::InstallPluginAsJob(boost::shared_ptr<IPlugin> plugin) {
           auto name = plugin->GetName();
 
           // add plugin to managed plugins
-          std::unique_lock lock(plugin_manager->m_plugins_mutex);
-          plugin_manager->m_plugins[name] = std::move(plugin);
+          std::unique_lock lock(plugin_manager->m_impl->plugins_mutex);
+          plugin_manager->m_impl->plugins[name] = std::move(plugin);
           lock.unlock();
 
           LOG_INFO("loaded and installed plugin '" << name << "' successfully")
@@ -74,15 +89,15 @@ void BoostPluginManager::InstallPluginAsJob(boost::shared_ptr<IPlugin> plugin) {
 }
 
 void BoostPluginManager::UnloadPlugin(const std::string &name) {
-  std::unique_lock lock(m_plugins_mutex);
+  std::unique_lock lock(m_impl->plugins_mutex);
 
-  bool plugin_installed = m_plugins.contains(name);
+  bool plugin_installed = m_impl->plugins.contains(name);
   if (!plugin_installed) {
     LOG_WARN("no plugin named '" << name << "' is currently loaded")
     return;
   }
 
-  auto plugin = std::move(m_plugins.at(name));
+  auto plugin = std::move(m_impl->plugins.at(name));
 
   try {
     plugin->ShutDown(GetContext());
@@ -94,7 +109,7 @@ void BoostPluginManager::UnloadPlugin(const std::string &name) {
   }
 
   // remove plugin from managed plugins
-  m_plugins.erase(name);
+  m_impl->plugins.erase(name);
   plugin.reset();
 
   LOG_INFO("shut-down and unloaded plugin '" << name << "' successfully")
@@ -192,14 +207,14 @@ void BoostPluginManager::LoadPluginsAsJob(const std::string &input_path_str) {
             LOG_ERR("cannot install plugins from "
                     << input_path_str
                     << " because it is not a valid path: " << path_error.what())
-            return JobContinuation::DISPOSE;
+            return DISPOSE;
           }
 
           bool is_directory = fs::is_directory(input_path_str);
           if (!is_directory) {
             LOG_WARN("cannot load plugins from "
                      << absolute_path << " because it is not a directory")
-            return JobContinuation::DISPOSE;
+            return DISPOSE;
           }
 
           std::string jsonFilePath = absolute_path + "/plugins.json";
@@ -278,8 +293,8 @@ BoostPluginManager::~BoostPluginManager() {
   std::list<std::string> current_plugins;
 
   {
-    std::unique_lock lock(m_plugins_mutex);
-    for (const auto &plugin : m_plugins) {
+    std::unique_lock lock(m_impl->plugins_mutex);
+    for (const auto &plugin : m_impl->plugins) {
       current_plugins.push_back(plugin.first);
     }
   }

@@ -6,7 +6,6 @@ find_package(Boost REQUIRED CONFIG)
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(hive-common SHARED
-        src/common.cpp
         src/BoostUuidGenerator.cpp
         src/Timer.cpp
         src/TimerManager.cpp
