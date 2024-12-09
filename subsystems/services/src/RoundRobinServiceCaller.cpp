@@ -109,7 +109,7 @@ SharedJob RoundRobinServiceCaller::BuildServiceCallJob(
               executor->IssueCallAsJob(request, job_manager, async);
 
           // wait for call to complete
-          context->GetJobManager()->WaitForCompletion(future_response);
+          context->GetJobManager()->Await(future_response);
           try {
             SharedServiceResponse response = future_response.get();
 

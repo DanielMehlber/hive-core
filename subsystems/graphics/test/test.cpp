@@ -139,7 +139,7 @@ TEST(GraphicsTest, offscreen_rendering_sphere) {
                                                  job_manager_ref.Borrow());
 
   job_manager_ref.Borrow()->InvokeCycleAndWait();
-  job_manager_ref.Borrow()->WaitForCompletion(response);
+  job_manager_ref.Borrow()->Await(response);
 
   auto decoder = subsystems->RequireSubsystem<IRenderResultEncoder>();
   auto encoded_color_buffer = response.get()->GetResult("color").value();

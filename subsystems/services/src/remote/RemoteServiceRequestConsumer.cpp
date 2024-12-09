@@ -52,7 +52,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
           auto future_service_caller =
               _this->m_service_query_func(request->GetServiceName(), true);
 
-          context->GetJobManager()->WaitForCompletion(future_service_caller);
+          context->GetJobManager()->Await(future_service_caller);
 
           SharedServiceResponse response;
 
@@ -66,7 +66,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
                   service_caller->IssueCallAsJob(request, job_manager, true,
                                                  true);
 
-              context->GetJobManager()->WaitForCompletion(future_response);
+              context->GetJobManager()->Await(future_response);
               response = future_response.get();
 
             } else {
@@ -102,7 +102,7 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
             auto endpoint = maybe_endpoint.value();
             auto sending_progress =
                 endpoint->Send(connection_info.endpoint_id, response_message);
-            context->GetJobManager()->WaitForCompletion(sending_progress);
+            context->GetJobManager()->Await(sending_progress);
 
             try {
               sending_progress.get();

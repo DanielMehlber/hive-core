@@ -161,7 +161,7 @@ void JobManager::ExecuteQueueAndWait(std::queue<SharedJob> &queue,
   }
 
   ScheduleAllJobsInQueue(queue, queue_mutex, counter);
-  WaitForCompletion(counter);
+  Await(counter);
 }
 
 size_t JobManager::GetTotalCyclesCount() const { return m_total_cycle_count; }

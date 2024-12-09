@@ -229,7 +229,7 @@ void BoostPluginManager::LoadPluginsAsJob(const std::string &input_path_str) {
                     ->RequireSubsystem<resources::IResourceManager>();
             auto future_resource =
                 resource_manager->LoadResource("file://" + jsonFilePath);
-            context->GetJobManager()->WaitForCompletion(future_resource);
+            context->GetJobManager()->Await(future_resource);
 
             std::shared_ptr<std::vector<char>> content;
             try {

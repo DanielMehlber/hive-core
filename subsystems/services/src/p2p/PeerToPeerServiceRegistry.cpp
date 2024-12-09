@@ -42,7 +42,7 @@ void broadcastServiceRegistration(
           std::future<size_t> progress =
               sender->IssueBroadcastAsJob(registration.GetMessage());
 
-          context->GetJobManager()->WaitForCompletion(progress);
+          context->GetJobManager()->Await(progress);
 
           try {
             size_t receivers = progress.get();

@@ -35,7 +35,7 @@ public:
 
     // wait until signal has been given
     m_waiting_executions_count->operator++();
-    m_job_manager.Borrow()->WaitForCompletion(m_completion_signal);
+    m_job_manager.Borrow()->Await(m_completion_signal);
     m_waiting_executions_count->operator--();
 
     completion_promise.set_value(std::make_shared<ServiceResponse>(

@@ -122,12 +122,12 @@ bool IsExecutedByFiber() {
       boost::fibers::type::worker_context);
 }
 
-void JobExecution::Yield() {
+void JobExecution::YieldToWaitingJobs() {
   if (IsExecutedByFiber()) {
-    // caller is a fiber, so yield
+    // caller is a fiber, so yield to some waiting job
     boost::this_fiber::yield();
   } else {
-    // caller is a thread, so block
+    // caller is a thread, so yield on thread-level
     std::this_thread::yield();
   }
 }

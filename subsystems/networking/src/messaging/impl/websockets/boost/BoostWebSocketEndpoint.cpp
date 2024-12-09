@@ -405,7 +405,7 @@ BoostWebSocketEndpoint::IssueBroadcastAsJob(const SharedMessage &message) {
         // wait for messages to be sent
         lock.unlock();
         for (auto &sending_progress : futures) {
-          context->GetJobManager()->WaitForCompletion(sending_progress);
+          context->GetJobManager()->Await(sending_progress);
           count++;
           try {
             sending_progress.get();

@@ -55,7 +55,7 @@ std::future<SharedServiceResponse> LocalServiceExecutor::IssueCallAsJob(
                                               << request->GetTransactionId())
         try {
           auto result = executor->m_func(request);
-          context->GetJobManager()->WaitForCompletion(result);
+          context->GetJobManager()->Await(result);
           completion_promise->set_value(result.get());
         } catch (...) {
           auto exception_ptr =

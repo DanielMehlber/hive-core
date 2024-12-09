@@ -45,11 +45,18 @@ public:
   void Schedule(const std::shared_ptr<Job> &job);
 
   /**
-   * The caller's execution will yield to another job
-   * unconditionally.
-   * @note Used for job synchronization, pausing jobs, or waiting for events.
+   * Allows a job to yield its execution, letting other jobs run instead. The
+   * job is paused and resumed later, enabling cooperative multitasking.
+   *
+   * Useful for asynchronous operations where a job waits for results, avoiding
+   * resource blocking by passing control to others, allowing them to make
+   * progress instead.
+   *
+   * @note Enables asynchronous behavior in job execution.
+   * @attention Must support both jobs and regular threads. Regular threads
+   * should also yield on the thread-level.
    */
-  void Yield();
+  void YieldToWaitingJobs();
 
   /**
    * Starts processing scheduled jobs and invoke the execution

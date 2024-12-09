@@ -127,7 +127,7 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
 
           // wait until request has been sent and register promise for
           // resolution
-          context->GetJobManager()->WaitForCompletion(sending_progress);
+          context->GetJobManager()->Await(sending_progress);
 
           try {
             // check if sending was successful (or threw exception)

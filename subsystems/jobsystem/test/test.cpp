@@ -233,7 +233,7 @@ TEST(JobSystem, wait_for_job_inside_job) {
         otherJob->AddCounter(counter);
 
         manager->KickJob(otherJob);
-        manager->WaitForCompletion(counter);
+        manager->Await(counter);
         order.push_back(2);
         return JobContinuation::DISPOSE;
       },
@@ -282,7 +282,7 @@ TEST(JobSystem, detach_jobs_mid_execution) {
   SharedJobCounter detach_job_counter = std::make_shared<JobCounter>();
   SharedJob job = std::make_shared<Job>(
       [&](JobContext *context) {
-        context->GetJobManager()->WaitForCompletion(detach_job_counter);
+        context->GetJobManager()->Await(detach_job_counter);
         execution_counter++;
         return JobContinuation::REQUEUE;
       },
@@ -320,7 +320,7 @@ TEST(JobSystem, wait_for_future_completion) {
         });
 
         order.push_back(0);
-        context->GetJobManager()->WaitForCompletion(future);
+        context->GetJobManager()->Await(future);
         order.push_back(2);
         return JobContinuation::DISPOSE;
       },
@@ -362,7 +362,7 @@ TEST(JobSynchronization, wait_for_future) {
   SharedJob future_job = std::make_shared<Job>(
       [&future, &barrier](JobContext *context) mutable {
         barrier = true;
-        context->GetJobManager()->WaitForCompletion(future);
+        context->GetJobManager()->Await(future);
         return DISPOSE;
       },
       "future-job");

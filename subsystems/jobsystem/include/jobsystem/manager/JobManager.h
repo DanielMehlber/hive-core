@@ -164,36 +164,34 @@ public:
   void InvokeCycleAndWait();
 
   /**
-   * Execution will wait (or will be deferred, depending on the execution
-   * environment) until the barrier object has been finished.
+   * Execution will wait until the barrier object has been resolved. The calling
+   * job will yield its execution to others in the meantime.
    * @param barrier process that needs finish for the current calling party to
    * continue.
    * @note On single-threaded implementations, this cannot be called from inside
    * a job because it would deadlock the worker thread.
    */
-  void WaitForCompletion(std::shared_ptr<IJobBarrier> barrier);
+  void Await(std::shared_ptr<IJobBarrier> barrier);
 
   /**
-   * Execution of the calling party will wait (or will be deferred,
-   * depending on the execution environment) until the passed future has been
-   * resolved.
+   * Execution will wait until the future has been resolved. The calling
+   * job will yield its execution to others in the meantime.
    * @tparam FutureType type of the future object
    * @param future future that must resolve in order for the calling party to
    * continue.
    */
   template <typename FutureType>
-  void WaitForCompletion(const std::future<FutureType> &future);
+  void Await(const std::future<FutureType> &future);
 
   /**
-   * Execution of the calling party will wait (or will be deferred,
-   * depending on the execution environment) until the passed future has been
-   * resolved.
+   * Execution will wait until the shared future has been resolved. The calling
+   * job will yield its execution to others in the meantime.
    * @tparam FutureType type of the future object
    * @param future future that must resolve in order for the calling party to
    * continue.
    */
   template <typename FutureType>
-  void WaitForCompletion(const std::shared_future<FutureType> &future);
+  void Await(const std::shared_future<FutureType> &future);
 
   /**
    * Wait for a fixed amount of time before continuing the job's execution.
@@ -209,27 +207,25 @@ public:
   size_t GetTotalCyclesCount() const;
 };
 
-inline void
-JobManager::WaitForCompletion(std::shared_ptr<IJobBarrier> barrier) {
+inline void JobManager::Await(std::shared_ptr<IJobBarrier> barrier) {
   while (!barrier->IsFinished()) {
-    m_execution.Yield();
+    m_execution.YieldToWaitingJobs();
   }
 }
 
 template <typename FutureType>
-void JobManager::WaitForCompletion(const std::future<FutureType> &future) {
+void JobManager::Await(const std::future<FutureType> &future) {
   while (future.wait_for(std::chrono::milliseconds(0)) !=
          std::future_status::ready) {
-    m_execution.Yield();
+    m_execution.YieldToWaitingJobs();
   }
 }
 
 template <typename FutureType>
-void JobManager::WaitForCompletion(
-    const std::shared_future<FutureType> &future) {
+void JobManager::Await(const std::shared_future<FutureType> &future) {
   while (future.wait_for(std::chrono::milliseconds(0)) !=
          std::future_status::ready) {
-    m_execution.Yield();
+    m_execution.YieldToWaitingJobs();
   }
 }
 
@@ -237,7 +233,7 @@ template <typename Rep, typename Period>
 void JobManager::WaitForDuration(std::chrono::duration<Rep, Period> duration) {
   const auto start = std::chrono::high_resolution_clock::now();
   while (std::chrono::high_resolution_clock::now() - start < duration) {
-    m_execution.Yield();
+    m_execution.YieldToWaitingJobs();
   }
 }
 
