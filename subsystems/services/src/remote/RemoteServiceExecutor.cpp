@@ -25,7 +25,7 @@ bool RemoteServiceExecutor::IsCallable() {
   if (auto maybe_networking_manager = m_networking_manager.TryBorrow()) {
     auto maybe_connection =
         maybe_networking_manager.value()->GetSomeMessageEndpointConnectedTo(
-            m_remote_host_info.endpoint_id);
+            m_remote_host_info.remote_endpoint_id);
     return maybe_connection.has_value();
   }
   return false;
@@ -65,7 +65,7 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
         if (executor->IsCallable()) {
           LOG_DEBUG("calling remote web-socket service '"
                     << request->GetServiceName() << "' at node "
-                    << executor->m_remote_host_info.endpoint_id)
+                    << executor->m_remote_host_info.remote_endpoint_id)
 
           if (!executor->m_response_consumer.expired()) {
             /* pass the promise (resolving the service request) to the response
@@ -98,21 +98,21 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
           auto maybe_connected_endpoint =
               executor->m_networking_manager.Borrow()
                   ->GetSomeMessageEndpointConnectedTo(
-                      executor->m_remote_host_info.endpoint_id);
+                      executor->m_remote_host_info.remote_endpoint_id);
 
           if (!maybe_connected_endpoint.has_value()) {
             LOG_ERR("cannot call remote web-socket service "
                     << request->GetServiceName() << " of node "
-                    << executor->m_remote_host_info.endpoint_id << " at "
-                    << executor->m_remote_host_info.hostname
+                    << executor->m_remote_host_info.remote_endpoint_id << " at "
+                    << executor->m_remote_host_info.remote_url
                     << " because no endpoint is connected to remote host")
 
             auto exception = BUILD_EXCEPTION(
                 CallFailedException,
                 "cannot call remote web-socket service "
                     << request->GetServiceName() << " of node "
-                    << executor->m_remote_host_info.endpoint_id << " at "
-                    << executor->m_remote_host_info.hostname
+                    << executor->m_remote_host_info.remote_endpoint_id << " at "
+                    << executor->m_remote_host_info.remote_url
                     << " because no endpoint is connected to remote host");
 
             request->MarkAsCurrentlyProcessed(false);
@@ -123,7 +123,7 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
           auto connected_endpoint = maybe_connected_endpoint.value();
 
           std::future<void> sending_progress = connected_endpoint->Send(
-              executor->m_remote_host_info.endpoint_id, message);
+              executor->m_remote_host_info.remote_endpoint_id, message);
 
           // wait until request has been sent and register promise for
           // resolution
@@ -139,14 +139,14 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
 
             LOG_ERR("failed to call remote service '"
                     << request->GetServiceName() << "' of node "
-                    << executor->m_remote_host_info.endpoint_id << " at "
-                    << executor->m_remote_host_info.hostname << ": " << what)
+                    << executor->m_remote_host_info.remote_endpoint_id << " at "
+                    << executor->m_remote_host_info.remote_url << ": " << what)
             auto except = BUILD_EXCEPTION(
                 CallFailedException,
                 "failed to call remote service '"
                     << request->GetServiceName() << "' of node "
-                    << executor->m_remote_host_info.endpoint_id << " at "
-                    << executor->m_remote_host_info.hostname << ": " << what);
+                    << executor->m_remote_host_info.remote_endpoint_id << " at "
+                    << executor->m_remote_host_info.remote_url << ": " << what);
 
             request->MarkAsCurrentlyProcessed(false);
             promise->set_exception(std::make_exception_ptr(except));
@@ -154,14 +154,14 @@ std::future<SharedServiceResponse> RemoteServiceExecutor::IssueCallAsJob(
         } else {
           LOG_ERR("cannot call remote web-socket service "
                   << request->GetServiceName() << " of node "
-                  << executor->m_remote_host_info.endpoint_id << " at "
-                  << executor->m_remote_host_info.hostname)
+                  << executor->m_remote_host_info.remote_endpoint_id << " at "
+                  << executor->m_remote_host_info.remote_url)
           auto exception = BUILD_EXCEPTION(
               CallFailedException,
               "cannot call remote web-socket service "
                   << request->GetServiceName() << " of node "
-                  << executor->m_remote_host_info.endpoint_id << " at "
-                  << executor->m_remote_host_info.hostname);
+                  << executor->m_remote_host_info.remote_endpoint_id << " at "
+                  << executor->m_remote_host_info.remote_url);
 
           request->MarkAsCurrentlyProcessed(false);
           promise->set_exception(std::make_exception_ptr(exception));

@@ -41,29 +41,29 @@ void RemoteServiceResponseConsumer::ProcessReceivedMessage(
   switch (response->GetStatus()) {
   case OK:
     LOG_DEBUG("received service response for pending request "
-              << transaction_id << " from " << connection_info.hostname)
+              << transaction_id << " from " << connection_info.remote_url)
     break;
   case PARAMETER_ERROR:
     LOG_WARN("received service response for pending request "
-             << transaction_id << " from " << connection_info.hostname
+             << transaction_id << " from " << connection_info.remote_url
              << ", but there was an parameter error: "
              << response->GetStatusMessage())
     break;
   case INTERNAL_ERROR:
     LOG_WARN("received service response for pending request "
-             << transaction_id << " from " << connection_info.hostname
+             << transaction_id << " from " << connection_info.remote_url
              << ", but an internal error occurred: "
              << response->GetStatusMessage())
     break;
   case GONE:
     LOG_WARN("received service response for pending request "
-             << transaction_id << " from " << connection_info.hostname
+             << transaction_id << " from " << connection_info.remote_url
              << ", but service is gone from endpoint: "
              << response->GetStatusMessage())
     break;
   case BUSY:
     LOG_WARN("received service response for pending request "
-             << transaction_id << " from " << connection_info.hostname
+             << transaction_id << " from " << connection_info.remote_url
              << ", but service is busy: " << response->GetStatusMessage())
     break;
   }
@@ -99,7 +99,7 @@ void RemoteServiceResponseConsumer::AddResponsePromise(
     networking::ConnectionClosedEvent connection_closed(std::move(event));
     std::string endpoint_id = connection_closed.GetEndpointId();
 
-    if (connection_info.endpoint_id == endpoint_id) {
+    if (connection_info.remote_endpoint_id == endpoint_id) {
       LOG_ERR("connection to remote endpoint '"
               << endpoint_id
               << "' has been closed mid service request. Request cancelled.")

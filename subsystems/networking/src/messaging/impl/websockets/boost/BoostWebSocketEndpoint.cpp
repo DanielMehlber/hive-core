@@ -251,16 +251,16 @@ void BoostWebSocketEndpoint::Impl::AddConnection(
 
   // if connection to this node already exists, close old connection
   bool connection_already_exists =
-      connections.contains(connection_info.endpoint_id);
+      connections.contains(connection_info.remote_endpoint_id);
   if (connection_already_exists) {
-    LOG_WARN("established connection with node " << connection_info.endpoint_id
-                                                 << " already exists.")
-    auto old_connection = connections[connection_info.endpoint_id];
+    LOG_WARN("established connection with node "
+             << connection_info.remote_endpoint_id << " already exists.")
+    auto old_connection = connections[connection_info.remote_endpoint_id];
     old_connection->Close();
   }
 
   // register new connection
-  connections[connection_info.endpoint_id] = connection;
+  connections[connection_info.remote_endpoint_id] = connection;
 
   // fire an event that signals the establishment of a new connection
   if (auto maybe_subsystems = subsystems.TryBorrow()) {
@@ -269,7 +269,7 @@ void BoostWebSocketEndpoint::Impl::AddConnection(
     // fire event if event subsystem is found
     if (subsystems->ProvidesSubsystem<events::IEventBroker>()) {
       ConnectionEstablishedEvent event;
-      event.SetEndpointId(connection_info.endpoint_id);
+      event.SetEndpointId(connection_info.remote_endpoint_id);
 
       auto event_subsystem =
           subsystems->RequireSubsystem<events::IEventBroker>();

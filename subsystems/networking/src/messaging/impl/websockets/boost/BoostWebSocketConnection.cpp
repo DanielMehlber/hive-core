@@ -59,24 +59,20 @@ void BoostWebSocketConnection::OnMessageReceived(
       error_code == http::error::end_of_stream ||
       error_code == asio::error::connection_reset ||
       error_code == beast::error::timeout) {
-    LOG_WARN("remote host " << m_remote_endpoint_info.address().to_string()
-                            << ":" << m_remote_endpoint_info.port()
-                            << " has closed the web-socket connection")
+    LOG_WARN("web-socket connection "
+             << m_connection_info.local_host_name << " <- "
+             << m_connection_info.remote_host_name
+             << " has been closed by the remote endpoint")
 
     Close();
     return;
   }
 
-  if (error_code == asio::error::operation_aborted) {
-    LOG_DEBUG("local host has cancelled listening to web-socket message from "
-              << m_remote_endpoint_info.address().to_string() << ":"
-              << m_remote_endpoint_info.port())
-    return;
-  }
-
   if (error_code) {
-    LOG_ERR("failed to receive web-socket message from host "
-            << m_remote_endpoint_info.address() << ": " << error_code.message())
+    LOG_ERR("failed to receive message via web-socket connection "
+            << m_connection_info.local_host_name << " <- "
+            << m_connection_info.remote_host_name << ": "
+            << error_code.message())
     return;
   }
 
@@ -110,12 +106,12 @@ void BoostWebSocketConnection::Close() {
           tcp::socket::shutdown_send, error_code);
     }
 
-    LOG_INFO("closed web-socket connection to "
-             << m_remote_endpoint_info.address().to_string() << ":"
-             << m_remote_endpoint_info.port())
+    LOG_INFO("closed web-socket connection "
+             << m_connection_info.local_host_name << " <-> "
+             << m_connection_info.remote_host_name)
   }
 
-  m_connection_closed_callback(m_connection_info.endpoint_id);
+  m_connection_closed_callback(m_connection_info.remote_endpoint_id);
 
   DEBUG_ASSERT(!m_web_socket_stream.is_open(), "socket should be closed now")
 }
@@ -136,9 +132,10 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
   std::unique_lock lock(m_web_socket_stream_mutex);
 
   if (!m_web_socket_stream.is_open()) {
-    LOG_WARN("cannot sent message via web-socket to remote host "
-             << m_remote_endpoint_info.address().to_string() << ":"
-             << m_remote_endpoint_info.port() << " because socket is closed")
+    LOG_WARN("cannot sent message via web-socket to web-socket connection "
+             << m_connection_info.local_host_name << " -> "
+             << m_connection_info.remote_host_name
+             << " because the connection is already closed")
 
     THROW_EXCEPTION(ConnectionClosedException, "connection is not open")
   }
@@ -171,15 +168,17 @@ void BoostWebSocketConnection::OnMessageSent(
   lock.unlock();
 
   if (error_code) {
-    LOG_WARN("sending message via web-socket to remote host "
-             << m_remote_endpoint_info.address().to_string() << ":"
-             << m_remote_endpoint_info.port()
-             << " failed: " << error_code.message())
-    auto exception =
-        BUILD_EXCEPTION(MessageSendingException,
-                        "sending message via web-socket to remote host "
-                            << m_remote_endpoint_info.address().to_string()
-                            << ":" << m_remote_endpoint_info.port()
+    LOG_WARN("sending message '" << message->GetType()
+                                 << "' via web-socket connection "
+                                 << m_connection_info.local_host_name << " -> "
+                                 << m_connection_info.remote_host_name
+                                 << " failed: " << error_code.message())
+    auto exception = BUILD_EXCEPTION(
+        MessageSendingException,
+        "sending message '" << message->GetType()
+                            << "' via web-socket connection "
+                            << m_connection_info.local_host_name << " -> "
+                            << m_connection_info.remote_host_name
                             << " failed: " << error_code.message());
     promise.set_exception(std::make_exception_ptr(exception));
 
@@ -194,7 +193,7 @@ void BoostWebSocketConnection::OnMessageSent(
   promise.set_value();
   LOG_DEBUG("sent message of type "
             << message->GetType() << " (" << sent_data->size()
-            << " bytes) via web-socket to host "
-            << m_remote_endpoint_info.address().to_string() << ":"
-            << m_remote_endpoint_info.port())
+            << " bytes) via web-socket connection "
+            << m_connection_info.local_host_name << " -> "
+            << m_connection_info.remote_host_name);
 }

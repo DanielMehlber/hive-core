@@ -44,8 +44,7 @@ void NetworkingManager::ConfigureNode(
 
   property_provider->Set("net.node.id", node_id);
 
-  LOG_INFO("this node is online and identifies as " << node_id
-                                                    << " in the hive")
+  LOG_INFO("this node identifies as " << node_id << " in the hive cluster")
 }
 
 void NetworkingManager::SetupConsumerCleanUpJob() {
@@ -154,7 +153,8 @@ void NetworkingManager::InstallMessageEndpoint(
     m_default_endpoint_protocol = protocol;
   }
 
-  LOG_INFO("new messaging endpoint for protocol '" << protocol << "' installed")
+  LOG_INFO("installed messaging endpoint for protocol '"
+           << protocol << "'" << (is_default ? " as default" : ""))
 }
 
 std::optional<hive::common::memory::Borrower<IMessageEndpoint>>

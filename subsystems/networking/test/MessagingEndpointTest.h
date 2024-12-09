@@ -108,18 +108,18 @@ TEST(WebSockets, connection_establishment) {
   Node node1 = SetupWebSocketPeer(9003);
   Node node2 = SetupWebSocketPeer(9004);
 
-  auto result = node1.networking_manager.Borrow()
-                    ->GetDefaultMessageEndpoint()
-                    .value()
-                    ->EstablishConnectionTo("ws://127.0.0.1:9004");
-  result.wait();
+  auto connection_result = node1.networking_manager.Borrow()
+                               ->GetDefaultMessageEndpoint()
+                               .value()
+                               ->EstablishConnectionTo("ws://127.0.0.1:9004");
 
   waitUntilConnectionCompleted(node1, node2);
 
   ConnectionInfo connection_info;
-  ASSERT_NO_THROW(connection_info = result.get());
-  ASSERT_FALSE(connection_info.hostname.empty());
-  ASSERT_FALSE(connection_info.endpoint_id.empty());
+  ASSERT_NO_THROW(connection_info = connection_result.get());
+  ASSERT_FALSE(connection_info.remote_url.empty());
+  ASSERT_FALSE(connection_info.remote_host_name.empty());
+  ASSERT_FALSE(connection_info.remote_endpoint_id.empty());
 }
 
 TEST(WebSockets, message_passing_1_to_1) {
@@ -137,15 +137,13 @@ TEST(WebSockets, message_passing_1_to_1) {
   node2.networking_manager.Borrow()->AddMessageConsumer(test_consumer_2);
 
   // establish connection
-  auto result1 = node1.networking_manager.Borrow()
-                     ->GetDefaultMessageEndpoint()
-                     .value()
-                     ->EstablishConnectionTo("ws://127.0.0.1:9004");
-  result1.wait();
-
-  ASSERT_NO_THROW(result1.get());
+  auto connection_result = node1.networking_manager.Borrow()
+                               ->GetDefaultMessageEndpoint()
+                               .value()
+                               ->EstablishConnectionTo("ws://127.0.0.1:9004");
 
   waitUntilConnectionCompleted(node1, node2);
+  ASSERT_NO_THROW(connection_result.get());
 
   SharedMessage message = std::make_shared<Message>("test-type");
 
@@ -154,31 +152,16 @@ TEST(WebSockets, message_passing_1_to_1) {
       node1.networking_manager.Borrow()->GetDefaultMessageEndpoint().value(),
       node2.uuid);
 
-  auto result2 = node2.networking_manager.Borrow()
-                     ->GetDefaultMessageEndpoint()
-                     .value()
-                     ->EstablishConnectionTo("ws://127.0.0.1:9003");
-  result2.wait();
-  ASSERT_NO_THROW(result2.get());
-
   sendMessageToNode(
       message,
       node2.networking_manager.Borrow()->GetDefaultMessageEndpoint().value(),
       node1.uuid);
 
   TryAssertUntilTimeout(
-      [&node1, &node2, &test_consumer_1] {
+      [&node1, &node2, &test_consumer_1, &test_consumer_2] {
         node1.job_manager.Borrow()->InvokeCycleAndWait();
         node2.job_manager.Borrow()->InvokeCycleAndWait();
-        return test_consumer_1->counter == 1;
-      },
-      10s);
-
-  TryAssertUntilTimeout(
-      [&node1, &node2, &test_consumer_2] {
-        node1.job_manager.Borrow()->InvokeCycleAndWait();
-        node2.job_manager.Borrow()->InvokeCycleAndWait();
-        return test_consumer_2->counter == 1;
+        return test_consumer_1->counter == 1 && test_consumer_2->counter == 1;
       },
       10s);
 }
@@ -194,14 +177,13 @@ TEST(WebSockets, message_receiving_multiple) {
 
   node2.networking_manager.Borrow()->AddMessageConsumer(test_consumer_1);
 
-  auto result1 = node1.networking_manager.Borrow()
-                     ->GetDefaultMessageEndpoint()
-                     .value()
-                     ->EstablishConnectionTo("ws://127.0.0.1:9004");
-  result1.wait();
-  ASSERT_NO_THROW(result1.get());
+  auto connection_result = node1.networking_manager.Borrow()
+                               ->GetDefaultMessageEndpoint()
+                               .value()
+                               ->EstablishConnectionTo("ws://127.0.0.1:9004");
 
   waitUntilConnectionCompleted(node1, node2);
+  ASSERT_NO_THROW(connection_result.get());
 
   for (int i = 0; i < 5; i++) {
     SharedMessage message = std::make_shared<Message>("test-type");
@@ -234,14 +216,13 @@ TEST(WebSockets, message_sending_1_to_n) {
   for (size_t i = 9005; i < 9010; i++) {
     Node peer = SetupWebSocketPeer(i);
 
-    auto result = peer.networking_manager.Borrow()
-                      ->GetDefaultMessageEndpoint()
-                      .value()
-                      ->EstablishConnectionTo("ws://127.0.0.1:9003");
-    result.wait();
-    ASSERT_NO_THROW(result.get());
+    auto connection_result = peer.networking_manager.Borrow()
+                                 ->GetDefaultMessageEndpoint()
+                                 .value()
+                                 ->EstablishConnectionTo("ws://127.0.0.1:9003");
 
     waitUntilConnectionCompleted(node1, peer);
+    ASSERT_NO_THROW(connection_result.get());
 
     SharedMessage message = std::make_shared<Message>("test-type");
 
@@ -277,14 +258,13 @@ TEST(WebSockets, message_broadcast) {
   for (size_t i = 9005; i < 9010; i++) {
     Node recipient_node = SetupWebSocketPeer(i);
 
-    auto result = recipient_node.networking_manager.Borrow()
-                      ->GetDefaultMessageEndpoint()
-                      .value()
-                      ->EstablishConnectionTo("127.0.0.1:9003");
-    result.wait();
-    ASSERT_NO_THROW(result.get());
+    auto connection_result = recipient_node.networking_manager.Borrow()
+                                 ->GetDefaultMessageEndpoint()
+                                 .value()
+                                 ->EstablishConnectionTo("127.0.0.1:9003");
 
     waitUntilConnectionCompleted(broadcasting_peer, recipient_node);
+    ASSERT_NO_THROW(connection_result.get());
 
     recipient_node.networking_manager.Borrow()->AddMessageConsumer(
         test_consumer_1);
@@ -304,13 +284,10 @@ TEST(WebSockets, message_broadcast) {
 
   SharedMessage message = std::make_shared<Message>("test-type");
 
-  auto future = broadcasting_peer.networking_manager.Borrow()
-                    ->GetDefaultMessageEndpoint()
-                    .value()
-                    ->IssueBroadcastAsJob(message);
-  broadcasting_peer.job_manager.Borrow()->InvokeCycleAndWait();
-  future.wait();
-  ASSERT_EQ(future.get(), 5);
+  auto broadcasting_result = broadcasting_peer.networking_manager.Borrow()
+                                 ->GetDefaultMessageEndpoint()
+                                 .value()
+                                 ->IssueBroadcastAsJob(message);
 
   TryAssertUntilTimeout(
       [&broadcasting_peer, &peers, &test_consumer_1] {
@@ -321,4 +298,8 @@ TEST(WebSockets, message_broadcast) {
         return test_consumer_1->counter == 5;
       },
       10s);
+
+  int result;
+  ASSERT_NO_THROW(result = broadcasting_result.get());
+  ASSERT_EQ(result, 5);
 }

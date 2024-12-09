@@ -15,7 +15,9 @@ namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
 namespace asio = boost::asio;           // from <boost/asio.hpp>
-using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+using tcp = asio::ip::tcp;              // from <boost/asio/ip/tcp.hpp>
+
+using namespace std::chrono_literals;
 
 BoostWebSocketConnectionEstablisher::BoostWebSocketConnectionEstablisher(
     std::string this_node_uuid,
@@ -90,25 +92,25 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection(
     std::shared_ptr<stream_type> plain_tcp_stream, beast::error_code error_code,
     tcp::resolver::results_type::endpoint_type endpoint_type) {
 
+  auto host = endpoint_type.address().to_string() + ":" +
+              std::to_string(endpoint_type.port());
+
   if (error_code) {
     LOG_WARN("cannot establish TCP connection to "
-             << endpoint_type.address() << " (" << uri << ") "
+             << host << " (" << uri << ") "
              << ": " << error_code.message())
 
-    auto exception = BUILD_EXCEPTION(ConnectionFailedException,
-                                     "cannot establish TCP connection to "
-                                         << endpoint_type.address() << ": "
-                                         << error_code.message());
+    auto exception = BUILD_EXCEPTION(
+        ConnectionFailedException, "cannot establish TCP connection to "
+                                       << host << ": " << error_code.message());
     connection_promise.set_exception(std::make_exception_ptr(exception));
     return;
   }
 
-  LOG_DEBUG("established outgoing TCP connection to "
-            << endpoint_type.address().to_string())
+  LOG_DEBUG("established outgoing TCP connection to " << host)
 
-  // Turn off the timeout on the tcp_stream, because
-  // the websocket stream has its own timeout system.
-  get_lowest_layer(*plain_tcp_stream).expires_never();
+  // set timeout during handshake process
+  get_lowest_layer(*plain_tcp_stream).expires_after(10s);
 
   // Set suggested timeout settings for the websocket
   plain_tcp_stream->set_option(
@@ -122,9 +124,6 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection(
                     " websocket-client-async");
       }));
 
-  auto host = endpoint_type.address().to_string() + ":" +
-              std::to_string(endpoint_type.port());
-
   // Perform the websocket handshake
   plain_tcp_stream->async_handshake(
       host, "/",
@@ -135,14 +134,24 @@ void BoostWebSocketConnectionEstablisher::ProcessEstablishedTcpConnection(
 }
 
 void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
-    std::promise<ConnectionInfo> &&connection_promise, std::string uri,
+    std::promise<ConnectionInfo> &&connection_promise, std::string url,
     std::shared_ptr<stream_type> web_socket_stream,
     beast::error_code error_code) {
+
+  // Turn off the timeout of the underlying TCP stream, because
+  // the websocket stream has its own timeout.
+  get_lowest_layer(*web_socket_stream).expires_never();
 
   auto remote_endpoint_info =
       web_socket_stream->next_layer().socket().remote_endpoint();
   auto local_endpoint_info =
       web_socket_stream->next_layer().socket().local_endpoint();
+
+  auto local_host = local_endpoint_info.address().to_string() + ":" +
+                    std::to_string(local_endpoint_info.port());
+
+  auto remote_host = remote_endpoint_info.address().to_string() + ":" +
+                     std::to_string(remote_endpoint_info.port());
 
   auto remote_address = remote_endpoint_info.address();
   auto remote_port = remote_endpoint_info.port();
@@ -152,14 +161,12 @@ void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
   if (error_code) {
     LOG_ERR(
         "web-socket handshake with remote host over established tcp connection "
-        << local_address.to_string() << ":" << local_port << "->"
-        << remote_address.to_string() << ":" << remote_port
+        << local_host << "->" << remote_host
         << " failed: " << error_code.message())
     auto exception = BUILD_EXCEPTION(
         ConnectionFailedException,
         "web-socket handshake with remote host over established tcp connection "
-            << local_address.to_string() << ":" << local_port << "->"
-            << remote_address.to_string() << ":" << remote_port
+            << local_host << "->" << remote_host
             << " failed: " << error_code.message());
     connection_promise.set_exception(std::make_exception_ptr(exception));
     return;
@@ -170,7 +177,9 @@ void BoostWebSocketConnectionEstablisher::ProcessWebSocketHandshake(
             << remote_address.to_string() << ":" << remote_port);
 
   ConnectionInfo connection_info;
-  connection_info.hostname = uri;
+  connection_info.remote_url = url;
+  connection_info.remote_host_name = remote_host;
+  connection_info.local_host_name = local_host;
 
   PerformNodeHandshake(std::move(connection_promise),
                        std::move(connection_info), web_socket_stream);
@@ -185,10 +194,12 @@ void BoostWebSocketConnectionEstablisher::PerformNodeHandshake(
   web_socket_stream->write(boost::asio::buffer(m_this_node_uuid), error_code);
 
   if (error_code) {
-    LOG_ERR("node handshake failed: " << error_code.message())
+    LOG_ERR("node handshake (on top of web-socket stream) failed: "
+            << error_code.message())
     auto exception =
         BUILD_EXCEPTION(ConnectionFailedException,
-                        "node handshake failed: " << error_code.message());
+                        "node handshake (on top of web-socket stream) failed: "
+                            << error_code.message());
     connection_promise.set_exception(std::make_exception_ptr(exception));
     return;
   }
@@ -223,10 +234,11 @@ void BoostWebSocketConnectionEstablisher::ProcessNodeHandshakeResponse(
       boost::beast::buffers_to_string(handshake_response_buffer->data());
   handshake_response_buffer->consume(handshake_response_buffer->size());
 
-  info.endpoint_id = other_endpoint_id;
+  info.remote_endpoint_id = other_endpoint_id;
 
-  LOG_INFO("successfully connected to " << info.endpoint_id << " at "
-                                        << info.hostname << " via web-sockets")
+  LOG_INFO("successfully connected to "
+           << info.remote_endpoint_id << " at " << info.remote_host_name << " ("
+           << info.remote_url << ") via web-sockets")
 
   // consume connection
   m_connection_consumer(info, std::move(*web_socket_stream));

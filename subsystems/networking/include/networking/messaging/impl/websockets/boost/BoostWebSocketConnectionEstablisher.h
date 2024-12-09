@@ -76,13 +76,13 @@ private:
    * @param connection_promise promise to resolve when the connection process
    * has completed. This will be passed through multiple functions until the end
    * of the process.
-   * @param uri URI of the remote endpoint
+   * @param url URI of the remote endpoint
    * @param web_socket_stream upgraded web-socket stream
    * @param error_code result of the web-socket handshake attempt
    */
   void
   ProcessWebSocketHandshake(std::promise<ConnectionInfo> &&connection_promise,
-                            std::string uri,
+                            std::string url,
                             std::shared_ptr<stream_type> web_socket_stream,
                             boost::beast::error_code error_code);
 

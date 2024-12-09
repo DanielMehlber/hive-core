@@ -98,17 +98,17 @@ void RemoteServiceRequestConsumer::ProcessReceivedMessage(
 
           if (auto maybe_endpoint =
                   networking_manager->GetSomeMessageEndpointConnectedTo(
-                      connection_info.endpoint_id)) {
+                      connection_info.remote_endpoint_id)) {
             auto endpoint = maybe_endpoint.value();
             auto sending_progress =
-                endpoint->Send(connection_info.endpoint_id, response_message);
+                endpoint->Send(connection_info.remote_endpoint_id, response_message);
             context->GetJobManager()->Await(sending_progress);
 
             try {
               sending_progress.get();
               LOG_DEBUG("sent remote service response for request "
                         << request->GetTransactionId() << " to node "
-                        << connection_info.endpoint_id)
+                        << connection_info.remote_endpoint_id)
             } catch (std::exception &exception) {
               LOG_ERR("error while sending response for remote service request "
                       << request->GetTransactionId() << " for service "

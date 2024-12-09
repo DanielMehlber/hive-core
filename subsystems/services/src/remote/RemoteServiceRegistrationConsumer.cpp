@@ -31,7 +31,7 @@ void RemoteServiceRegistrationConsumer::ProcessReceivedMessage(
 
   LOG_INFO("received web-socket service registration of service '"
            << service_name << "' (" << service_id << ") from host "
-           << connection_info.endpoint_id)
+           << connection_info.remote_endpoint_id)
 
   SharedServiceExecutor stub = std::make_shared<RemoteServiceExecutor>(
       service_name, m_networking_manager, connection_info, service_id,
