@@ -25,6 +25,24 @@ SharedServiceRequest GenerateRenderingRequest(int width, int height) {
   return request;
 }
 
+inline void waitUntilConnectionCompleted(Node &node1, Node &node2) {
+  TryAssertUntilTimeout(
+      [&node1, &node2]() {
+        node2.job_manager.Borrow()->InvokeCycleAndWait();
+        node1.job_manager.Borrow()->InvokeCycleAndWait();
+        bool node1_connected =
+            node1.networking_mgr.Borrow()
+                ->GetSomeMessageEndpointConnectedTo(node2.uuid)
+                .has_value();
+        bool node2_connected =
+            node2.networking_mgr.Borrow()
+                ->GetSomeMessageEndpointConnectedTo(node1.uuid)
+                .has_value();
+        return node1_connected && node2_connected;
+      },
+      5s);
+}
+
 TEST(GraphicsTests, remote_render_service) {
   auto config = std::make_shared<common::config::Configuration>();
 
@@ -47,7 +65,7 @@ TEST(GraphicsTests, remote_render_service) {
                                  .value()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
-  connection_progress.wait();
+  waitUntilConnectionCompleted(node_1, node_2);
   ASSERT_NO_THROW(connection_progress.get());
 
   // process established connection

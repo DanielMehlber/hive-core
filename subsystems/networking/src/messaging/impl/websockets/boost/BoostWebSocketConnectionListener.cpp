@@ -123,30 +123,30 @@ void BoostWebSocketConnectionListener::ProcessTcpConnection(
     remote_host = "(unknown)";
   }
 
+  // this is normal and happens when the listener shuts down. Its running
+  // async_accept operation will be cancelled, resulting in this error code.
   if (error_code == asio::error::operation_aborted) {
-    LOG_DEBUG("local web-socket connection acceptor at " << local_host
-                                                         << " has stopped")
+    LOG_DEBUG("stopped accepting incoming TCP connections at " << local_host)
     return;
   }
 
   if (error_code) {
     LOG_ERR("failed to accept incoming TCP connection "
-            << remote_host << " -> " << local_host
+            << local_host << " <- " << remote_host
             << " for web-socket stream: " << error_code.message())
     StartAcceptingAnotherConnection();
     return;
   }
 
   if (!socket.is_open()) {
-    LOG_ERR("server was not able to accept TCP connection for web-socket "
-            "stream: incoming TCP connection "
-            << remote_host << " -> " << local_host
-            << " has unexpectedly closed")
+    LOG_ERR("failed to accept incoming TCP connection "
+            << local_host << " <- " << remote_host
+            << " for web-socket stream: socket has unexpectedly been closed")
     return;
   }
 
-  LOG_DEBUG("accepted incoming TCP connection " << remote_host << " -> "
-                                                << local_host)
+  LOG_DEBUG("accepted incoming TCP connection " << local_host << " <- "
+                                                << remote_host)
 
   // create stream and perform handshake
   auto stream = std::make_shared<stream_type>(std::move(socket));
@@ -185,13 +185,13 @@ void BoostWebSocketConnectionListener::ProcessWebSocketHandshake(
 
   if (ec) {
     LOG_ERR("failed to accept incoming web-socket handshake via TCP connection "
-            << remote_host << " -> " << local_host << ": " << ec.message())
+            << local_host << " <- " << remote_host << ": " << ec.message())
     StartAcceptingAnotherConnection();
     return;
   }
 
-  LOG_DEBUG("accepted incoming web-socket connection " << remote_host << " -> "
-                                                       << local_host)
+  LOG_DEBUG("accepted incoming web-socket connection " << local_host << " <- "
+                                                       << remote_host)
 
   ConnectionInfo connection_info;
   connection_info.remote_url = remote_host;
@@ -216,8 +216,8 @@ void BoostWebSocketConnectionListener::ProcessNodeHandshakeRequest(
 
   if (ec) {
     LOG_ERR("incoming Hive node handshake via web-socket connection "
-            << connection_info.remote_host_name << " -> "
-            << connection_info.local_host_name << " failed: " << ec.message())
+            << connection_info.local_host_name << " <- "
+            << connection_info.remote_host_name << " failed: " << ec.message())
     web_socket_stream->close(websocket::close_code::none);
     return;
   }
@@ -234,15 +234,16 @@ void BoostWebSocketConnectionListener::ProcessNodeHandshakeRequest(
   if (ec) {
     LOG_ERR("failed to response to incoming Hive node handshake via web-socket "
             "connection "
-            << connection_info.remote_host_name << " -> "
-            << connection_info.local_host_name << ": " << ec.message())
+            << connection_info.local_host_name << " <- "
+            << connection_info.remote_host_name << ": " << ec.message())
     web_socket_stream->close(websocket::close_code::none);
     return;
   }
 
-  LOG_INFO("node " << connection_info.remote_endpoint_id << " from "
-                   << connection_info.remote_host_name
-                   << " successfully connected via web-sockets")
+  LOG_INFO("established web-socket connection "
+           << m_this_node_uuid << " <-> " << other_endpoint_id << " ("
+           << connection_info.local_host_name << " <-> "
+           << connection_info.remote_host_name << ")")
 
   m_connection_consumer(connection_info, std::move(*web_socket_stream));
 
@@ -250,9 +251,14 @@ void BoostWebSocketConnectionListener::ProcessNodeHandshakeRequest(
 }
 
 void BoostWebSocketConnectionListener::ShutDown() {
-  LOG_DEBUG("web-socket connection listener has been shut down")
   if (m_incoming_tcp_connection_acceptor->is_open()) {
     m_incoming_tcp_connection_acceptor->cancel();
     m_incoming_tcp_connection_acceptor->close();
+
+    const auto local_host = m_local_endpoint->address().to_string() + ":" +
+                            std::to_string(m_local_endpoint->port());
+
+    LOG_DEBUG("web-socket connection listener at " << local_host
+                                                   << " has been shut down")
   }
 }

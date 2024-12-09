@@ -78,6 +78,24 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
               port};
 }
 
+inline void waitUntilConnectionCompleted(Node &node1, Node &node2) {
+  TryAssertUntilTimeout(
+      [&node1, &node2]() {
+        node2.job_manager.Borrow()->InvokeCycleAndWait();
+        node1.job_manager.Borrow()->InvokeCycleAndWait();
+        bool node1_connected =
+            node1.networking_mgr.Borrow()
+                ->GetSomeMessageEndpointConnectedTo(node2.uuid)
+                .has_value();
+        bool node2_connected =
+            node2.networking_mgr.Borrow()
+                ->GetSomeMessageEndpointConnectedTo(node1.uuid)
+                .has_value();
+        return node1_connected && node2_connected;
+      },
+      5s);
+}
+
 TEST(RemoteServiceTests, run_single_remote_service) {
   auto config = std::make_shared<common::config::Configuration>();
 
@@ -90,7 +108,7 @@ TEST(RemoteServiceTests, run_single_remote_service) {
                                  .value()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
-  connection_progress.wait();
+  waitUntilConnectionCompleted(node_1, node_2);
   ASSERT_NO_THROW(connection_progress.get());
 
   SharedServiceExecutor local_service =
@@ -151,7 +169,7 @@ TEST(RemoteServiceTests, remote_service_load_balancing) {
                                    .value()
                                    ->EstablishConnectionTo("127.0.0.1:9004");
 
-    connection_progress.wait();
+    waitUntilConnectionCompleted(central_node, ith_node);
     ASSERT_NO_THROW(connection_progress.get());
 
     std::shared_ptr<AddingServiceExecutor> service =
@@ -248,6 +266,7 @@ TEST(RemoteServiceTests, web_socket_node_destroyed) {
                         .value()
                         ->EstablishConnectionTo("127.0.0.1:9005");
 
+    waitUntilConnectionCompleted(node_1, node_2);
     ASSERT_NO_THROW(progress.get());
 
     node_1.job_manager.Borrow()->InvokeCycleAndWait();
@@ -297,7 +316,7 @@ TEST(RemoteServiceTests, async_service_call) {
                                  .value()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
-  connection_progress.wait();
+  waitUntilConnectionCompleted(node_1, node_2);
   ASSERT_NO_THROW(connection_progress.get());
 
   SharedServiceExecutor local_service =
@@ -364,7 +383,7 @@ TEST(RemoteServiceTests, service_endpoint_disconnected) {
                                    .value()
                                    ->EstablishConnectionTo("127.0.0.1:9006");
 
-    connection_progress.wait();
+    waitUntilConnectionCompleted(node_1, node_2);
     ASSERT_NO_THROW(connection_progress.get());
 
     SharedServiceExecutor local_service =
@@ -410,7 +429,7 @@ TEST(RemoteServiceTests, service_executor_busy) {
                                  .value()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
-  connection_progress.wait();
+  waitUntilConnectionCompleted(servicing_node, calling_node);
   ASSERT_NO_THROW(connection_progress.get());
 
   // controls when the limited service is allowed to complete
@@ -511,7 +530,7 @@ TEST(RemoteServiceTests, busy_retry_policy) {
                                  .value()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
-  connection_progress.wait();
+  waitUntilConnectionCompleted(servicing_node, calling_node);
   ASSERT_NO_THROW(connection_progress.get());
 
   // controls when the limited service is allowed to complete

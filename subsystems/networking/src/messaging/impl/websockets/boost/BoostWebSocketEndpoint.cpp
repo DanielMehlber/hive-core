@@ -125,6 +125,9 @@ void BoostWebSocketEndpoint::Shutdown() {
   m_impl->running = false;
   running_lock.unlock();
 
+  const auto local_host = m_impl->local_endpoint->address().to_string() + ":" +
+                          std::to_string(m_impl->local_endpoint->port());
+
   // close all endpoints
   std::unique_lock conn_lock(m_impl->connections_mutex);
   m_impl->connection_listener->ShutDown();
@@ -140,7 +143,7 @@ void BoostWebSocketEndpoint::Shutdown() {
     execution.join();
   }
 
-  LOG_DEBUG("local web-socket endpoint has been shut down")
+  LOG_INFO("web-socket endpoint at " << local_host << " has been shut down")
 }
 
 std::string BoostWebSocketEndpoint::GetProtocol() const { return "ws"; }

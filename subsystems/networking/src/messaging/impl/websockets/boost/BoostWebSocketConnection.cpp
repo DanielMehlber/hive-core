@@ -59,12 +59,22 @@ void BoostWebSocketConnection::OnMessageReceived(
       error_code == http::error::end_of_stream ||
       error_code == asio::error::connection_reset ||
       error_code == beast::error::timeout) {
-    LOG_WARN("web-socket connection "
-             << m_connection_info.local_host_name << " <- "
-             << m_connection_info.remote_host_name
-             << " has been closed by the remote endpoint")
+    LOG_WARN("web-socket connection " << m_connection_info.local_host_name
+                                      << " <-> "
+                                      << m_connection_info.remote_host_name
+                                      << " closed by remote endpoint")
 
     Close();
+    return;
+  }
+
+  // this is normal and happens when the connection shuts down. Its running
+  // async_read operation will be cancelled, resulting in this error code.
+  if (error_code == asio::error::operation_aborted) {
+    LOG_DEBUG(
+        "stopped listening for incoming messages at web-socket connection "
+        << m_connection_info.local_host_name << " <-> "
+        << m_connection_info.remote_host_name)
     return;
   }
 
