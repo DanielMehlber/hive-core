@@ -83,16 +83,16 @@ Usually we need to _wait_ (yield) for the following things:
 * a `JobCounter` when waiting for a job or set of jobs to finish.
 * a duration of time to pass.
 
-The job-system offers the `WaitForCompletion` function for that purpose.
+The job-system offers the `Await` function for that purpose.
 
 ```cpp
 // -- wait for future inside a job --
 std::future<Result> future_result = async_task();
 
-// this is pure evil, don't do it!
+// this is NOT asynchronous, don't do it!
 // std::future.wait();
 
-WaitForCompletion(future_result); // yields until future has resolved
+job_manager->Await(future_result); // yields until future has resolved
 Result result = future_result.get();
 
 // -- wait for other job inside a job --
@@ -104,14 +104,14 @@ job_manager->KickJob(other_job);
 // this is also pure evil, so I don't want to see it in your jobs
 // while (!other_job->IsFinished()) {}
 
-WaitForCompletion(other_job_counter); // yields until other job has finished
+job_manager->Await(other_job_counter); // yields until other job has finished
 
 // -- wait for a duration of time inside a job --
-WaitForDuration(5s);
+job_manager->WaitForDuration(5s);
 
 // -- wait for a mutex inside a job --
 jobsystem::mutex mtx; // do not use std::mutex, they block
-std::unique_lock<jobsystem::mutex> lock(mtx); // will yield under the hood. No need to call WaitForCompletion
+std::unique_lock<jobsystem::mutex> lock(mtx); // will yield under the hood. No need to call Await
 ```
 
 ## Synchronous vs. Asynchronous Jobs
