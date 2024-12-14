@@ -18,7 +18,7 @@ private:
   common::memory::Reference<common::subsystems::SubsystemManager> m_subsystems;
 
   /** Renderer that should be used for executing the rendering request */
-  common::memory::Reference<graphics::IRenderer> m_renderer;
+  common::memory::Reference<IRenderer> m_renderer;
 
   /**
    * Fow now, only one image can be taken at a time. This mutex enforces this

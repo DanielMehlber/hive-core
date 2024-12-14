@@ -1,4 +1,4 @@
-#include "networking/messaging/impl/websockets/boost/BoostWebSocketConnectionEstablisher.h"
+#include "networking/messaging/endpoints/websockets/BoostWebSocketConnectionEstablisher.h"
 #include "logging/LogManager.h"
 #include "networking/util/UrlParser.h"
 #include <boost/asio.hpp>

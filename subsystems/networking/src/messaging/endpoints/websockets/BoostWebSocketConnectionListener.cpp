@@ -1,7 +1,7 @@
 #include <utility>
 
 #include "logging/LogManager.h"
-#include "networking/messaging/impl/websockets/boost/BoostWebSocketConnectionListener.h"
+#include "networking/messaging/endpoints/websockets/BoostWebSocketConnectionListener.h"
 
 using namespace hive::networking;
 using namespace hive::networking::messaging;
@@ -11,7 +11,7 @@ namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
 namespace asio = boost::asio;           // from <boost/asio.hpp>
-using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+using tcp = asio::ip::tcp;              // from <boost/asio/ip/tcp.hpp>
 
 BoostWebSocketConnectionListener::BoostWebSocketConnectionListener(
     std::string this_node_uuid,
@@ -115,19 +115,19 @@ void BoostWebSocketConnectionListener::ProcessTcpConnection(
   auto local_host = m_local_endpoint->address().to_string() + ":" +
                     std::to_string(m_local_endpoint->port());
 
+  // this is normal and happens when the listener shuts down. Its running
+  // async_accept operation will be cancelled, resulting in this error code.
+  if (error_code == asio::error::operation_aborted) {
+    LOG_DEBUG("stopped accepting incoming TCP connections at " << local_host)
+    return;
+  }
+
   std::string remote_host;
   try {
     remote_host = socket.remote_endpoint().address().to_string() + ":" +
                   std::to_string(socket.remote_endpoint().port());
   } catch (...) {
     remote_host = "(unknown)";
-  }
-
-  // this is normal and happens when the listener shuts down. Its running
-  // async_accept operation will be cancelled, resulting in this error code.
-  if (error_code == asio::error::operation_aborted) {
-    LOG_DEBUG("stopped accepting incoming TCP connections at " << local_host)
-    return;
   }
 
   if (error_code) {

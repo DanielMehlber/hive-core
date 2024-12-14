@@ -3,7 +3,7 @@
 #include "common/config/Configuration.h"
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
-#include "networking/messaging/IMessageEndpoint.h"
+#include "networking/messaging/endpoints/IMessageEndpoint.h"
 
 namespace hive::networking::messaging::websockets {
 

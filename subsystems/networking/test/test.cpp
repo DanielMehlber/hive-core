@@ -1,6 +1,5 @@
 #include "MessageConverterTest.h"
 #include "MessagingEndpointTest.h"
-#include "MultipartFormdataTest.h"
 #include "UrlParserTest.h"
 #include <gtest/gtest.h>
 

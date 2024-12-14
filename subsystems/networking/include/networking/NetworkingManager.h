@@ -4,9 +4,12 @@
 #include "common/memory/ExclusiveOwnership.h"
 #include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/synchronization/JobMutex.h"
-#include "networking/messaging/IMessageConsumer.h"
-#include "networking/messaging/IMessageEndpoint.h"
-#include "networking/messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"
+#include "networking/messaging/ConnectionInfo.h"
+#include "networking/messaging/Message.h"
+#include "networking/messaging/consumer/IMessageConsumer.h"
+#include "networking/messaging/converter/IMessageConverter.h"
+#include "networking/messaging/endpoints/IMessageEndpoint.h"
+#include "networking/messaging/endpoints/websockets/BoostWebSocketEndpoint.h"
 #include <map>
 #include <memory>
 

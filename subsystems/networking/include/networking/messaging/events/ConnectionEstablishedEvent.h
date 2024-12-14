@@ -4,7 +4,6 @@
 
 namespace hive::networking {
 class ConnectionEstablishedEvent {
-private:
   events::SharedEvent m_event;
 
 public:

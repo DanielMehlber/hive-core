@@ -2,7 +2,7 @@
 
 #include "common/memory/ExclusiveOwnership.h"
 #include "events/listener/impl/FunctionalEventListener.h"
-#include "networking/messaging/IMessageEndpoint.h"
+#include "networking/messaging/endpoints/IMessageEndpoint.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistrationConsumer.h"
 #include "services/registry/impl/remote/RemoteServiceRequestConsumer.h"

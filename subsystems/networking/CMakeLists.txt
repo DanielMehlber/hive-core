@@ -8,14 +8,14 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(hive-networking SHARED
         src/util/UrlParser.cpp
         src/messaging/Message.cpp
-        src/messaging/MessageConsumerJob.cpp
-        src/messaging/MessageConverter.cpp
+        src/messaging/consumers/MessageConsumerJob.cpp
         src/NetworkingManager.cpp
-        src/messaging/impl/websockets/boost/BoostWebSocketEndpoint.cpp
-        src/messaging/impl/websockets/boost/BoostWebSocketConnection.cpp
-        src/messaging/impl/websockets/boost/BoostWebSocketConnectionListener.cpp
-        src/messaging/impl/websockets/boost/BoostWebSocketConnectionEstablisher.cpp
-        src/messaging/MultipartFormdata.cpp
+        src/messaging/endpoints/websockets/BoostWebSocketEndpoint.cpp
+        src/messaging/endpoints/websockets/BoostWebSocketConnection.cpp
+        src/messaging/endpoints/websockets/BoostWebSocketConnectionListener.cpp
+        src/messaging/endpoints/websockets/BoostWebSocketConnectionEstablisher.cpp
+        src/messaging/converter/MultipartMessageConverter.cpp
+        src/messaging/converter/JsonMessageConverter.cpp
 )
 
 add_library(Hive::networking ALIAS hive-networking)

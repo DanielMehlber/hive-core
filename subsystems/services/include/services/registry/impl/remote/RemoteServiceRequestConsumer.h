@@ -3,7 +3,7 @@
 #include "common/subsystems/SubsystemManager.h"
 #include "jobsystem/manager/JobManager.h"
 #include "networking/NetworkingManager.h"
-#include "networking/messaging/IMessageConsumer.h"
+#include "networking/messaging/consumer/IMessageConsumer.h"
 #include "services/caller/IServiceCaller.h"
 
 namespace hive::services::impl {

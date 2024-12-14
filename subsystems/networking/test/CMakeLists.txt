@@ -1,7 +1,6 @@
 find_package(GTest REQUIRED)
 
-add_executable(networkingtests test.cpp
-        MultipartFormdataTest.h)
+add_executable(networkingtests test.cpp)
 target_link_libraries(networkingtests PUBLIC GTest::GTest ${Boost_LIBRARIES}
         hive-common
         hive-jobsystem

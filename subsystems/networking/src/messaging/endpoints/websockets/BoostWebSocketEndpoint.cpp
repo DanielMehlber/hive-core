@@ -1,17 +1,17 @@
-#include "networking/messaging/impl/websockets/boost/BoostWebSocketEndpoint.h"
+#include "networking/messaging/endpoints/websockets/BoostWebSocketEndpoint.h"
 
 #include "data/DataLayer.h"
 #include "events/broker/IEventBroker.h"
 #include "jobsystem/jobs/TimerJob.h"
 #include "logging/LogManager.h"
 #include "networking/NetworkingManager.h"
-#include "networking/messaging/MessageConverter.h"
+#include "networking/messaging/converter/MultipartMessageConverter.h"
 #include "networking/messaging/events/ConnectionClosedEvent.h"
 #include "networking/messaging/events/ConnectionEstablishedEvent.h"
 
-#include "networking/messaging/impl/websockets/boost/BoostWebSocketConnection.h"
-#include "networking/messaging/impl/websockets/boost/BoostWebSocketConnectionEstablisher.h"
-#include "networking/messaging/impl/websockets/boost/BoostWebSocketConnectionListener.h"
+#include "networking/messaging/endpoints/websockets/BoostWebSocketConnection.h"
+#include "networking/messaging/endpoints/websockets/BoostWebSocketConnectionEstablisher.h"
+#include "networking/messaging/endpoints/websockets/BoostWebSocketConnectionListener.h"
 
 #include "networking/util/UrlParser.h"
 #include <regex>
@@ -214,7 +214,11 @@ void BoostWebSocketEndpoint::Impl::ProcessReceivedMessage(
   // convert payload into message
   SharedMessage message;
   try {
-    message = MessageConverter::FromMultipartFormData(data);
+    // TODO: support multiple message types
+    // this also requires sending the MIME type with each web-socket message
+    // (headers?)
+    MultipartMessageConverter converter;
+    message = converter.Deserialize(data);
   } catch (const MessagePayloadInvalidException &ex) {
     LOG_WARN("message received from host "
              << over_connection->GetRemoteHostAddress()

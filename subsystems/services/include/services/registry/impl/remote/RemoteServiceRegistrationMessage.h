@@ -28,8 +28,8 @@ public:
   void SetServiceName(const std::string &service_name);
   std::string GetServiceName();
 
-  void SetCapacity(size_t capacity);
-  size_t GetCapacity();
+  void SetCapacity(capacity_t capacity);
+  capacity_t GetCapacity();
 };
 
 inline void RemoteServiceRegistrationMessage::SetServiceName(
@@ -58,12 +58,12 @@ inline std::string RemoteServiceRegistrationMessage::GetId() {
   return m_message->GetAttribute("service-id").value_or("");
 }
 
-inline void RemoteServiceRegistrationMessage::SetCapacity(size_t capacity) {
+inline void RemoteServiceRegistrationMessage::SetCapacity(capacity_t capacity) {
   m_message->SetAttribute("service-capacity", std::to_string(capacity));
 }
 
-inline size_t RemoteServiceRegistrationMessage::GetCapacity() {
-  return std::stoul(m_message->GetAttribute("service-capacity").value_or("-1"));
+inline capacity_t RemoteServiceRegistrationMessage::GetCapacity() {
+  return std::stoi(m_message->GetAttribute("service-capacity").value_or("-1"));
 }
 
 } // namespace hive::services::impl

@@ -32,13 +32,13 @@ public:
   /**
    * @return unique id of this message
    */
-  std::string GetId() const ;
+  std::string GetId() const;
 
   /**
    * @return type of this message
    * @note this attribute is used to find the according message consumer
    */
-  std::string GetType() const ;
+  std::string GetType() const;
 
   /**
    * Sets or overwrites an attribute of this message.
@@ -59,18 +59,27 @@ public:
    * Returns a set of attribute names contained in the message
    * @return set of attribute names
    */
-  std::set<std::string> GetAttributeNames() const ;
+  std::set<std::string> GetAttributeNames() const;
+
+  /**
+   * Returns all attributes of this message.
+   * @return map of attributes
+   */
+  std::map<std::string, std::string> &GetAttributes();
 
   /**
    * Compares this message with another message for equality.
    * @param other other message
    * @return true if both events are equal in content
    */
-  bool EqualsTo(const std::shared_ptr<Message> &other) const ;
+  bool EqualsTo(const std::shared_ptr<Message> &other) const;
 };
 
-inline std::string Message::GetId() const  { return m_uuid; }
-inline std::string Message::GetType() const  { return m_type; }
+inline std::string Message::GetId() const { return m_uuid; }
+inline std::string Message::GetType() const { return m_type; }
+inline std::map<std::string, std::string> &Message::GetAttributes() {
+  return m_attributes;
+}
 
 typedef std::shared_ptr<Message> SharedMessage;
 

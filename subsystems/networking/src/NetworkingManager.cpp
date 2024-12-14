@@ -4,7 +4,9 @@
 #include "jobsystem/jobs/TimerJob.h"
 #include "jobsystem/manager/JobManager.h"
 #include "logging/LogManager.h"
-#include "networking/messaging/MessageConsumerJob.h"
+#include "networking/messaging/consumer/MessageConsumerJob.h"
+#include "networking/messaging/converter/JsonMessageConverter.h"
+#include "networking/messaging/converter/MultipartMessageConverter.h"
 
 using namespace hive::networking;
 using namespace hive::networking::messaging;
@@ -18,9 +20,15 @@ NetworkingManager::NetworkingManager(
 
   // configuration section
   ConfigureNode(config);
-  bool auto_init_websocket_server = config->GetAsInt("net.autoInit", true);
 
-  if (auto_init_websocket_server) {
+  // install default message converters
+  const auto json_converter = std::make_shared<JsonMessageConverter>();
+  const auto multipart_converter =
+      std::make_shared<MultipartMessageConverter>();
+
+  // init default message endpoint if configured
+  bool auto_init_default_endpoint = config->GetAsInt("net.autoInit", true);
+  if (auto_init_default_endpoint) {
     StartDefaultEndpointImplementation();
   }
 }

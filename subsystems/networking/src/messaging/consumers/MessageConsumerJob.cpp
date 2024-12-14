@@ -1,4 +1,4 @@
-#include "networking/messaging/MessageConsumerJob.h"
+#include "networking/messaging/consumer/MessageConsumerJob.h"
 #include <functional>
 
 using namespace hive::networking::messaging;

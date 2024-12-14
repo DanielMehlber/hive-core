@@ -43,7 +43,7 @@ inline void waitUntilConnectionCompleted(Node &node1, Node &node2) {
       5s);
 }
 
-TEST(GraphicsTests, remote_render_service) {
+TEST(GraphicsTest, remote_render_service) {
   auto config = std::make_shared<common::config::Configuration>();
 
   auto node_1 = setupNode(config, 9005);
@@ -148,7 +148,7 @@ TEST(GraphicsTest, offscreen_rendering_sphere) {
   subsystems->AddOrReplaceSubsystem<IRenderer>(std::move(renderer));
 
   SharedServiceExecutor render_service =
-      std::static_pointer_cast<services::impl::LocalServiceExecutor>(
+      std::static_pointer_cast<impl::LocalServiceExecutor>(
           std::make_shared<RenderService>(subsystems.CreateReference()));
 
   RenderServiceRequest request_generator;

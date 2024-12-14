@@ -1,7 +1,7 @@
 #pragma once
 
 #include "networking/NetworkingManager.h"
-#include "networking/messaging/IMessageConsumer.h"
+#include "networking/messaging/consumer/IMessageConsumer.h"
 #include "services/registry/IServiceRegistry.h"
 #include "services/registry/impl/remote/RemoteServiceRegistrationMessage.h"
 #include "services/registry/impl/remote/RemoteServiceResponseConsumer.h"

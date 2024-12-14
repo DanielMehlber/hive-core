@@ -21,7 +21,6 @@ DECLARE_EXCEPTION(MessageSendingException);
  */
 class BoostWebSocketConnection
     : public std::enable_shared_from_this<BoostWebSocketConnection> {
-private:
   /**
    * TCP stream that allows interaction with the communication partner.
    */

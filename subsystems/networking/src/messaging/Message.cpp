@@ -21,12 +21,11 @@ std::optional<std::string>
 Message::GetAttribute(const std::string &attribute_key) {
   if (m_attributes.contains(attribute_key)) {
     return m_attributes.at(attribute_key);
-  } else {
-    return {};
   }
+  return {};
 }
 
-std::set<std::string> Message::GetAttributeNames() const  {
+std::set<std::string> Message::GetAttributeNames() const {
   std::set<std::string> attribute_names;
   std::map<std::string, std::string>::const_iterator it;
 
@@ -37,12 +36,16 @@ std::set<std::string> Message::GetAttributeNames() const  {
   return attribute_names;
 }
 
-bool Message::EqualsTo(const std::shared_ptr<Message> &other) const  {
+bool Message::EqualsTo(const std::shared_ptr<Message> &other) const {
   if (m_uuid != other->m_uuid) {
     return false;
-  } else if (m_type != other->m_type) {
+  }
+
+  if (m_type != other->m_type) {
     return false;
-  } else if (m_attributes.size() != other->m_attributes.size()) {
+  }
+
+  if (m_attributes.size() != other->m_attributes.size()) {
     return false;
   }
 

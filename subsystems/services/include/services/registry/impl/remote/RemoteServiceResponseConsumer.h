@@ -3,7 +3,7 @@
 #include "common/subsystems/SubsystemManager.h"
 #include "events/listener/impl/FunctionalEventListener.h"
 #include "jobsystem/synchronization/JobMutex.h"
-#include "networking/messaging/IMessageConsumer.h"
+#include "networking/messaging/consumer/IMessageConsumer.h"
 #include "services/ServiceRequest.h"
 #include "services/ServiceResponse.h"
 #include <future>

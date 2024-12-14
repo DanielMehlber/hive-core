@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ConnectionInfo.h"
-#include "Message.h"
+#include "networking/messaging/ConnectionInfo.h"
+#include "networking/messaging/Message.h"
 #include <memory>
 
 namespace hive::networking::messaging {

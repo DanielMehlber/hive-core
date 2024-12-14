@@ -1,6 +1,7 @@
-#include "networking/messaging/impl/websockets/boost/BoostWebSocketConnection.h"
+#include "networking/messaging/endpoints/websockets/BoostWebSocketConnection.h"
 #include "logging/LogManager.h"
-#include "networking/messaging/MessageConverter.h"
+#include "networking/messaging/converter/MultipartMessageConverter.h"
+
 #include <boost/asio.hpp>
 #include <utility>
 
@@ -132,8 +133,10 @@ std::future<void> BoostWebSocketConnection::Send(const SharedMessage &message) {
   std::promise<void> sending_promise;
   std::future<void> sending_future = sending_promise.get_future();
 
-  auto str_payload = std::make_shared<std::string>(
-      MessageConverter::ToMultipartFormData(message));
+  // TODO: support multiple message types
+  MultipartMessageConverter converter;
+  auto str_payload =
+      std::make_shared<std::string>(converter.Serialize(message));
 
   /*
    * The write call must finish before another one can be called. This lock
@@ -171,7 +174,7 @@ void BoostWebSocketConnection::OnMessageSent(
     std::promise<void> &&promise, SharedMessage message,
     std::shared_ptr<std::string> sent_data,
     std::unique_lock<jobsystem::recursive_mutex> lock,
-    boost::beast::error_code error_code,
+    beast::error_code error_code,
     [[maybe_unused]] std::size_t bytes_transferred) {
 
   // allow others to send messages now

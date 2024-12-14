@@ -1,7 +1,8 @@
 #pragma once
 
-#include "IMessageConsumer.h"
 #include "common/exceptions/ExceptionsBase.h"
+#include "networking/messaging/ConnectionInfo.h"
+#include "networking/messaging/Message.h"
 #include <future>
 #include <list>
 #include <memory>

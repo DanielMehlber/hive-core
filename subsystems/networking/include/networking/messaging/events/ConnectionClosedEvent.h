@@ -4,7 +4,6 @@
 
 namespace hive::networking {
 class ConnectionClosedEvent {
-private:
   events::SharedEvent m_event;
 
 public:
