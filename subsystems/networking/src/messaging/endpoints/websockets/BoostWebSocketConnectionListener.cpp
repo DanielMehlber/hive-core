@@ -30,7 +30,7 @@ BoostWebSocketConnectionListener::~BoostWebSocketConnectionListener() {
 
 void BoostWebSocketConnectionListener::Init() {
   // load configurations
-  bool should_use_tls = m_config->GetBool("net.tls.enabled", true);
+  bool should_use_tls = m_config->GetBool("net.websocket.tls", true);
 
   if (should_use_tls) {
     // TODO: implement TLS for web-sockets

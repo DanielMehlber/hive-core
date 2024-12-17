@@ -5,7 +5,7 @@ find_package(Boost REQUIRED CONFIG COMPONENTS json log)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-networking SHARED
+add_library(networking SHARED
         src/util/UrlParser.cpp
         src/messaging/Message.cpp
         src/messaging/consumers/MessageConsumerJob.cpp
@@ -18,31 +18,32 @@ add_library(hive-networking SHARED
         src/messaging/converter/JsonMessageConverter.cpp
 )
 
-add_library(Hive::networking ALIAS hive-networking)
+add_library(Hive::networking ALIAS networking)
+set_target_properties(networking PROPERTIES OUTPUT_NAME "hive-networking")
 
-target_include_directories(hive-networking PUBLIC
+target_include_directories(networking PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(hive-networking PUBLIC
+target_link_libraries(networking PUBLIC
         ${Boost_LIBRARIES}
-        hive-logging
-        hive-jobsystem
-        hive-events
-        hive-common
-        hive-data
+        logging
+        jobsystem
+        events
+        common
+        data
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-networking PUBLIC FILE_SET HEADERS
+target_sources(networking PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-networking
+install(TARGETS networking
         EXPORT hiveNetworkingTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

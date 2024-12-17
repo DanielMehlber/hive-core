@@ -5,39 +5,40 @@ find_package(Boost REQUIRED CONFIG COMPONENTS log)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-plugins SHARED
+add_library(plugins SHARED
         src/BoostPluginManager.cpp
 )
 
-add_library(Hive::plugins ALIAS hive-plugins)
+add_library(Hive::plugins ALIAS plugins)
+set_target_properties(plugins PROPERTIES OUTPUT_NAME "hive-plugins")
 
-target_include_directories(hive-plugins PUBLIC
+target_include_directories(plugins PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(hive-plugins PUBLIC
+target_link_libraries(plugins PUBLIC
         ${Boost_LIBRARIES}
-        hive-logging
-        hive-jobsystem
-        hive-events
-        hive-common
-        hive-networking
-        hive-services
-        hive-resources
-        hive-scene
-        hive-graphics
+        logging
+        jobsystem
+        events
+        common
+        networking
+        services
+        resources
+        scene
+        graphics
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-plugins PUBLIC FILE_SET HEADERS
+target_sources(plugins PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-plugins
+install(TARGETS plugins
         EXPORT hivePluginsTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

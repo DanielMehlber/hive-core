@@ -87,7 +87,7 @@ void PeerToPeerServiceRegistry::Register(
     auto networking_manager =
         subsystems->RequireSubsystem<networking::NetworkingManager>();
     auto message_endpoint =
-        networking_manager->GetDefaultMessageEndpoint().value();
+        networking_manager->GetPrimaryMessageEndpoint().value();
 
     std::string name = executor->GetServiceName();
 
@@ -283,7 +283,7 @@ void PeerToPeerServiceRegistry::SendServicePortfolioToEndpoint(
                "job system should exist")
 
   auto networking_manager = subsystems->RequireSubsystem<NetworkingManager>();
-  auto endpoint = networking_manager->RequireDefaultMessageEndpoint();
+  auto endpoint = networking_manager->RequirePrimaryMessageEndpoint();
 
   auto job_manager = subsystems->RequireSubsystem<JobManager>();
 

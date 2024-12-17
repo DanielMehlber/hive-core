@@ -65,7 +65,7 @@ int main(int argc, const char **argv) {
 
   /* APPLY OPTIONS TO SUBSYSTEM CONFIGURATION */
   auto config = std::make_shared<common::config::Configuration>();
-  config->Set("net.port", service_port);
+  config->Set("net.websocket.port", service_port);
   config->Set("jobs.concurrency", threads);
   bool local_only = service_port < 0;
 

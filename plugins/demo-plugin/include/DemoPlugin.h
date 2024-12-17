@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hive/plugins/IPlugin.h"
+#include <hive/plugins/IPlugin.h>
 
 class DemoPlugin : public hive::plugins::IPlugin {
 public:

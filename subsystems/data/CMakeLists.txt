@@ -7,7 +7,7 @@ find_package(Boost REQUIRED CONFIG COMPONENTS)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 
-add_library(hive-data SHARED
+add_library(data SHARED
         src/FunctionalChangeListener.cpp
         src/DataLayer.cpp
 
@@ -15,29 +15,30 @@ add_library(hive-data SHARED
         src/Boost/BoostLocalDataProvider.cpp
 )
 
-add_library(Hive::data ALIAS hive-data)
+add_library(Hive::data ALIAS data)
+set_target_properties(data PROPERTIES OUTPUT_NAME "hive-data")
 
-target_include_directories(hive-data PUBLIC
+target_include_directories(data PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(hive-data PUBLIC
+target_link_libraries(data PUBLIC
         ${Boost_LIBRARIES}
-        hive-logging
-        hive-jobsystem
-        hive-common
+        logging
+        jobsystem
+        common
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-data PUBLIC FILE_SET HEADERS
+target_sources(data PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-data
+install(TARGETS data
         EXPORT hiveDataTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

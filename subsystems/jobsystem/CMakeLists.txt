@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.23)
-
 project(hive-jobsystem)
 
 # Set a configuration option for selecting the implementation
@@ -43,30 +42,31 @@ ENDIF ()
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-jobsystem SHARED ${SOURCES})
+add_library(jobsystem SHARED ${SOURCES})
 
-add_library(Hive::jobsystem ALIAS hive-jobsystem)
+add_library(Hive::jobsystem ALIAS jobsystem)
+set_target_properties(jobsystem PROPERTIES OUTPUT_NAME "hive-jobsystem")
 
-target_include_directories(hive-jobsystem PUBLIC
+target_include_directories(jobsystem PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(hive-jobsystem
+target_link_libraries(jobsystem
         ${Boost_LIBRARIES}
-        hive-common
-        hive-logging
+        common
+        logging
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-jobsystem PUBLIC FILE_SET HEADERS
+target_sources(jobsystem PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-jobsystem
+install(TARGETS jobsystem
         EXPORT hiveJobsystemTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

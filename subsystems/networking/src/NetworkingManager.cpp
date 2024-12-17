@@ -27,7 +27,7 @@ NetworkingManager::NetworkingManager(
       std::make_shared<MultipartMessageConverter>();
 
   // init default message endpoint if configured
-  bool auto_init_default_endpoint = config->GetAsInt("net.autoInit", true);
+  bool auto_init_default_endpoint = config->GetAsInt("net.startup", true);
   if (auto_init_default_endpoint) {
     StartDefaultEndpointImplementation();
   }
@@ -136,17 +136,17 @@ void NetworkingManager::ProcessMessage(const SharedMessage &message,
 }
 
 void NetworkingManager::InstallMessageEndpoint(
-    common::memory::Owner<IMessageEndpoint> &&endpoint, bool is_default) {
+    common::memory::Owner<IMessageEndpoint> &&endpoint, bool is_new_primary) {
 
   DEBUG_ASSERT(endpoint.GetState() != nullptr, "endpoint must not be null")
-  std::unique_lock lock(m_endpoints_mutex);
+  std::unique_lock lock(m_installed_endpoints_mutex);
 
   auto protocol = endpoint->GetProtocol();
 
   // remove old endpoint if it exists
-  if (m_endpoints.contains(protocol)) {
-    auto former_endpoint = m_endpoints.at(protocol);
-    m_endpoints.erase(protocol);
+  if (m_installed_endpoints.contains(protocol)) {
+    auto former_endpoint = m_installed_endpoints.at(protocol);
+    m_installed_endpoints.erase(protocol);
     (*former_endpoint)->Shutdown();
   }
 
@@ -154,38 +154,38 @@ void NetworkingManager::InstallMessageEndpoint(
   endpoint->Startup();
   auto endpoint_ptr = std::make_shared<common::memory::Owner<IMessageEndpoint>>(
       std::move(endpoint));
-  m_endpoints[protocol] = endpoint_ptr;
+  m_installed_endpoints[protocol] = endpoint_ptr;
 
-  bool is_only_one_installed = m_endpoints.size() == 1;
-  if (is_default || is_only_one_installed) {
-    m_default_endpoint_protocol = protocol;
+  bool is_only_one_installed = m_installed_endpoints.size() == 1;
+  if (is_new_primary || is_only_one_installed) {
+    m_primary_endpoint_protocol = protocol;
   }
 
   LOG_INFO("installed messaging endpoint for protocol '"
-           << protocol << "'" << (is_default ? " as default" : ""))
+           << protocol << "'" << (is_new_primary ? " as default" : ""))
 }
 
 std::optional<hive::common::memory::Borrower<IMessageEndpoint>>
 NetworkingManager::GetMessageEndpoint(const std::string &protocol) const {
 
   DEBUG_ASSERT(!protocol.empty(), "protocol must not be empty")
-  std::unique_lock lock(m_endpoints_mutex);
+  std::unique_lock lock(m_installed_endpoints_mutex);
 
-  if (m_endpoints.contains(protocol)) {
-    return m_endpoints.at(protocol)->Borrow();
+  if (m_installed_endpoints.contains(protocol)) {
+    return m_installed_endpoints.at(protocol)->Borrow();
   }
 
   return {};
 }
 
 std::optional<hive::common::memory::Borrower<IMessageEndpoint>>
-NetworkingManager::GetDefaultMessageEndpoint() const {
-  return GetMessageEndpoint(m_default_endpoint_protocol);
+NetworkingManager::GetPrimaryMessageEndpoint() const {
+  return GetMessageEndpoint(m_primary_endpoint_protocol);
 }
 
 hive::common::memory::Borrower<IMessageEndpoint>
-NetworkingManager::RequireDefaultMessageEndpoint() const {
-  auto maybe_endpoint = GetDefaultMessageEndpoint();
+NetworkingManager::RequirePrimaryMessageEndpoint() const {
+  auto maybe_endpoint = GetPrimaryMessageEndpoint();
   if (!maybe_endpoint.has_value()) {
     THROW_EXCEPTION(NoEndpointsException,
                     "no messaging endpoints have been installed")
@@ -194,12 +194,12 @@ NetworkingManager::RequireDefaultMessageEndpoint() const {
   return maybe_endpoint.value();
 }
 
-void NetworkingManager::SetDefaultMessageEndpoint(const std::string &protocol) {
+void NetworkingManager::SetPrimaryMessageEndpoint(const std::string &protocol) {
   DEBUG_ASSERT(!protocol.empty(), "can't set empty protocol as default")
 
-  std::unique_lock lock(m_endpoints_mutex);
-  if (m_endpoints.contains(protocol)) {
-    m_default_endpoint_protocol = protocol;
+  std::unique_lock lock(m_installed_endpoints_mutex);
+  if (m_installed_endpoints.contains(protocol)) {
+    m_primary_endpoint_protocol = protocol;
     LOG_DEBUG("default messaging endpoint set to protocol '" << protocol << "'")
   } else {
     LOG_ERR("no endpoint for protocol '" << protocol
@@ -216,42 +216,42 @@ void NetworkingManager::SetDefaultMessageEndpoint(const std::string &protocol) {
 void NetworkingManager::UninstallMessageEndpoint(const std::string &protocol) {
   DEBUG_ASSERT(!protocol.empty(), "protocol must not be empty")
 
-  std::unique_lock lock(m_endpoints_mutex);
+  std::unique_lock lock(m_installed_endpoints_mutex);
 
-  if (!m_endpoints.contains(protocol)) {
+  if (!m_installed_endpoints.contains(protocol)) {
     LOG_WARN("protocol '" << protocol
                           << "' has no endpoint implementation to uninstall: "
                              "skipping uninstallation")
     return;
   }
 
-  auto endpoint_ptr = m_endpoints.at(protocol);
-  m_endpoints.erase(protocol);
+  auto endpoint_ptr = m_installed_endpoints.at(protocol);
+  m_installed_endpoints.erase(protocol);
   (*endpoint_ptr)->Shutdown();
 
   // check if default endpoint has been uninstalled
-  if (m_default_endpoint_protocol == protocol) {
+  if (m_primary_endpoint_protocol == protocol) {
     // take first endpoint as new default
-    if (!m_endpoints.empty()) {
-      const auto it = m_endpoints.begin();
-      m_default_endpoint_protocol = it->first;
+    if (!m_installed_endpoints.empty()) {
+      const auto it = m_installed_endpoints.begin();
+      m_primary_endpoint_protocol = it->first;
     } else {
-      m_default_endpoint_protocol.clear();
+      m_primary_endpoint_protocol.clear();
     }
   }
 }
 
 bool NetworkingManager::SupportsMessagingProtocol(
     const std::string &protocol) const {
-  std::unique_lock lock(m_endpoints_mutex);
-  return m_endpoints.contains(protocol);
+  std::unique_lock lock(m_installed_endpoints_mutex);
+  return m_installed_endpoints.contains(protocol);
 }
 
 std::vector<std::string> NetworkingManager::GetSupportedProtocols() const {
   std::vector<std::string> protocols;
-  std::unique_lock lock(m_endpoints_mutex);
+  std::unique_lock lock(m_installed_endpoints_mutex);
 
-  for (const auto &[protocol, _] : m_endpoints) {
+  for (const auto &[protocol, _] : m_installed_endpoints) {
     protocols.push_back(protocol);
   }
 
@@ -259,27 +259,27 @@ std::vector<std::string> NetworkingManager::GetSupportedProtocols() const {
 }
 
 bool NetworkingManager::HasInstalledMessageEndpoints() const {
-  return !m_endpoints.empty();
+  return !m_installed_endpoints.empty();
 }
 
 std::optional<hive::common::memory::Borrower<IMessageEndpoint>>
 NetworkingManager::GetSomeMessageEndpointConnectedTo(
     const std::string &endpoint_id) const {
-  std::unique_lock lock(m_endpoints_mutex);
+  std::unique_lock lock(m_installed_endpoints_mutex);
 
-  if (m_endpoints.empty()) {
+  if (m_installed_endpoints.empty()) {
     return {};
   }
 
   // check default endpoint first
-  auto default_endpoint = m_endpoints.at(m_default_endpoint_protocol);
+  auto default_endpoint = m_installed_endpoints.at(m_primary_endpoint_protocol);
   if ((*default_endpoint)->HasConnectionTo(endpoint_id)) {
     return default_endpoint->Borrow();
   }
 
   // check other endpoints after
-  for (const auto &[protocol, endpoint] : m_endpoints) {
-    if (protocol == m_default_endpoint_protocol) {
+  for (const auto &[protocol, endpoint] : m_installed_endpoints) {
+    if (protocol == m_primary_endpoint_protocol) {
       continue;
     }
 

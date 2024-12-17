@@ -51,7 +51,7 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<DataLayer>(std::move(data_layer));
 
   // setup networking node
-  config->Set("net.port", port);
+  config->Set("net.websocket.port", port);
   auto networking_manager = common::memory::Owner<NetworkingManager>(
       subsystems.CreateReference(), config);
 
@@ -104,7 +104,7 @@ TEST(RemoteServiceTests, run_single_remote_service) {
 
   // first establish connection in order to broadcast the connection
   auto connection_progress = node_1.networking_mgr.Borrow()
-                                 ->GetDefaultMessageEndpoint()
+                                 ->GetPrimaryMessageEndpoint()
                                  .value()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
@@ -165,8 +165,7 @@ TEST(RemoteServiceTests, remote_service_load_balancing) {
 
     // first establish connection in order to broadcast the connection
     auto connection_progress = ith_node.networking_mgr.Borrow()
-                                   ->GetDefaultMessageEndpoint()
-                                   .value()
+                                   ->RequirePrimaryMessageEndpoint()
                                    ->EstablishConnectionTo("127.0.0.1:9004");
 
     waitUntilConnectionCompleted(central_node, ith_node);
@@ -262,8 +261,7 @@ TEST(RemoteServiceTests, web_socket_node_destroyed) {
     auto node_2 = setupNode(config, 9006);
 
     auto progress = node_2.networking_mgr.Borrow()
-                        ->GetDefaultMessageEndpoint()
-                        .value()
+                        ->RequirePrimaryMessageEndpoint()
                         ->EstablishConnectionTo("127.0.0.1:9005");
 
     waitUntilConnectionCompleted(node_1, node_2);
@@ -295,8 +293,7 @@ TEST(RemoteServiceTests, web_socket_node_destroyed) {
       [&node_1] {
         node_1.job_manager.Borrow()->InvokeCycleAndWait();
         return node_1.networking_mgr.Borrow()
-                   ->GetDefaultMessageEndpoint()
-                   .value()
+                   ->RequirePrimaryMessageEndpoint()
                    ->GetActiveConnectionCount() == 0;
       },
       10s);
@@ -312,8 +309,7 @@ TEST(RemoteServiceTests, async_service_call) {
   auto node_2 = setupNode(config, 9006);
 
   auto connection_progress = node_1.networking_mgr.Borrow()
-                                 ->GetDefaultMessageEndpoint()
-                                 .value()
+                                 ->RequirePrimaryMessageEndpoint()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
   waitUntilConnectionCompleted(node_1, node_2);
@@ -357,7 +353,7 @@ TEST(RemoteServiceTests, async_service_call) {
 
   while (result_fut.wait_for(0s) != std::future_status::ready) {
     node_2.job_manager.Borrow()->InvokeCycleAndWait();
-    cycles++;
+    ++cycles;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
@@ -379,8 +375,7 @@ TEST(RemoteServiceTests, service_endpoint_disconnected) {
     auto node_2 = setupNode(config, 9006);
 
     auto connection_progress = node_1.networking_mgr.Borrow()
-                                   ->GetDefaultMessageEndpoint()
-                                   .value()
+                                   ->RequirePrimaryMessageEndpoint()
                                    ->EstablishConnectionTo("127.0.0.1:9006");
 
     waitUntilConnectionCompleted(node_1, node_2);
@@ -425,8 +420,7 @@ TEST(RemoteServiceTests, service_executor_busy) {
   auto calling_node = setupNode(config, 9006);
 
   auto connection_progress = servicing_node.networking_mgr.Borrow()
-                                 ->GetDefaultMessageEndpoint()
-                                 .value()
+                                 ->RequirePrimaryMessageEndpoint()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
   waitUntilConnectionCompleted(servicing_node, calling_node);
@@ -526,8 +520,7 @@ TEST(RemoteServiceTests, busy_retry_policy) {
   auto calling_node = setupNode(config, 9006);
 
   auto connection_progress = servicing_node.networking_mgr.Borrow()
-                                 ->GetDefaultMessageEndpoint()
-                                 .value()
+                                 ->RequirePrimaryMessageEndpoint()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 
   waitUntilConnectionCompleted(servicing_node, calling_node);

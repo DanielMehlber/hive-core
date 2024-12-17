@@ -36,13 +36,13 @@ class NetworkingManager
   mutable jobsystem::mutex m_consumers_mutex;
 
   /** default protocol name */
-  std::string m_default_endpoint_protocol;
+  std::string m_primary_endpoint_protocol;
 
   /** stores registered message endpoints according to their protocol */
   std::map<std::string,
            std::shared_ptr<common::memory::Owner<messaging::IMessageEndpoint>>>
-      m_endpoints;
-  mutable jobsystem::mutex m_endpoints_mutex;
+      m_installed_endpoints;
+  mutable jobsystem::mutex m_installed_endpoints_mutex;
 
   void StartDefaultEndpointImplementation();
   void ConfigureNode(const common::config::SharedConfiguration &config);
@@ -104,11 +104,12 @@ public:
    * @attention If the protocol is already registered, the existing endpoint
    * will be shut down and replaced.
    * @param endpoint the messaging endpoint to install
-   * @param is_default if true, this endpoint will be used as the default one.
+   * @param is_new_primary if true, this endpoint will be used as the primary
+   * one.
    */
   void InstallMessageEndpoint(
       common::memory::Owner<messaging::IMessageEndpoint> &&endpoint,
-      bool is_default = false);
+      bool is_new_primary = false);
 
   /**
    * Retrieves the messaging endpoint implementation for a specific protocol.
@@ -120,22 +121,22 @@ public:
   GetMessageEndpoint(const std::string &protocol) const;
 
   /**
-   * Retrieves the default registered messaging endpoint implementation.
-   * @return the default messaging endpoint implementation if one has been
+   * Retrieves the primary registered messaging endpoint implementation.
+   * @return the primary messaging endpoint implementation if one has been
    * installed.
    */
   std::optional<common::memory::Borrower<messaging::IMessageEndpoint>>
-  GetDefaultMessageEndpoint() const;
+  GetPrimaryMessageEndpoint() const;
 
   /**
-   * Retrieves the default registered messaging endpoint implementation. If this
+   * Retrieves the primary registered messaging endpoint implementation. If this
    * operation fails because there are no endpoints installed, an exception is
    * thrown.
-   * @return the default messaging endpoint implementation.
+   * @return the primary messaging endpoint implementation.
    * @throws NoEndpointsException if no endpoints are currently installed.
    */
   common::memory::Borrower<messaging::IMessageEndpoint>
-  RequireDefaultMessageEndpoint() const;
+  RequirePrimaryMessageEndpoint() const;
 
   /**
    * Sets the default messaging endpoint implementation for a specific protocol.
@@ -143,7 +144,7 @@ public:
    * @throws ProtocolNotSupportedException if no endpoint for the given protocol
    * is currently installed, it can't be set as default protocol.
    */
-  void SetDefaultMessageEndpoint(const std::string &protocol);
+  void SetPrimaryMessageEndpoint(const std::string &protocol);
 
   /**
    * Uninstalls a messaging endpoint implementation for a specific protocol

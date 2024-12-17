@@ -13,27 +13,28 @@ set(GRAPHICS_SOURCES
 )
 
 set(GRAPHICS_DEPENDENCIES
-        hive-logging
-        hive-jobsystem
-        hive-common
-        hive-scene
-        hive-services
+        logging
+        jobsystem
+        common
+        scene
+        services
         vsg::vsg)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-graphics SHARED
+add_library(graphics SHARED
         ${GRAPHICS_SOURCES}
 )
 
-add_library(Hive::graphics ALIAS hive-graphics)
+add_library(Hive::graphics ALIAS graphics)
+set_target_properties(graphics PROPERTIES OUTPUT_NAME "hive-graphics")
 
-target_include_directories(hive-graphics PUBLIC
+target_include_directories(graphics PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(hive-graphics PUBLIC
+target_link_libraries(graphics PUBLIC
         ${Boost_LIBRARIES}
         ${GRAPHICS_DEPENDENCIES}
 )
@@ -41,11 +42,11 @@ target_link_libraries(hive-graphics PUBLIC
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-graphics PUBLIC FILE_SET HEADERS
+target_sources(graphics PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-graphics
+install(TARGETS graphics
         EXPORT hiveGraphicsTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

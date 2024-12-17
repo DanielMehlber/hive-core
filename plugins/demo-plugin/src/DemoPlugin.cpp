@@ -1,4 +1,7 @@
 #include "DemoPlugin.h"
+#include <hive/jobsystem/jobs/TimerJob.h>
+#include <hive/jobsystem/manager/JobManager.h>
+#include <hive/logging/LogManager.h>
 
 using namespace std::chrono_literals;
 

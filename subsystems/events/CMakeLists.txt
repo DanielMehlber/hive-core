@@ -5,32 +5,33 @@ find_package(Boost REQUIRED CONFIG COMPONENTS fiber context)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-events SHARED
+add_library(events SHARED
         src/JobBasedEventBroker.cpp
 )
 
-add_library(Hive::events ALIAS hive-events)
+add_library(Hive::events ALIAS events)
+set_target_properties(events PROPERTIES OUTPUT_NAME "hive-events")
 
-target_include_directories(hive-events PUBLIC
+target_include_directories(events PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(hive-events PUBLIC
+target_link_libraries(events PUBLIC
         ${Boost_LIBRARIES}
-        hive-logging
-        hive-jobsystem
+        logging
+        jobsystem
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-events PUBLIC FILE_SET HEADERS
+target_sources(events PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-events
+install(TARGETS events
         EXPORT hiveEventsTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

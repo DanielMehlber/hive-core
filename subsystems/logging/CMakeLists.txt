@@ -5,31 +5,32 @@ find_package(Boost REQUIRED CONFIG COMPONENTS log log_setup system)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-logging SHARED
+add_library(logging SHARED
         src/logging/logger/impl/BoostLogger.cpp
         src/logging/LogManager.cpp
 )
 
-add_library(Hive::logging ALIAS hive-logging)
+add_library(Hive::logging ALIAS logging)
+set_target_properties(logging PROPERTIES OUTPUT_NAME "hive-logging")
 
-target_include_directories(hive-logging PUBLIC
+target_include_directories(logging PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(hive-logging PUBLIC
+target_link_libraries(logging PUBLIC
         ${Boost_LIBRARIES}
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-logging PUBLIC FILE_SET HEADERS
+target_sources(logging PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-logging
+install(TARGETS logging
         EXPORT hiveLoggingTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

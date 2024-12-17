@@ -43,7 +43,7 @@ Node setupNode(const common::config::SharedConfiguration &config, int port) {
   subsystems->AddOrReplaceSubsystem<DataLayer>(std::move(data_layer));
 
   // setup networking manager
-  config->Set("net.port", port);
+  config->Set("net.websocket.port", port);
   auto networking_manager = common::memory::Owner<NetworkingManager>(
       subsystems.CreateReference(), config);
 

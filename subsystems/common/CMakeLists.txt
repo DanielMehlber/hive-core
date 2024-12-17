@@ -5,31 +5,32 @@ find_package(Boost REQUIRED CONFIG)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-common SHARED
+add_library(common SHARED
         src/BoostUuidGenerator.cpp
         src/Timer.cpp
         src/TimerManager.cpp
         src/SpinLock.cpp
 )
 
-add_library(Hive::common ALIAS hive-common)
+add_library(Hive::common ALIAS common)
+set_target_properties(common PROPERTIES OUTPUT_NAME "hive-common")
 
-target_include_directories(hive-common PUBLIC
+target_include_directories(common PUBLIC
         ${Boost_INCLUDE_DIRS}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
 )
 
-target_link_libraries(hive-common PUBLIC ${Boost_LIBRARIES})
+target_link_libraries(common PUBLIC ${Boost_LIBRARIES})
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-common PUBLIC FILE_SET HEADERS
+target_sources(common PUBLIC FILE_SET HEADERS
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-common
+install(TARGETS common
         EXPORT hiveCommonTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

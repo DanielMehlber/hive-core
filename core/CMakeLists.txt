@@ -1,45 +1,46 @@
 cmake_minimum_required(VERSION 3.23)
-project(hive-core)
+project(core)
 
 find_package(Boost COMPONENTS CONFIG REQUIRED log system fiber context)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-core SHARED
+add_library(core SHARED
         src/Core.cpp
 )
 
-add_library(Hive::core ALIAS hive-core)
+add_library(Hive::core ALIAS core)
+set_target_properties(core PROPERTIES OUTPUT_NAME "hive-core")
 
-target_include_directories(hive-core PUBLIC
+target_include_directories(core PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
 
-target_link_libraries(hive-core PUBLIC
+target_link_libraries(core PUBLIC
         ${Boost_LIBRARIES}
-        hive-common
-        hive-logging
-        hive-jobsystem
-        hive-events
-        hive-networking
-        hive-scene
-        hive-graphics
-        hive-services
-        hive-resources
-        hive-data
-        hive-plugins
+        common
+        logging
+        jobsystem
+        events
+        networking
+        scene
+        graphics
+        services
+        resources
+        data
+        plugins
 )
 
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-core PUBLIC FILE_SET HEADERS
+target_sources(core PUBLIC FILE_SET HEADERS
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-core
+install(TARGETS core
         EXPORT hiveCoreTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib

@@ -61,7 +61,7 @@ TEST(GraphicsTest, remote_render_service) {
 
   // first establish connection in order to broadcast the connection
   auto connection_progress = node_1.networking_mgr.Borrow()
-                                 ->GetDefaultMessageEndpoint()
+                                 ->GetPrimaryMessageEndpoint()
                                  .value()
                                  ->EstablishConnectionTo("127.0.0.1:9006");
 

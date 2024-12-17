@@ -89,10 +89,10 @@ void BoostWebSocketEndpoint::Startup() {
 
   const auto &config = m_impl->config;
 
-  bool init_server_at_startup = config->GetBool("net.server.auto-init", true);
-  int thread_count = config->GetAsInt("net.threads", 1);
-  int local_endpoint_port = config->GetAsInt("net.port", 9000);
-  std::string local_endpoint_address = config->Get("net.address", "127.0.0.1");
+  bool init_server_at_startup = config->GetBool("net.websocket.init", true);
+  int thread_count = config->GetAsInt("net.websocket.threads", 1);
+  int local_endpoint_port = config->GetAsInt("net.websocket.port", 9000);
+  std::string local_endpoint_address = config->Get("net.websocket.address", "127.0.0.1");
 
   m_impl->local_endpoint = std::make_shared<boost::asio::ip::tcp::endpoint>(
       asio::ip::make_address(local_endpoint_address), local_endpoint_port);

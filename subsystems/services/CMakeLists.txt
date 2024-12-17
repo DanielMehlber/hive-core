@@ -10,7 +10,7 @@ add_compile_definitions(NOMINMAX)
 
 # build sources
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(hive-services SHARED
+add_library(services SHARED
         src/ServiceRequest.cpp
         src/ServiceResponse.cpp
         src/LocalServiceExecutor.cpp
@@ -24,33 +24,34 @@ add_library(hive-services SHARED
         src/remote/RemoteServiceRequestConsumer.cpp
 )
 
-add_library(Hive::services ALIAS hive-services)
+add_library(Hive::services ALIAS services)
+set_target_properties(services PROPERTIES OUTPUT_NAME "hive-services")
 
-target_include_directories(hive-services PUBLIC
+target_include_directories(services PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>"
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(hive-services PUBLIC
+target_link_libraries(services PUBLIC
         ${Boost_LIBRARIES}
-        hive-logging
-        hive-jobsystem
-        hive-events
-        hive-common
-        hive-networking
-        hive-resources
-        hive-data
+        logging
+        jobsystem
+        events
+        common
+        networking
+        resources
+        data
 )
 
 # install
 file(GLOB_RECURSE HEADER_FILES "include/**/*.h")
 
-target_sources(hive-services PUBLIC FILE_SET HEADERS
+target_sources(services PUBLIC FILE_SET HEADERS
         BASE_DIRS include
         FILES ${HEADER_FILES})
 
-install(TARGETS hive-services
+install(TARGETS services
         EXPORT hiveServicesTargets
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
